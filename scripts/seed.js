@@ -6,6 +6,7 @@ const names=['Aurora Salud','Norte Deportivo','Lumen Retail','Horizonte Logísti
 const cases=[['Terminal de cobro sin conexión','Conectividad','La terminal perdió conexión; los pagos con tarjeta están detenidos.'],['Impresora de etiquetas intermitente','Equipos','La impresora presenta cortes al imprimir etiquetas de inventario.'],['Diferencia en la factura mensual','Facturación','Solicitamos revisar dos cargos duplicados en la factura del servicio.'],['Restablecimiento de acceso al portal','Accesos','El equipo de sucursal no puede iniciar sesión con su cuenta autorizada.'],['Seguimiento de visita técnica','Servicio','Solicitamos confirmar la ventana de atención y el alcance de la visita.'],['Red inalámbrica inestable','Conectividad','La señal se interrumpe en el área de recepción durante horas de operación.']];
 export async function seed() {
  const credentials=[];
+ const managerEmail=(process.env.DEMO_MANAGER_EMAIL||'olivier.steineur@o7digitalgroup.com').trim().toLowerCase();
  const accessPath=process.env.DEMO_ACCESS_PATH||'.local/demo-access.json';
  await transaction(async db=>{
   await db.query('SELECT pg_advisory_xact_lock(7347502)');
@@ -18,9 +19,9 @@ export async function seed() {
    const existing=(await db.query('SELECT * FROM users WHERE email=$1',[email])).rows[0]; if(existing) return existing;
    const password=randomBytes(18).toString('base64url');
    const u=(await db.query('INSERT INTO users(email,name,role,company_id,password_hash) VALUES($1,$2,$3,$4,$5) RETURNING *',[email,name,role,company,await hashPassword(password)])).rows[0];
-   if(['responsable@example.test','agente@example.test','cliente@example.test','cliente2@example.test'].includes(email)) credentials.push({email,password,role}); return u;
+   if([managerEmail,'agente@example.test','cliente@example.test','cliente2@example.test'].includes(email)) credentials.push({email,password,role}); return u;
   }
-  const manager=await user('responsable@example.test','Daniel Rivera','manager');
+  const manager=await user(managerEmail,'Olivier Steineur','manager');
   const agents=[]; const count=Number(process.env.DEMO_INTERNAL_USERS||25);
   if(!Number.isInteger(count)||count<2||count>100) throw new Error('DEMO_INTERNAL_USERS must be 2–100');
   for(let i=0;i<count-1;i++) agents.push(await user(i===0?'agente@example.test':`agente${i+1}@example.test`,i===0?'Ana López':`Agente ficticio ${i+1}`,'agent'));

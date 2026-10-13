@@ -11,7 +11,7 @@ after(()=>pool.end());
 async function login(email){const credentials=JSON.parse(await readFile('.local/demo-access.json','utf8'));const credential=credentials.find(c=>c.email===email);assert.ok(credential,'Local demo credentials required');const agent=request.agent(app);const boot=await agent.get('/api/bootstrap').expect(200);const res=await agent.post('/api/login').set('X-CSRF-Token',boot.body.csrf).send(credential).expect(200);return {agent,csrf:res.body.csrf,user:res.body.user};}
 const post=(u,path,body)=>u.agent.post('/api'+path).set('X-CSRF-Token',u.csrf).send(body);
 test('Persistent workflow, human approval and company/agent isolation',async()=>{
- const client=await login('cliente@example.test'),other=await login('cliente2@example.test'),manager=await login('responsable@example.test'),agent=await login('agente@example.test');
+ const client=await login('cliente@example.test'),other=await login('cliente2@example.test'),manager=await login(process.env.DEMO_MANAGER_EMAIL||'olivier.steineur@o7digitalgroup.com'),agent=await login('agente@example.test');
  await client.agent.get('/api/users').expect(403);
  await request(app).get('/api/tickets').expect(401);
  await client.agent.post('/api/tickets').send({}).expect(403);
