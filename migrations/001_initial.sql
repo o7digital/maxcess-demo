@@ -1,0 +1,10 @@
+CREATE TABLE companies (id SERIAL PRIMARY KEY, name TEXT NOT NULL UNIQUE, sector TEXT NOT NULL, site TEXT NOT NULL);
+CREATE TABLE users (id SERIAL PRIMARY KEY, email TEXT NOT NULL UNIQUE, name TEXT NOT NULL, role TEXT NOT NULL CHECK(role IN ('manager','agent','client')), company_id INTEGER REFERENCES companies(id), password_hash TEXT NOT NULL, CHECK ((role = 'client') = (company_id IS NOT NULL)));
+CREATE TABLE contacts (id SERIAL PRIMARY KEY, company_id INTEGER NOT NULL REFERENCES companies(id), name TEXT NOT NULL, email TEXT NOT NULL UNIQUE, function TEXT NOT NULL);
+CREATE TABLE tickets (id SERIAL PRIMARY KEY, seed_key TEXT UNIQUE, title TEXT NOT NULL, company_id INTEGER NOT NULL REFERENCES companies(id), site TEXT NOT NULL, category TEXT NOT NULL CHECK(category IN ('Conectividad','Equipos','Facturación','Accesos','Servicio')), description TEXT NOT NULL, priority TEXT NOT NULL CHECK(priority IN ('Baja','Media','Alta','Crítica')), requested_priority TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'Abierto' CHECK(status IN ('Abierto','En curso','Resuelto','Cerrado')), agent_id INTEGER REFERENCES users(id), created_by INTEGER NOT NULL REFERENCES users(id), resolution TEXT, created_at TIMESTAMPTZ NOT NULL DEFAULT now(), updated_at TIMESTAMPTZ NOT NULL DEFAULT now(), due_at TIMESTAMPTZ NOT NULL, resolved_at TIMESTAMPTZ);
+CREATE INDEX tickets_company ON tickets(company_id);
+CREATE INDEX tickets_agent ON tickets(agent_id);
+CREATE TABLE events (id SERIAL PRIMARY KEY, ticket_id INTEGER NOT NULL REFERENCES tickets(id), actor_id INTEGER NOT NULL REFERENCES users(id), kind TEXT NOT NULL CHECK(kind IN ('history','reply','note','resolution')), body TEXT NOT NULL, internal BOOLEAN NOT NULL DEFAULT false, created_at TIMESTAMPTZ NOT NULL DEFAULT now());
+CREATE INDEX events_ticket ON events(ticket_id,created_at);
+CREATE TABLE session (sid VARCHAR NOT NULL PRIMARY KEY, sess JSON NOT NULL, expire TIMESTAMP(6) NOT NULL);
+CREATE INDEX session_expire ON session(expire);
