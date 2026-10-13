@@ -1,4 +1,6 @@
-# Réutilisation et intégrations
+# Réutilisation et intégrations — livraison initiale
+
+Ce document décrit la version stable initiale. Pour le chat Olivia V3.5 réel, les nouveaux rôles et le reporting de la branche `dev`, voir [DEV.md](DEV.md).
 
 Inspection en lecture seule des dépôts o7digital le 12 octobre 2026. Aucun service ni aucune base de production n’a été modifié.
 

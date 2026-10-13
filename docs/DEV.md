@@ -20,7 +20,7 @@ Les accès sont dans `.local/ACCES-DEV.md`, hors de Git. L’adresse du superadm
 | Technicien support | Tickets affectés et entreprises concernées | Aucun droit administratif |
 | Client | Tickets, dashboard et rapports de sa propre entreprise | Aucun droit sur les comptes internes |
 
-Les admins et gérants voient toutes les entreprises conformément à la précision explicite du propriétaire. Ils affectent les tickets et accèdent aux notes internes. Le client ne reçoit pas les notes internes. Désactiver une compte bloque immédiatement ses sessions existantes. Les droits sont vérifiés par le serveur ; les comptes ne peuvent pas modifier leur propre accès ni créer un rôle plus élevé que leurs permissions.
+Les admins et gérants voient toutes les entreprises conformément à la précision explicite du propriétaire. Ils affectent les tickets et accèdent aux notes internes. Le client ne reçoit pas les notes internes. Désactiver un compte bloque immédiatement ses sessions existantes. Les droits sont vérifiés par le serveur ; les comptes ne peuvent pas modifier leur propre accès ni créer un rôle plus élevé que leurs permissions.
 
 ## Dashboard et reporting
 
@@ -49,3 +49,5 @@ Le widget reprend la direction du [composant O7Widget de suitesmine-bot](https:/
 ## Vérification
 
 `npm run build`, `npm test`, `npm run test:browser`, `npm run test:dashboard`. Tests de droits, suspension de session, isolation, reporting, disponibilité Hugging Face et contrat du chat, puis parcours navigateur des cinq profils et contrôles ordinateur/mobile. Captures privées dans `.local/screenshots/`.
+
+Les contrôles navigateur ont également passé sur l’URL Railway dev pour les cinq profils : parcours de tickets, création/suspension de compte, sauvegarde de rapport, export et réponse réelle du chat. Le endpoint privé Olivia refuse les appels sans sa clé (HTTP 401).

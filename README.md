@@ -1,16 +1,20 @@
-# Service Hub — démo SAV
+# Service Hub — support et intelligence de service
 
-Version premium de test : https://service-hub-dev-3fbf.up.railway.app · branche `dev`. [Rôles, reporting et intégrations dev](docs/DEV.md).
+Version premium de test : **https://service-hub-dev-3fbf.up.railway.app** · branche **dev**.
 
-Application dédiée pour la présentation à Omar : design premium du ZIP, interface espagnole, trois rôles authentifiés et PostgreSQL. Sources : branche `demo/service-hub` du dépôt `o7digital/maxcess-demo`.
+Dashboard client et opérationnel, graphiques depuis PostgreSQL, rapports sauvegardés, export CSV, administration des comptes et chat flottant relié à Olivia V3.5 sur VPS2. Interface espagnole, design graphite/ivoire/citron et logo lié à O7 Digital Group Holding.
 
-Démo déployée : https://service-hub-production-3168.up.railway.app
+La version stable initiale est conservée sur `main` et `demo/service-hub`, à https://service-hub-production-3168.up.railway.app. `dev` a été créée depuis cette base commune. L’environnement Railway `dev` utilise une base indépendante et un secret de session distinct.
 
-[Livraison et vérifications](docs/DELIVERY.md). Les accès sont dans le document privé local `.local/ACCES-DEMO.md`, hors des sources publiques.
+## Accès et permissions
+
+Accès de test privés : `.local/ACCES-DEV.md`, exclu de Git. Le superadministrateur utilise `olivier.steineur@o7digitalgroup.com`. Son mot de passe de démonstration est conservé ; aucun mot de passe n’est inclus dans les sources.
+
+Superadministrateur, admin et gérant voient toutes les entreprises, conformément au choix du propriétaire. Les techniciens voient leurs tickets affectés. Les clients disposent du dashboard, des rapports et des tickets de leur entreprise, sans notes internes. L’administration permet de créer et suspendre les comptes selon la hiérarchie des rôles. Les sessions des comptes suspendus sont immédiatement refusées.
 
 ## Lancer localement
 
-Node.js 22+ et une base PostgreSQL **dédiée à cette démo** sont requis.
+Node.js 22+ et une base PostgreSQL **dédiée à la démo** sont requis.
 
 ```sh
 npm ci
@@ -21,25 +25,36 @@ npm run seed
 npm start
 ```
 
-Le seed ajoute 20 entreprises, 20 contacts, 60 tickets, 25 comptes internes illustratifs par défaut et 4 comptes clients. `DEMO_INTERNAL_USERS` configure l’effectif interne initial (2–100). Le seed ne réinitialise ni les mots de passe ni les tickets existants. Il n’est pas exécuté au démarrage. Les accès de test générés sont écrits dans `.local/demo-access.json`, ignoré par Git, et doivent être transmis séparément. Les autres comptes illustratifs ont un mot de passe aléatoire non divulgué.
+Le seed initial crée 20 entreprises, 20 contacts, 60 tickets, 25 comptes internes illustratifs et 4 comptes clients. `DEMO_INTERNAL_USERS` configure le nombre initial de comptes internes (4–100). Le seed est idempotent ; il ne réinitialise ni les tickets ni les mots de passe et n’est pas exécuté au démarrage. Les accès générés sont conservés dans `.local/demo-access.json`, hors de Git.
 
-Le client voit les tickets de son entreprise. L’agent voit ses tickets affectés et les contacts correspondants. Le responsable gère la file globale, les entreprises, les comptes et l’affectation. Notes internes masquées par le serveur. Réponse et classification soumises à validation humaine. Olivia est simulée et n’envoie aucun message externe.
+## Intégrations
+
+- Chat **Olivia V3.5 réel** : passerelle serveur dédiée au VPS2, scopes distincts par entreprise/client et technicien, conversations sauvegardées dans PostgreSQL. Variables serveur `OLIVIA_BASE_URL` et `OLIVIA_API_KEY`. Le chat ne publie pas de réponses et ne modifie pas les tickets.
+- Brouillons de tickets : mode de démonstration distinct, clairement identifié, avec validation humaine avant publication.
+- Reporting **Hugging Face** : prêt côté serveur, en attente du token et du modèle du propriétaire. Variables `HF_TOKEN` et `HF_REPORT_MODEL`. Sans configuration, les rapports de données et graphiques restent disponibles et le bouton de synthèse IA est désactivé. Pas de réponse IA fabriquée.
+- Logo et lien holding : https://www.o7digitalgroup.com/. Marque Service Hub configurable via `BRAND_NAME` et `BRAND_SUBTITLE`.
+
+[Contrats, scopes et limites opérationnelles](docs/DEV.md). Aucune pièce jointe ou messagerie externe n’est activée.
 
 ## Vérification
 
 ```sh
 npm run build
 npm test
-# Le serveur doit être démarré pour le contrôle navigateur.
+# Démarrer le serveur pour les contrôles dans le navigateur.
 npm run test:browser
+npm run test:dashboard
 ```
 
-Les tests utilisent la base de démo configurée et suppriment leurs tickets temporaires. Ne pas les exécuter sur une base de production. Le test navigateur utilise Google Chrome sur macOS ; `CHROME_PATH` permet un autre chemin Chromium et `QA_BASE_URL` un serveur distant. Captures privées dans `.local/screenshots/`.
+Les tests utilisent exclusivement la base dédiée et suppriment leurs données locales temporaires. Ne pas les exécuter sur une base de production. Tests navigateur avec Google Chrome sur macOS ; `CHROME_PATH` permet un autre chemin Chromium. Pour Railway dev : `QA_BASE_URL=https://service-hub-dev-3fbf.up.railway.app` et `QA_ACCESS_PATH=.local/dev-access.json`. Captures privées dans `.local/screenshots/`.
 
-## Railway
+## Déployer sur dev
 
-Projet dédié, un service `service-hub` et un PostgreSQL avec volume. Voir `railway.json` : Docker, migration avant déploiement, `/health` et écoute sur `PORT`. Variables serveur : `DATABASE_URL=${{Postgres.DATABASE_URL}}`, `SESSION_SECRET` aléatoire, `NODE_ENV=production`, `DEMO_MODE=true`, `PORT=3000`. `BRAND_NAME` et `BRAND_SUBTITLE` personnalisent la marque.
+```sh
+railway environment link dev
+railway up --service service-hub --environment dev --detach
+```
 
-Déployer avec `railway up --service service-hub --detach`. Exécuter le seed une seule fois depuis un environnement privé connecté à cette base, puis conserver les identifiants hors du dépôt. La base est persistante ; les redéploiements ne font que les migrations manquantes. Les données et sessions survivent au remplacement du conteneur.
+`railway.json` : Docker, migration avant déploiement, `/health` et écoute sur `PORT`. Variables serveur : `DATABASE_URL=${{Postgres.DATABASE_URL}}`, secret de session, `NODE_ENV=production` (cookies HTTPS), `APP_ENV=dev`, `DEMO_MODE=true`, `PORT=3000`. Le PostgreSQL utilise un volume persistant ; un redéploiement n’exécute que les migrations manquantes.
 
-[Scénario en espagnol](docs/DEMO-ES.md) · [réutilisation et intégrations](docs/REUSE.md) · [brief fourni](docs/BRIEF.md).
+[Documentation dev](docs/DEV.md) · [scénario initial en espagnol](docs/DEMO-ES.md) · [réutilisation initiale](docs/REUSE.md) · [brief](docs/BRIEF.md).

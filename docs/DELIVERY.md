@@ -1,4 +1,6 @@
-# Livraison — 12 octobre 2026
+# Livraison initiale — 12 octobre 2026
+
+La version premium de test ultérieure est documentée dans [DEV.md](DEV.md).
 
 - Démo : https://service-hub-production-3168.up.railway.app
 - Projet Railway dédié : `maxcess-service-hub-demo` (`181c19c8-d9f1-4337-b827-3713d2df89f6`). Services : `service-hub` et `Postgres`, avec volume PostgreSQL persistant.
