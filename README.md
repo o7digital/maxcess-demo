@@ -2,6 +2,10 @@
 
 Application dédiée pour la présentation à Omar : design premium du ZIP, interface espagnole, trois rôles authentifiés et PostgreSQL. Sources : branche `demo/service-hub` du dépôt `o7digital/maxcess-demo`.
 
+Démo déployée : https://service-hub-production-3168.up.railway.app
+
+[Livraison et vérifications](docs/DELIVERY.md). Les accès sont dans le document privé local `.local/ACCES-DEMO.md`, hors des sources publiques.
+
 ## Lancer localement
 
 Node.js 22+ et une base PostgreSQL **dédiée à cette démo** sont requis.
