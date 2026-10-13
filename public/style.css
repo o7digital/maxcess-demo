@@ -2225,6 +2225,763 @@ body {
   }
 }
 /* Keep controls stationary while the user reads, types or clicks. */
-#mx-demo .olivia-float-panel{animation:olivia-float 6s ease-in-out infinite}
-#mx-demo .olivia-float-panel:hover,#mx-demo .olivia-float-panel:focus-within{animation-play-state:paused}
-@media(prefers-reduced-motion:reduce){#mx-demo .olivia-float-panel{animation:none}}
+#mx-demo .olivia-float-panel {
+  animation: olivia-float 6s ease-in-out infinite;
+}
+#mx-demo .olivia-float-panel:hover,
+#mx-demo .olivia-float-panel:focus-within {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  #mx-demo .olivia-float-panel {
+    animation: none;
+  }
+}
+/* Client experience: touch-first portal, independently authenticated previews. */
+#mx-demo .demo-entry-link {
+  background: #ffffff12;
+  color: #e9f6d9;
+  border-color: #ffffff20;
+  white-space: normal;
+  text-decoration: none;
+}
+#mx-demo .portal-wordmark {
+  display: block;
+  font-size: 24px;
+  font-weight: 750;
+  letter-spacing: -1px;
+  color: #203b32;
+  text-decoration: none;
+}
+#mx-demo .portal-wordmark > span {
+  color: #8ba852;
+}
+#mx-demo .portal-wordmark small {
+  display: block;
+  letter-spacing: 1px;
+  font-size: 9px;
+  font-weight: 450;
+  color: #88927d;
+  margin-top: 5px;
+}
+#mx-demo .portal-welcome {
+  max-width: 1220px;
+  margin: auto;
+  padding: 35px 35px 24px;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+#mx-demo .portal-entry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+#mx-demo .portal-entry-header .o7-mark {
+  background: #203b32;
+}
+#mx-demo .portal-entry-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 65px;
+  align-items: center;
+  flex: 1;
+  margin: 65px 0;
+}
+#mx-demo .portal-entry-copy h1 {
+  font-size: 49px;
+  line-height: 1.17;
+  font-weight: 450;
+  letter-spacing: -1.5px;
+  margin: 23px 0;
+}
+#mx-demo .portal-entry-copy h1 em {
+  font-family: Georgia, serif;
+  color: #819957;
+  font-weight: 400;
+}
+#mx-demo .portal-entry-copy > p {
+  font-size: 14px;
+  color: #7d8973;
+  line-height: 1.9;
+  max-width: 490px;
+}
+#mx-demo .portal-entry-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 35px;
+}
+#mx-demo .portal-entry-cards > span {
+  padding: 17px 15px;
+  background: #e9efdf;
+  border: 1px solid #dce4cf;
+  border-radius: 11px;
+  color: #8aa160;
+  font-size: 22px;
+  min-width: 125px;
+}
+#mx-demo .portal-entry-cards b {
+  display: block;
+  font-size: 10px;
+  font-weight: 550;
+  margin-top: 11px;
+  color: #677b52;
+}
+#mx-demo .portal-entry-form {
+  padding: 30px;
+}
+#mx-demo .portal-entry-form h2 {
+  font-size: 22px;
+  margin: 14px 0 23px;
+}
+#mx-demo .portal-entry-form .btn {
+  width: 100%;
+  margin-top: 14px;
+}
+#mx-demo .portal-entry-form input {
+  width: 100%;
+  min-height: 45px;
+}
+#mx-demo .demo-client-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #f1f4e9;
+  border-radius: 11px;
+  border: 1px solid #e3e8d9;
+}
+#mx-demo .demo-client-card .avatar {
+  background: #dce8c6;
+  width: 42px;
+  height: 42px;
+  color: #657d43;
+}
+#mx-demo .demo-client-card b {
+  font-size: 13px;
+}
+#mx-demo .demo-client-card small {
+  display: block;
+  font-size: 10px;
+  color: #8a967b;
+  margin-top: 5px;
+}
+#mx-demo .portal-preview-link {
+  display: block;
+  font-size: 11px;
+  color: #69834b;
+  padding: 14px 0;
+  text-decoration: none;
+}
+#mx-demo .real-client-login {
+  border-top: 1px solid var(--line);
+  margin-top: 8px;
+  padding-top: 17px;
+  font-size: 11px;
+  color: #7c8b6b;
+}
+#mx-demo .real-client-login summary {
+  cursor: pointer;
+}
+#mx-demo .portal-welcome > footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  flex-wrap: wrap;
+  color: #8c967f;
+  font-size: 10px;
+}
+#mx-demo .portal-welcome > footer a {
+  color: #73865d;
+  text-decoration: none;
+}
+#mx-demo .client-top {
+  min-height: 92px;
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  padding: 21px 35px;
+  border-bottom: 1px solid #e1e6d8;
+  background: #fdfdf8;
+}
+#mx-demo .client-company {
+  border-left: 1px solid #e1e6d8;
+  padding-left: 25px;
+  font-size: 12px;
+}
+#mx-demo .client-company small {
+  display: block;
+  color: #8d987e;
+  font-size: 10px;
+  margin-top: 6px;
+}
+#mx-demo .client-header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#mx-demo .client-header-actions .btn {
+  font-size: 10px;
+  text-decoration: none;
+}
+#mx-demo .client-layout {
+  display: grid;
+  grid-template-columns: 185px minmax(0, 1fr);
+  min-height: calc(100vh - 92px);
+}
+#mx-demo .client-menu {
+  background: #f4f6ed;
+  border-right: 1px solid #e0e6d6;
+  padding: 32px 18px;
+  color: #819270;
+  display: flex;
+  flex-direction: column;
+}
+#mx-demo .client-menu-title {
+  font-size: 8px;
+  letter-spacing: 2px;
+  margin: 0 12px 18px;
+}
+#mx-demo .client-menu nav button {
+  color: #7d8d6c;
+  font-size: 12px;
+}
+#mx-demo .client-menu nav button.active {
+  background: #e0eccb;
+  color: #365133;
+  box-shadow: none;
+}
+#mx-demo .client-menu .nav-icon {
+  font-size: 21px;
+}
+#mx-demo .client-menu-footer {
+  margin-top: auto;
+  padding: 38px 9px 0;
+}
+#mx-demo .client-menu-footer .o7-mark {
+  background: #203b32;
+  width: 31px;
+  height: 31px;
+}
+#mx-demo .client-menu-footer .o7-mark b,
+#mx-demo .client-menu-footer .o7-mark i {
+  font-size: 16px;
+}
+#mx-demo .client-menu-footer .o7-mark b {
+  left: 4px;
+}
+#mx-demo .client-menu-footer .o7-mark i {
+  right: 4px;
+}
+#mx-demo .client-menu-footer .o7-copy strong {
+  font-size: 7px;
+  letter-spacing: 0.08em;
+}
+#mx-demo .client-menu-footer .o7-copy small {
+  font-size: 6px;
+}
+#mx-demo .client-menu-footer p {
+  font-size: 9px;
+  color: #98a28c;
+  line-height: 1.8;
+  margin-top: 22px;
+}
+#mx-demo .client-content {
+  max-width: 1280px;
+  width: 100%;
+  padding: 36px 38px 90px;
+}
+#mx-demo .client-welcome-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+#mx-demo .client-welcome-line h1 {
+  font-size: 33px;
+  margin: 12px 0 8px;
+}
+#mx-demo .client-welcome-line p {
+  font-size: 12px;
+  color: #89947f;
+  margin: 0;
+}
+#mx-demo .client-demo-pill {
+  font-size: 8px;
+  letter-spacing: 0.8px;
+  padding: 7px 10px;
+  color: #93a07f;
+  background: #edf2e4;
+  border: 1px solid #e0e7d5;
+  border-radius: 6px;
+}
+#mx-demo .client-service-hero {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  background:
+    radial-gradient(ellipse at 88% 35%, #617d4450, transparent 50%),
+    linear-gradient(125deg, #203d33, #1b332d);
+  border-radius: 21px;
+  color: #f2f9e7;
+  padding: 30px 33px;
+  overflow: hidden;
+  min-height: 230px;
+}
+#mx-demo .client-service-hero .eyebrow {
+  color: #b9d598;
+  font-size: 9px;
+}
+#mx-demo .client-service-hero h2 {
+  font-size: 30px;
+  font-weight: 450;
+  line-height: 1.24;
+  letter-spacing: -0.7px;
+  margin: 14px 0;
+}
+#mx-demo .client-service-hero h2 em {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  color: #d8eabe;
+}
+#mx-demo .client-service-hero p {
+  font-size: 11px;
+  color: #b6c8ae;
+  margin: 0 0 20px;
+}
+#mx-demo .client-hero-graphic {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#mx-demo .client-hero-graphic > span {
+  width: 83px;
+  height: 83px;
+  border-radius: 24px;
+  background: linear-gradient(145deg, #ecfcc5, #a8c37f 55%, #647f4f);
+  display: grid;
+  place-items: center;
+  font-size: 46px;
+  color: #345735;
+  transform: rotate(-9deg);
+  box-shadow:
+    0 14px 34px #142c2350,
+    inset 0 1px 2px #ffffff70;
+  z-index: 1;
+}
+#mx-demo .client-hero-ring {
+  position: absolute;
+  width: 177px;
+  height: 177px;
+  border: 1px solid #d6e8b81f;
+  border-radius: 50%;
+}
+#mx-demo .client-hero-ring:after {
+  content: "";
+  position: absolute;
+  inset: 23px;
+  border: 1px solid #d6e8b81f;
+  border-radius: 50%;
+}
+#mx-demo .client-hero-graphic i {
+  position: absolute;
+  bottom: 6px;
+  font-style: normal;
+  font-size: 8px;
+  color: #cee2bb;
+  border: 1px solid #d6e8b829;
+  padding: 6px 9px;
+  border-radius: 5px;
+}
+#mx-demo .client-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 21px 0 28px;
+}
+#mx-demo .client-metrics > div {
+  background: #fff;
+  border: 1px solid #e4e8dd;
+  border-radius: 12px;
+  padding: 20px;
+}
+#mx-demo .client-metrics small {
+  font-size: 10px;
+  color: #89977b;
+}
+#mx-demo .client-metrics strong {
+  display: block;
+  font-size: 29px;
+  font-weight: 500;
+  letter-spacing: -1px;
+  margin: 13px 0 8px;
+}
+#mx-demo .client-metrics span {
+  font-size: 9px;
+  color: #a0aa93;
+  display: block;
+}
+#mx-demo .client-home-columns {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 24px;
+}
+#mx-demo .client-home-columns .panel-head {
+  padding: 0 2px;
+}
+#mx-demo .client-home-columns h2 {
+  font-size: 16px;
+  margin-top: 8px;
+}
+#mx-demo .client-ticket-cards {
+  display: grid;
+  gap: 12px;
+}
+#mx-demo .client-ticket-card {
+  display: block;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #e1e7d7;
+  border-radius: 12px;
+  text-align: left;
+  padding: 18px 20px;
+  color: var(--ink);
+  box-shadow: 0 4px 12px #152c2b02;
+}
+#mx-demo .client-ticket-card h3 {
+  font-size: 14px;
+  font-weight: 550;
+  line-height: 1.5;
+  margin: 15px 0 7px;
+}
+#mx-demo .client-ticket-card p {
+  font-size: 10px;
+  color: #94a081;
+  margin: 0 0 16px;
+}
+#mx-demo .client-card-priority {
+  font-size: 9px;
+  color: #8f9c7b;
+}
+#mx-demo .client-card-arrow {
+  font-size: 17px;
+  color: #88a55f;
+}
+#mx-demo .client-help-panel {
+  background: #eff3e7;
+  padding: 23px;
+  border-color: #dde6cf;
+}
+#mx-demo .client-help-panel h2 {
+  font-size: 20px;
+  margin: 13px 0 20px;
+}
+#mx-demo .client-category-list {
+  display: grid;
+  gap: 6px;
+}
+#mx-demo .client-category-list button {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 13px 0;
+  border: 0;
+  border-bottom: 1px solid #dfe7d4;
+  background: transparent;
+  color: #6f815b;
+  text-align: left;
+}
+#mx-demo .client-category-list button > span {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: #e2ebd3;
+  border-radius: 7px;
+  color: #7e9959;
+  font-size: 18px;
+}
+#mx-demo .client-category-list b {
+  font-size: 11px;
+  font-weight: 500;
+}
+#mx-demo .client-category-list i {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 17px;
+}
+#mx-demo .client-help-panel > p {
+  font-size: 10px;
+  color: #8e9b7e;
+  margin: 24px 0 16px;
+  line-height: 1.9;
+}
+#mx-demo .client-help-panel .btn {
+  font-size: 11px;
+}
+#mx-demo .client-home-report {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 25px;
+  background: #f0f2e9;
+  border: 1px solid #e2e7d8;
+  border-radius: 14px;
+  margin-top: 25px;
+}
+#mx-demo .client-home-report h2 {
+  font-size: 17px;
+  margin: 12px 0 6px;
+}
+#mx-demo .client-home-report p {
+  font-size: 11px;
+  color: #8b987b;
+  margin: 0;
+}
+#mx-demo .client-experience .table-wrap {
+  overflow: visible;
+}
+#mx-demo .client-experience .client-menu nav {
+  display: block;
+}
+@media (max-width: 1050px) {
+  #mx-demo .client-content {
+    padding: 30px 25px 90px;
+  }
+  #mx-demo .client-layout {
+    grid-template-columns: 155px minmax(0, 1fr);
+  }
+  #mx-demo .client-service-hero {
+    grid-template-columns: 1fr 140px;
+    padding: 25px;
+  }
+  #mx-demo .client-home-columns {
+    grid-template-columns: 1fr;
+  }
+  #mx-demo .client-help-panel .client-category-list {
+    grid-template-columns: 1fr 1fr;
+    gap: 7px 18px;
+  }
+  #mx-demo .client-hero-graphic > span {
+    width: 67px;
+    height: 67px;
+    font-size: 38px;
+  }
+  #mx-demo .client-hero-ring {
+    width: 130px;
+    height: 130px;
+  }
+  #mx-demo .client-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+  #mx-demo .client-company {
+    padding-left: 18px;
+  }
+  #mx-demo .client-preview-link {
+    display: none;
+  }
+  #mx-demo .portal-entry-grid {
+    gap: 28px;
+  }
+  #mx-demo .portal-entry-copy h1 {
+    font-size: 38px;
+  }
+}
+@media (max-width: 730px) {
+  #mx-demo .portal-welcome {
+    padding: 23px 20px;
+  }
+  #mx-demo .portal-entry-grid {
+    grid-template-columns: 1fr;
+    margin: 38px 0;
+    gap: 28px;
+  }
+  #mx-demo .portal-entry-copy h1 {
+    font-size: 37px;
+  }
+  #mx-demo .portal-entry-cards {
+    margin-top: 23px;
+    gap: 9px;
+  }
+  #mx-demo .portal-entry-cards > span {
+    min-width: 98px;
+    padding: 15px 12px;
+  }
+  #mx-demo .portal-entry-cards b {
+    font-size: 9px;
+  }
+  #mx-demo .portal-entry-form {
+    padding: 23px;
+  }
+  #mx-demo .portal-entry-copy > p {
+    font-size: 12px;
+  }
+  #mx-demo .client-top {
+    padding: 18px 19px;
+    gap: 13px;
+    flex-wrap: wrap;
+  }
+  #mx-demo .client-company {
+    border: 0;
+    padding: 0;
+    margin-left: auto;
+    text-align: right;
+    font-size: 10px;
+  }
+  #mx-demo .client-header-actions {
+    width: 100%;
+    justify-content: flex-end;
+    border-top: 1px solid #edf0e6;
+    padding-top: 11px;
+  }
+  #mx-demo .client-header-actions > .avatar {
+    display: none;
+  }
+  #mx-demo .client-header-actions .btn {
+    padding: 7px 10px;
+    font-size: 9px;
+  }
+  #mx-demo .client-layout {
+    display: block;
+  }
+  #mx-demo .client-content {
+    padding: 25px 18px 115px;
+  }
+  #mx-demo .client-menu {
+    position: fixed;
+    z-index: 12;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 8px 16px calc(9px + env(safe-area-inset-bottom));
+    background: #fcfdf8f2;
+    backdrop-filter: blur(12px);
+    border: 0;
+    border-top: 1px solid #e0e7d4;
+    display: block;
+  }
+  #mx-demo .client-menu-title,
+  #mx-demo .client-menu-footer {
+    display: none;
+  }
+  #mx-demo .client-experience .client-menu nav {
+    display: flex;
+    overflow: visible;
+    margin: 0;
+    justify-content: space-around;
+    gap: 8px;
+  }
+  #mx-demo .client-menu nav button {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 7px 8px;
+    border-radius: 10px;
+    font-size: 9px;
+    min-height: 50px;
+    width: auto;
+  }
+  #mx-demo .client-menu nav button .nav-icon {
+    display: block;
+    font-size: 20px;
+    width: auto;
+  }
+  #mx-demo .client-welcome-line h1 {
+    font-size: 29px;
+  }
+  #mx-demo .client-demo-pill {
+    font-size: 7px;
+    padding: 6px 8px;
+    max-width: 100px;
+    line-height: 1.6;
+  }
+  #mx-demo .client-welcome-line .eyebrow {
+    font-size: 8px;
+  }
+  #mx-demo .client-welcome-line p {
+    font-size: 11px;
+  }
+  #mx-demo .client-service-hero {
+    grid-template-columns: 1fr;
+    padding: 25px;
+    border-radius: 17px;
+    min-height: 230px;
+  }
+  #mx-demo .client-hero-graphic {
+    display: none;
+  }
+  #mx-demo .client-service-hero h2 {
+    font-size: 28px;
+  }
+  #mx-demo .client-service-hero .btn {
+    font-size: 11px;
+    padding: 11px 15px;
+  }
+  #mx-demo .client-metrics {
+    gap: 10px;
+    margin: 17px 0 26px;
+  }
+  #mx-demo .client-metrics > div {
+    padding: 17px 16px;
+  }
+  #mx-demo .client-metrics strong {
+    font-size: 28px;
+  }
+  #mx-demo .client-home-columns {
+    gap: 22px;
+  }
+  #mx-demo .client-help-panel .client-category-list {
+    grid-template-columns: 1fr;
+  }
+  #mx-demo .client-home-report {
+    display: block;
+    padding: 22px;
+  }
+  #mx-demo .client-home-report h2 {
+    font-size: 18px;
+    line-height: 1.5;
+  }
+  #mx-demo .client-home-report .btn {
+    margin-top: 17px;
+    font-size: 11px;
+  }
+  #mx-demo .client-ticket-card {
+    padding: 17px;
+  }
+  #mx-demo .client-ticket-card h3 {
+    font-size: 13px;
+  }
+  #mx-demo .client-ticket-card .badge {
+    font-size: 8px;
+  }
+  #mx-demo:has(.client-experience) #olivia-widget {
+    bottom: 88px;
+  }
+  #mx-demo:has(.client-experience) .olivia-float-panel {
+    height: min(620px, calc(100dvh - 190px));
+  }
+  #mx-demo .client-experience .report-filters input {
+    font-size: 14px !important;
+  }
+}
+@media print {
+  #mx-demo .client-top,
+  #mx-demo .client-menu {
+    display: none !important;
+  }
+  #mx-demo .client-layout {
+    display: block;
+  }
+  #mx-demo .client-content {
+    padding: 0;
+  }
+}

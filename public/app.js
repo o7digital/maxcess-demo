@@ -1,5 +1,6 @@
 import { metricCards, charts, reportDocument } from "./analytics.js";
 import { mountChat, resetChat } from "./chat.js";
+const clientPortal = /^\/cliente\/?$/.test(location.pathname);
 const app = document.querySelector("#app"),
   overlay = document.querySelector("#mx-overlay");
 let config,
@@ -77,7 +78,11 @@ function notify(message) {
 async function api(path, method = "GET", body) {
   const res = await fetch("/api" + path, {
     method,
-    headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf || "" },
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRF-Token": csrf || "",
+      ...(clientPortal ? { "X-Client-Portal": "1" } : {}),
+    },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
   const data = await res.json();
@@ -99,7 +104,12 @@ async function bootstrap() {
   document.title = `${config.brand} — ${config.subtitle}`;
 }
 function welcome() {
-  app.innerHTML = `<div class="login"><div class="row welcome-heading"><div><h2>${esc(config.brand)} ↗</h2><p class="subtitle">${esc(config.subtitle)}</p></div>${holdingLogo()}<span class="demo-tag">ENTORNO ${esc(config.environment).toUpperCase()} · DATOS FICTICIOS</span></div><div class="welcome-grid"><div class="hero"><div class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> ATENCIÓN CON CONTINUIDAD</div><h1>Cada solicitud.<br>Una respuesta<br><em>con contexto.</em></h1><p>Un espacio compartido para clientes, agentes y responsables. Del primer contacto a la resolución, sin perder el hilo.</p><div class="actions"><button class="btn lime" data-action="guide">Recorrido guiado ↗</button><button class="btn" data-action="try">Probar la plataforma</button></div></div></div><div class="panel"><div class="eyebrow">TU ESPACIO DE SERVICIO</div><h2>Iniciar sesión</h2><p class="subtitle">Usa los accesos de demostración compartidos por el equipo. Cada perfil tiene permisos propios.</p><form id="login"><label for="email">Correo electrónico</label><input id="email" name="email" type="email" autocomplete="username" required placeholder="nombre@example.test"><label for="password">Contraseña</label><input id="password" name="password" type="password" autocomplete="current-password" required><p id="login-error" role="alert"></p><button class="btn primary" type="submit">Entrar a mi espacio ↗</button></form><p class="notice">20 empresas ficticias · equipo interno ilustrativo de 25 cuentas por defecto. La distribución no constituye un acuerdo de licencias.</p></div></div><div id="guide" class="guide" ${guide ? "" : "hidden"}><div class="eyebrow">RECORRIDO GUIADO · 5 MINUTOS</div><h2>Una solicitud, tres perspectivas.</h2><p>1. <b>Cliente:</b> inicia sesión y registra una solicitud con sede y prioridad.<br>2. <b>Responsable:</b> entra con tu cuenta y asigna la solicitud a Ana López.<br>3. <b>Agente:</b> revisa el historial, solicita un borrador a Olivia y valida la respuesta.<br>4. <b>Cliente:</b> vuelve al portal para leer y responder.<br>5. <b>Agente:</b> documenta la resolución, cierra y prueba la reapertura.</p><p class="subtitle">Cierra la sesión antes de cambiar de cuenta. Olivia trabaja en modo demo: ninguna sugerencia se publica automáticamente.</p></div></div>`;
+  app.classList.toggle("client-experience", clientPortal);
+  if (clientPortal) {
+    clientWelcome();
+    return;
+  }
+  app.innerHTML = `<div class="login"><div class="row welcome-heading"><div><h2>${esc(config.brand)} ↗</h2><p class="subtitle">${esc(config.subtitle)}</p></div>${holdingLogo()}<span class="demo-tag">ENTORNO ${esc(config.environment).toUpperCase()} · DATOS FICTICIOS</span></div><div class="welcome-grid"><div class="hero"><div class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> ATENCIÓN CON CONTINUIDAD</div><h1>Cada solicitud.<br>Una respuesta<br><em>con contexto.</em></h1><p>Un espacio compartido para clientes, agentes y responsables. Del primer contacto a la resolución, sin perder el hilo.</p><div class="actions"><button class="btn lime" data-action="guide">Recorrido guiado ↗</button><button class="btn" data-action="try">Probar la plataforma</button>${config.clientDemo ? '<a class="btn demo-entry-link" href="/demo">Demo cliente · móvil / tablet / desktop ↗</a>' : ""}</div></div></div><div class="panel"><div class="eyebrow">TU ESPACIO DE SERVICIO</div><h2>Iniciar sesión</h2><p class="subtitle">Usa los accesos de demostración compartidos por el equipo. Cada perfil tiene permisos propios.</p><form id="login"><label for="email">Correo electrónico</label><input id="email" name="email" type="email" autocomplete="username" required placeholder="nombre@example.test"><label for="password">Contraseña</label><input id="password" name="password" type="password" autocomplete="current-password" required><p id="login-error" role="alert"></p><button class="btn primary" type="submit">Entrar a mi espacio ↗</button></form><p class="notice">20 empresas ficticias · equipo interno ilustrativo de 25 cuentas por defecto. La distribución no constituye un acuerdo de licencias.</p></div></div><div id="guide" class="guide" ${guide ? "" : "hidden"}><div class="eyebrow">RECORRIDO GUIADO · 5 MINUTOS</div><h2>Una solicitud, tres perspectivas.</h2><p>1. <b>Cliente:</b> inicia sesión y registra una solicitud con sede y prioridad.<br>2. <b>Responsable:</b> entra con tu cuenta y asigna la solicitud a Ana López.<br>3. <b>Agente:</b> revisa el historial, solicita un borrador a Olivia y valida la respuesta.<br>4. <b>Cliente:</b> vuelve al portal para leer y responder.<br>5. <b>Agente:</b> documenta la resolución, cierra y prueba la reapertura.</p><p class="subtitle">Cierra la sesión antes de cambiar de cuenta. Olivia trabaja en modo demo: ninguna sugerencia se publica automáticamente.</p></div></div>`;
   $("#login").addEventListener("submit", async (e) => {
     e.preventDefault();
     const b = e.submitter;
@@ -134,6 +144,11 @@ async function load() {
   users = u.users;
 }
 function shell() {
+  app.classList.toggle("client-experience", user.role === "client");
+  if (user.role === "client") {
+    clientShell();
+    return;
+  }
   app.innerHTML = `<div class="shell"><aside><div class="brand">${esc(config.brand)}<b>↗</b></div><div class="brand-sub">${esc(config.subtitle)}</div><div class="workspace"><span class="mini-logo">S</span><div><strong>Centro de servicio</strong>${roleLabel(user.role)}</div></div><div class="side-label">MI ESPACIO</div><nav aria-label="Navegación principal">${[
     ["overview", "◫", "Panel de control"],
     ["tickets", "▤", user.role === "agent" ? "Mi fila" : "Solicitudes"],
@@ -144,6 +159,7 @@ function shell() {
         ]
       : []),
     ["reports", "▧", "Informes"],
+    ...(config.clientDemo ? [["demo", "▣", "Demo cliente"]] : []),
     ...(user.role !== "client" ? [["olivia", "✦", "Olivia IA"]] : []),
   ]
     .map(
@@ -163,6 +179,7 @@ function shell() {
   mountChat(user, api, () => selected, notify);
 }
 function table(list) {
+  if (user.role === "client") return clientTicketCards(list);
   return list.length
     ? `<div class="table-wrap"><table><thead><tr><th>SOLICITUD</th><th>EMPRESA / SEDE</th><th>AGENTE</th><th>PRIORIDAD</th><th>ESTADO / SLA</th></tr></thead><tbody>${list.map((t) => `<tr><td><span class="ticket-id">SH-${t.id}</span><button class="ticket-title" data-ticket="${t.id}">${esc(t.title)}</button><small>${esc(t.category)}</small></td><td>${esc(company(t))}<small>${esc(t.site)}</small></td><td>${esc(t.agent || "Sin asignar")}</td><td>${badge(t.priority)}</td><td>${badge(t.status)}<small class="${sla(t) === "Vencido" ? "sla-over" : ""}">${esc(sla(t))}</small></td></tr>`).join("")}</tbody></table></div>`
     : '<div class="empty">No hay solicitudes con estos filtros.</div>';
@@ -170,7 +187,15 @@ function table(list) {
 function render() {
   const el = $("#content");
   if (!el) return;
+  if (view === "demo") {
+    location.href = "/demo";
+    return;
+  }
   if (view === "overview") {
+    if (user.role === "client") {
+      renderClientHome(el);
+      return;
+    }
     renderDashboard(el, false);
     return;
   } else if (view === "reports") {
@@ -266,9 +291,9 @@ function closeDialog() {
   selected = null;
   lastFocus?.focus();
 }
-function newTicket() {
+function newTicket(category) {
   showDialog(
-    `<div class="row"><div><div class="eyebrow">PORTAL DE ATENCIÓN</div><h2 id="dialog-title">Nueva solicitud</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">Describe lo que ocurre. El equipo validará la prioridad y te dará seguimiento.</p><form id="new-ticket"><label for="title">Asunto</label><input name="title" id="title" maxlength="160" required><div class="field-row"><div><label for="company">Empresa</label><select name="company_id" id="company" required>${companies.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div><div><label for="site">Sede</label><input name="site" id="site" maxlength="160" value="${esc(companies[0]?.site)}" required></div></div><div class="field-row"><div><label for="category">Categoría</label><select name="category" id="category">${option(categories)}</select></div><div><label for="new-priority">Prioridad deseada</label><select name="priority" id="new-priority">${option(priorities, "Media")}</select></div></div><label for="description">Descripción</label><textarea name="description" id="description" maxlength="4000" rows="5" required></textarea><p class="subtitle">No incluyas contraseñas ni datos bancarios. Las piezas adjuntas no están habilitadas en esta demostración.</p><button type="submit" class="btn primary">Registrar solicitud ↗</button></form>`,
+    `<div class="row"><div><div class="eyebrow">PORTAL DE ATENCIÓN</div><h2 id="dialog-title">Nueva solicitud</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">Describe lo que ocurre. El equipo validará la prioridad y te dará seguimiento.</p><form id="new-ticket"><label for="title">Asunto</label><input name="title" id="title" maxlength="160" required><div class="field-row"><div><label for="company">Empresa</label><select name="company_id" id="company" required>${companies.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div><div><label for="site">Sede</label><input name="site" id="site" maxlength="160" value="${esc(companies[0]?.site)}" required></div></div><div class="field-row"><div><label for="category">Categoría</label><select name="category" id="category">${option(categories, category)}</select></div><div><label for="new-priority">Prioridad deseada</label><select name="priority" id="new-priority">${option(priorities, "Media")}</select></div></div><label for="description">Descripción</label><textarea name="description" id="description" maxlength="4000" rows="5" required></textarea><p class="subtitle">No incluyas contraseñas ni datos bancarios. Las piezas adjuntas no están habilitadas en esta demostración.</p><button type="submit" class="btn primary">Registrar solicitud ↗</button></form>`,
   );
   $("#company").addEventListener(
     "change",
@@ -533,7 +558,13 @@ try {
     await load();
     view = "overview";
     shell();
-  } else welcome();
+  } else if (
+    clientPortal &&
+    config.clientDemo &&
+    new URLSearchParams(location.search).get("preview") === "1"
+  )
+    await enterClientDemo();
+  else welcome();
 } catch (err) {
   app.innerHTML =
     '<p class="empty">No fue posible cargar la plataforma. Actualiza la página.</p>';
@@ -704,4 +735,124 @@ function renderUsers(el) {
       }
     };
   };
+}
+function clientWelcome() {
+  app.classList.add("client-experience");
+  app.innerHTML = `<div class="portal-welcome"><header class="portal-entry-header"><a class="portal-wordmark" href="/cliente">${esc(config.brand)}<span>↗</span><small>Tu espacio de atención</small></a>${holdingLogo()}</header><div class="portal-entry-grid"><div class="portal-entry-copy"><div class="eyebrow">SERVICIO A TU RITMO</div><h1>Tu equipo de soporte.<br><em>Siempre a mano.</em></h1><p>Desde tu teléfono, iPad o computadora. Crea solicitudes, sigue cada respuesta y consulta tus indicadores.</p><div class="portal-entry-cards"><span>◫<b>Tu dashboard</b></span><span>▤<b>Tus solicitudes</b></span><span>✦<b>Tu asistente Olivia</b></span></div></div><div class="panel portal-entry-form"><div class="eyebrow">PORTAL CLIENTE</div><h2>Bienvenido a tu espacio.</h2>${config.clientDemo ? `<div class="demo-client-card"><span class="avatar">CV</span><div><b>Camila Vega</b><small>Aurora Salud · empresa ficticia</small></div></div><button class="btn primary" id="enter-client-demo">Entrar a la demo cliente ↗</button><p class="subtitle">Prueba el recorrido sin introducir credenciales. Las solicitudes se guardan en el entorno de demostración.</p><a class="portal-preview-link" href="/demo">Ver móvil, iPad / tablet y desktop ↗</a><details class="real-client-login"><summary>Entrar con mi cuenta cliente</summary>` : "<div>"}<form id="login"><label for="email">Correo electrónico</label><input id="email" name="email" type="email" autocomplete="username" required><label for="password">Contraseña</label><input id="password" name="password" type="password" autocomplete="current-password" required><p id="login-error" role="alert"></p><button class="btn">Entrar a mi espacio ↗</button></form>${config.clientDemo ? "</details>" : "</div>"}</div></div><footer>Service Hub · ${esc(config.subtitle)}<a href="https://www.o7digitalgroup.com/" target="_blank" rel="noopener noreferrer">O7 Digital Group Holding ↗</a></footer></div>`;
+  $("#enter-client-demo")?.addEventListener("click", async (e) => {
+    e.currentTarget.disabled = true;
+    try {
+      await enterClientDemo();
+    } catch (err) {
+      notify(err.message);
+      e.target.disabled = false;
+    }
+  });
+  $("#login").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    e.submitter.disabled = true;
+    try {
+      const data = await api(
+        "/login",
+        "POST",
+        Object.fromEntries(new FormData(e.target)),
+      );
+      user = data.user;
+      csrf = data.csrf;
+      await load();
+      view = "overview";
+      shell();
+    } catch (err) {
+      $("#login-error").textContent = err.message;
+      e.submitter.disabled = false;
+    }
+  });
+}
+async function enterClientDemo() {
+  const data = await api("/demo/client-login", "POST", {});
+  user = data.user;
+  csrf = data.csrf;
+  await load();
+  view = "overview";
+  shell();
+}
+function clientShell() {
+  app.classList.add("client-experience");
+  app.innerHTML = `<div class="client-shell"><header class="client-top"><a class="portal-wordmark" href="${clientPortal ? "/cliente" : "/"}">${esc(config.brand)}<span>↗</span><small>Portal de atención</small></a><div class="client-company"><b>${esc(companies[0]?.name)}</b><small>${esc(user.name)}</small></div><div class="client-header-actions">${config.clientDemo ? '<a class="btn client-preview-link" href="/demo" target="_blank" rel="noopener noreferrer">Ver dispositivos ↗</a>' : ""}<button class="btn" data-action="logout">Cerrar sesión</button><span class="avatar">${esc(
+    user.name
+      .split(" ")
+      .map((n) => n[0])
+      .slice(0, 2)
+      .join(""),
+  )}</span></div></header><div class="client-layout"><aside class="client-menu"><div class="client-menu-title">TU ESPACIO</div><nav aria-label="Navegación principal">${[
+    ["overview", "◫", "Inicio"],
+    ["tickets", "▤", "Solicitudes"],
+    ["reports", "▧", "Informes"],
+  ]
+    .map(
+      ([v, i, label]) =>
+        `<button data-view="${v}" class="${view === v ? "active" : ""}"><span class="nav-icon">${i}</span><span>${label}</span></button>`,
+    )
+    .join(
+      "",
+    )}</nav><div class="client-menu-footer">${holdingLogo()}<p>Atención con continuidad.<br>Contexto en cada respuesta.</p></div></aside><main class="body client-content" id="content"></main></div></div>`;
+  render();
+  mountChat(user, api, () => selected, notify);
+}
+function clientTicketCards(list) {
+  return list.length
+    ? `<div class="client-ticket-cards">${list.map((t) => `<button class="client-ticket-card" data-ticket="${t.id}" aria-label="${esc(t.title)}"><div class="row"><span class="ticket-id">SH-${t.id} · ${esc(t.category)}</span>${badge(t.status)}</div><h3>${esc(t.title)}</h3><p>${esc(t.site)}</p><div class="row"><span class="client-card-priority">${esc(t.priority)} · ${esc(sla(t))}</span><span class="client-card-arrow">↗</span></div></button>`).join("")}</div>`
+    : '<div class="panel empty">Tu primera solicitud empieza aquí. Cuéntanos cómo podemos ayudarte.</div>';
+}
+async function renderClientHome(el) {
+  el.innerHTML = '<p class="empty">Preparando tu espacio…</p>';
+  try {
+    const data = await api("/analytics");
+    if (!el.isConnected || view !== "overview") return;
+    const m = data.metrics;
+    el.innerHTML = `<div class="client-welcome-line"><div><div class="eyebrow">TU SERVICIO, CON CONTINUIDAD</div><h1>Hola, ${esc(user.name.split(" ")[0])}.</h1><p>Estamos contigo en cada solicitud.</p></div><span class="client-demo-pill">${esc(config.environment).toUpperCase()} · datos ficticios</span></div><div class="client-service-hero"><div><span class="eyebrow">CUÉNTANOS QUÉ NECESITAS</span><h2>Una solicitud.<br><em>El siguiente paso, claro.</em></h2><p>Tu equipo tiene el contexto. Tú tienes el seguimiento.</p><button class="btn lime" data-action="new">+ Nueva solicitud</button></div><div class="client-hero-graphic" aria-hidden="true"><div class="client-hero-ring"></div><span>↗</span><i>Todo en un solo lugar</i></div></div><div class="client-metrics">${[
+      ["En atención", m.active, "Solicitudes activas"],
+      ["Atendidas", m.resolved, "Resueltas o cerradas"],
+      [
+        "Cumplimiento SLA",
+        m.sla_percent === null ? "—" : m.sla_percent + "%",
+        "Casos atendidos",
+      ],
+      [
+        "Tiempo promedio",
+        m.average_resolution_hours === null
+          ? "—"
+          : m.average_resolution_hours + " h",
+        "Hasta la resolución",
+      ],
+    ]
+      .map(
+        ([label, value, caption]) =>
+          `<div><small>${label}</small><strong>${value}</strong><span>${caption}</span></div>`,
+      )
+      .join(
+        "",
+      )}</div><div class="client-home-columns"><section><div class="panel-head"><div><div class="eyebrow">TU SEGUIMIENTO</div><h2>Solicitudes recientes</h2></div><button class="small-link" data-view="tickets">Ver todas ↗</button></div>${clientTicketCards(tickets.slice(0, 3))}</section><section class="panel client-help-panel"><div class="eyebrow">¿EN QUÉ TE AYUDAMOS?</div><h2>Empieza por aquí.</h2><div class="client-category-list">${[
+      ["Conectividad", "⌁", "Conexión y red"],
+      ["Equipos", "▣", "Equipos y terminales"],
+      ["Facturación", "▤", "Facturas y cargos"],
+      ["Accesos", "◉", "Acceso a tu portal"],
+    ]
+      .map(
+        ([category, icon, label]) =>
+          `<button data-client-category="${category}"><span>${icon}</span><b>${label}</b><i>↗</i></button>`,
+      )
+      .join(
+        "",
+      )}</div><p>¿Necesitas orientación? Abre Olivia, tu asistente de servicio.</p><button class="btn" id="client-open-olivia">Hablar con Olivia ✦</button></section></div><div class="client-home-report"><div><div class="eyebrow">TU PERSPECTIVA</div><h2>El servicio también se ve en los datos.</h2><p>Consulta tus gráficos, exporta indicadores y guarda un informe de tu empresa.</p></div><button class="btn" data-view="reports">Explorar mis informes ↗</button></div>`;
+    el.querySelectorAll("[data-client-category]").forEach(
+      (b) => (b.onclick = () => newTicket(b.dataset.clientCategory)),
+    );
+    $("#client-open-olivia").onclick = () =>
+      document.querySelector(".olivia-launcher").click();
+  } catch (err) {
+    if (el.isConnected)
+      el.innerHTML = '<p class="empty">No fue posible cargar tu espacio.</p>';
+    notify(err.message);
+  }
 }

@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Service Hub — demo cliente</title>
+    <meta
+      name="description"
+      content="Prueba el portal cliente en móvil, tablet y escritorio."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/demo.css" />
+    <script type="module" src="/demo.js"></script>
+  </head>
+  <body>
+    <header class="demo-header">
+      <a class="demo-brand" href="/"
+        >Service Hub<span>↗</span><small>powered by O7 Digital</small></a
+      ><a
+        class="holding"
+        href="https://www.o7digitalgroup.com/"
+        target="_blank"
+        rel="noopener noreferrer"
+        ><b>O<span>7</span></b
+        ><span>O7 DIGITAL GROUP<small>HOLDING ↗</small></span></a
+      ><a class="back-link" href="/">Volver al espacio interno ↗</a>
+    </header>
+    <main>
+      <div class="demo-intro">
+        <div>
+          <span class="eyebrow">LA EXPERIENCIA DEL CLIENTE</span>
+          <h1>Un servicio.<br /><em>Todos tus dispositivos.</em></h1>
+          <p>
+            Prueba el mismo portal en móvil, iPad / tablet y escritorio. Crea
+            una solicitud, consulta tus informes y conversa con Olivia.
+          </p>
+        </div>
+        <div class="demo-note">
+          <i></i>
+          <div>
+            <b>Demo funcional · empresa ficticia</b>
+            <p>
+              Perfil Camila Vega · Aurora Salud.<br />Tu sesión interna
+              permanece independiente.
+            </p>
+          </div>
+        </div>
+      </div>
+      <section
+        class="device-console"
+        aria-label="Vista previa del portal cliente"
+      >
+        <div class="device-toolbar">
+          <div
+            class="device-options"
+            role="group"
+            aria-label="Formato de pantalla"
+          >
+            <button data-device="mobile" aria-pressed="true">
+              <span>▯</span>Móvil<small>390 × 844</small></button
+            ><button data-device="tablet" aria-pressed="false">
+              <span>▣</span>iPad / tablet<small>820 × 1180</small></button
+            ><button data-device="desktop" aria-pressed="false">
+              <span>▱</span>Desktop<small>1280 × 800</small>
+            </button>
+          </div>
+          <div class="preview-actions">
+            <button id="rotate" aria-label="Cambiar orientación">Girar ↻</button
+            ><a href="/cliente" target="_blank" rel="noopener noreferrer"
+              >Abrir portal completo ↗</a
+            >
+          </div>
+        </div>
+        <div class="device-stage">
+          <div class="device-wrapper">
+            <div class="device-frame mobile">
+              <div class="device-top"><span></span></div>
+              <iframe
+                src="/cliente?preview=1"
+                title="Portal cliente — vista móvil"
+                id="client-preview"
+                width="390"
+                height="844"
+              ></iframe>
+              <div class="device-bottom"><span></span></div>
+            </div>
+          </div>
+        </div>
+        <footer class="device-caption">
+          <span id="viewport-label" aria-live="polite"
+            >Móvil · 390 × 844 · vertical</span
+          ><span>Las acciones guardan datos de demostración.</span>
+        </footer>
+      </section>
+      <div class="demo-steps">
+        <article>
+          <span>01</span>
+          <h2>Tu espacio</h2>
+          <p>
+            Dashboard, solicitudes e informes de tu empresa, con navegación
+            adaptada a cada pantalla.
+          </p>
+        </article>
+        <article>
+          <span>02</span>
+          <h2>Tu solicitud</h2>
+          <p>
+            Registra una incidencia y sigue su conversación. Tus datos
+            permanecen al cambiar de formato.
+          </p>
+        </article>
+        <article>
+          <span>03</span>
+          <h2>Tu asistente</h2>
+          <p>
+            Abre el chat flotante de Olivia y consulta el contexto autorizado de
+            tu servicio.
+          </p>
+        </article>
+      </div>
+    </main>
+  </body>
+</html>

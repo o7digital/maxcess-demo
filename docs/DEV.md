@@ -51,3 +51,20 @@ Le widget reprend la direction du [composant O7Widget de suitesmine-bot](https:/
 `npm run build`, `npm test`, `npm run test:browser`, `npm run test:dashboard`. Tests de droits, suspension de session, isolation, reporting, disponibilité Hugging Face et contrat du chat, puis parcours navigateur des cinq profils et contrôles ordinateur/mobile. Captures privées dans `.local/screenshots/`.
 
 Les contrôles navigateur ont également passé sur l’URL Railway dev pour les cinq profils : parcours de tickets, création/suspension de compte, sauvegarde de rapport, export et réponse réelle du chat. Le endpoint privé Olivia refuse les appels sans sa clé (HTTP 401).
+
+## Démo utilisateur responsive
+
+- Présentation des trois formats : https://service-hub-dev-3fbf.up.railway.app/demo
+- Portail client plein écran : https://service-hub-dev-3fbf.up.railway.app/cliente
+
+Un seul portail, adapté aux écrans mobiles, tablettes/iPad et desktop. Pas d’application native ni de PWA dans cette livraison, conformément au choix du propriétaire. Le portail propose un accueil client dédié, des cartes de demandes, le dashboard, les rapports et Olivia. La navigation devient une barre tactile inférieure sur mobile et un menu latéral sur tablette/desktop.
+
+La page `/demo` permet de changer entre 390 × 844, 820 × 1180 et 1280 × 800, de tourner mobile/tablette et d’ouvrir le portail plein écran. Les aperçus utilisent la véritable application dans une iframe de même origine ; ils simulent les dimensions de viewport, pas un système iOS ou Android. Le changement de format redimensionne la même vue et conserve sa session et son état.
+
+Profil fictif dédié : **Camila Vega — Aurora Salud**, avec un compte de rôle client. L’entrée rapide sans mot de passe est disponible exclusivement lorsque `DEMO_MODE=true` et `APP_ENV=dev`. Le serveur choisit cette identité fixe et refuse les paramètres de rôle, d’utilisateur ou d’entreprise fournis par le navigateur. Désactiver le compte bloque également la démo. Les accès ordinaires avec compte client restent possibles.
+
+La session du portail utilise un cookie HttpOnly distinct de celui du cockpit, enregistré dans la même base persistante. La démo n’efface donc pas la session administrateur. Les droits client sont imposés côté serveur, y compris si un cookie d’un autre rôle est présenté au portail. Les notes internes et les autres entreprises restent protégées.
+
+Le seed ajoute ce profil de démonstration aux quatre comptes clients existants, sans modifier leurs mots de passe ni réinitialiser les tickets. Pour une base déjà déployée, provisionner uniquement ce compte fictif avant de publier la fonctionnalité.
+
+Tests : `npm run test:devices` valide les trois viewports, la rotation, une création réelle de ticket, la persistance après changement de format/rechargement et les sessions admin/client indépendantes dans le même navigateur. Les tests API couvrent également l’interdiction hors dev et les refus de privilèges. Le contrôle visuel est effectué dans Chromium, pas sur un iPad physique.

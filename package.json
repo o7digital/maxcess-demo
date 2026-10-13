@@ -14,7 +14,8 @@
     "build": "node scripts/build.js",
     "test": "node --env-file-if-exists=.env --test --test-concurrency=1 tests/*.test.js",
     "test:browser": "node --env-file-if-exists=.env scripts/browser-qa.js",
-    "test:dashboard": "node --env-file-if-exists=.env scripts/dashboard-qa.js"
+    "test:dashboard": "node --env-file-if-exists=.env scripts/dashboard-qa.js",
+    "test:devices": "node --env-file-if-exists=.env scripts/client-preview-qa.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

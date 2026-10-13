@@ -144,6 +144,12 @@ export async function seed() {
           companies[i].id,
         ),
       );
+    await user(
+      "demo.usuario@example.test",
+      "Camila Vega",
+      "client",
+      companies[0].id,
+    );
     for (let i = 0; i < 60; i++) {
       const c = companies[i % 20],
         [title, category, description] = cases[i % 6],

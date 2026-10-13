@@ -60,8 +60,10 @@ export function createApp() {
   app.disable("x-powered-by");
   app.use(
     helmet({
+      xFrameOptions: { action: "sameorigin" },
       contentSecurityPolicy: {
         directives: {
+          "frame-ancestors": ["'self'"],
           "script-src": ["'self'"],
           "style-src": ["'self'"],
           "img-src": ["'self'", "data:"],
@@ -80,24 +82,33 @@ export function createApp() {
       res.status(503).json({ status: "unavailable" });
     }
   });
-  app.use(
-    session({
-      store: new (pgSession(session))({
-        pool,
-        tableName: "session",
-        createTableIfMissing: false,
-      }),
-      secret: process.env.SESSION_SECRET,
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 8 * 3600000,
-      },
+  const sessionOptions = {
+    store: new (pgSession(session))({
+      pool,
+      tableName: "session",
+      createTableIfMissing: false,
     }),
-  );
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 8 * 3600000,
+    },
+  };
+  const regularSession = session(sessionOptions);
+  const clientPortalSession = session({
+    ...sessionOptions,
+    name: "service_hub_client_portal",
+  });
+  app.use((req, res, next) => {
+    req.clientPortal = req.get("X-Client-Portal") === "1";
+    (req.clientPortal ? clientPortalSession : regularSession)(req, res, next);
+  });
+  const clientDemoEnabled = () =>
+    process.env.DEMO_MODE === "true" && process.env.APP_ENV === "dev";
   app.use("/api", (req, res, next) => {
     res.set("Cache-Control", "no-store");
     next();
@@ -109,6 +120,7 @@ export function createApp() {
       brand: process.env.BRAND_NAME || "Service Hub",
       subtitle: process.env.BRAND_SUBTITLE || "powered by O7 Digital",
       demo: process.env.DEMO_MODE === "true",
+      clientDemo: clientDemoEnabled(),
       environment: process.env.APP_ENV || "dev",
       holding: "https://www.o7digitalgroup.com/",
     });
@@ -128,6 +140,34 @@ export function createApp() {
     legacyHeaders: false,
     message: { error: "Demasiados intentos. Intenta más tarde." },
   });
+  app.post("/api/demo/client-login", loginLimit, async (req, res) => {
+    if (!clientDemoEnabled())
+      throw fail(
+        404,
+        "La demostración cliente no está disponible en este entorno",
+      );
+    if (!req.clientPortal)
+      throw fail(400, "Abre el portal de demostración cliente");
+    if (Object.keys(req.body || {}).length)
+      throw fail(
+        400,
+        "La identidad de demostración se determina en el servidor",
+      );
+    const demo = (
+      await pool.query(
+        "SELECT u.* FROM users u JOIN companies c ON c.id=u.company_id WHERE u.email=$1 AND u.role='client' AND u.active=true AND c.name='Aurora Salud'",
+        ["demo.usuario@example.test"],
+      )
+    ).rows[0];
+    if (!demo)
+      throw fail(503, "El perfil cliente de demostración no está disponible");
+    await new Promise((resolve, reject) =>
+      req.session.regenerate((e) => (e ? reject(e) : resolve())),
+    );
+    req.session.userId = demo.id;
+    req.session.csrf = randomBytes(24).toString("hex");
+    res.json({ user: exposeUser(demo), csrf: req.session.csrf });
+  });
   app.post("/api/login", loginLimit, async (req, res) => {
     const email = text(req.body.email, "Correo", 200).toLowerCase(),
       password = text(req.body.password, "Contraseña", 200);
@@ -142,6 +182,8 @@ export function createApp() {
     );
     if (!user || !user.active || !valid)
       throw fail(401, "Correo o contraseña incorrectos");
+    if (req.clientPortal && user.role !== "client")
+      throw fail(403, "Este portal está reservado a los clientes");
     await new Promise((resolve, reject) =>
       req.session.regenerate((e) => (e ? reject(e) : resolve())),
     );
@@ -159,6 +201,8 @@ export function createApp() {
       )
     ).rows[0];
     if (!user || !user.active) return next(fail(401, "Sesión finalizada"));
+    if (req.clientPortal && user.role !== "client")
+      return next(fail(403, "Este portal está reservado a los clientes"));
     req.user = user;
     next();
   });
@@ -167,7 +211,9 @@ export function createApp() {
     await new Promise((resolve, reject) =>
       req.session.destroy((e) => (e ? reject(e) : resolve())),
     );
-    res.clearCookie("connect.sid");
+    res.clearCookie(
+      req.clientPortal ? "service_hub_client_portal" : "connect.sid",
+    );
     res.json({ ok: true });
   });
   app.get("/api/companies", async (req, res) => {
@@ -637,19 +683,27 @@ export function createApp() {
     },
   );
   app.use("/api", (req, res, next) => next(fail(404, "Ruta no disponible")));
+  app.get(["/demo", "/demo/", "/demo.html"], (req, res, next) => {
+    if (!clientDemoEnabled())
+      return next(
+        fail(404, "La demostración no está disponible en este entorno"),
+      );
+    res.sendFile(new URL("../public/demo.html", import.meta.url).pathname);
+  });
+  app.get(["/cliente", "/cliente/"], (req, res) =>
+    res.sendFile(new URL("../public/index.html", import.meta.url).pathname),
+  );
   app.use(express.static(new URL("../public/", import.meta.url).pathname));
   app.use((err, req, res, next) => {
     if (res.headersSent) return next(err);
     if (!err.status || err.status >= 500)
       console.error("Request failed:", err.code || err.name);
-    res
-      .status(err.status || 500)
-      .json({
-        error:
-          err.status && err.status < 500
-            ? err.message
-            : "No fue posible completar la operación",
-      });
+    res.status(err.status || 500).json({
+      error:
+        err.status && err.status < 500
+          ? err.message
+          : "No fue posible completar la operación",
+    });
   });
   return app;
 }

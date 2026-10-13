@@ -19,7 +19,7 @@ const browser = await chromium.launch({
 const errors = [];
 const reportIds = [],
   conversationIds = [];
-let qaUserEmail,lastPage;
+let qaUserEmail, lastPage;
 await mkdir(".local/screenshots", { recursive: true });
 try {
   for (const role of [
@@ -49,7 +49,7 @@ try {
         viewport: { width: role === "client" ? 390 : 1440, height: 1000 },
       }),
       page = await context.newPage();
-    lastPage=page;
+    lastPage = page;
     page.on("pageerror", (err) => errors.push(err.message));
     page.on("console", (m) => {
       if (m.type() === "error" && !m.text().includes("401"))
@@ -59,7 +59,9 @@ try {
     await page.locator("#email").fill(credential.email);
     await page.locator("#password").fill(credential.password);
     await page.getByRole("button", { name: "Entrar a mi espacio" }).click();
-    await page.locator(".activity-chart").waitFor();
+    await page
+      .locator(role === "client" ? ".client-service-hero" : ".activity-chart")
+      .waitFor();
     assert.ok(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -130,7 +132,7 @@ try {
           r.request().method() === "POST",
         { timeout: 90000 },
       );
-      response.catch(()=>{});
+      response.catch(() => {});
       await page
         .locator("#chat-message")
         .fill(
@@ -168,7 +170,13 @@ try {
   console.log(
     "Premium dashboard QA passed: 5 roles, company scope, saved reports, CSV, user creation/suspension, floating chat, desktop/mobile and no JS errors.",
   );
-} catch(error){console.error("Dashboard QA failure:",error.message);await lastPage?.screenshot({path:".local/screenshots/qa-failure.png",fullPage:true}).catch(()=>{});throw error;} finally {
+} catch (error) {
+  console.error("Dashboard QA failure:", error.message);
+  await lastPage
+    ?.screenshot({ path: ".local/screenshots/qa-failure.png", fullPage: true })
+    .catch(() => {});
+  throw error;
+} finally {
   await browser.close();
   if (!process.env.QA_BASE_URL) {
     await pool.query("DELETE FROM reports WHERE id=ANY($1::uuid[])", [

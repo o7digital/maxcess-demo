@@ -6,6 +6,8 @@ Dashboard client et opérationnel, graphiques depuis PostgreSQL, rapports sauveg
 
 La version stable initiale est conservée sur `main` et `demo/service-hub`, à https://service-hub-production-3168.up.railway.app. `dev` a été créée depuis cette base commune. L’environnement Railway `dev` utilise une base indépendante et un secret de session distinct.
 
+Démo utilisateur : [aperçus mobile / iPad / desktop](https://service-hub-dev-3fbf.up.railway.app/demo) · [portail client plein écran](https://service-hub-dev-3fbf.up.railway.app/cliente).
+
 ## Accès et permissions
 
 Accès de test privés : `.local/ACCES-DEV.md`, exclu de Git. Le superadministrateur utilise `olivier.steineur@o7digitalgroup.com`. Son mot de passe de démonstration est conservé ; aucun mot de passe n’est inclus dans les sources.
@@ -25,7 +27,7 @@ npm run seed
 npm start
 ```
 
-Le seed initial crée 20 entreprises, 20 contacts, 60 tickets, 25 comptes internes illustratifs et 4 comptes clients. `DEMO_INTERNAL_USERS` configure le nombre initial de comptes internes (4–100). Le seed est idempotent ; il ne réinitialise ni les tickets ni les mots de passe et n’est pas exécuté au démarrage. Les accès générés sont conservés dans `.local/demo-access.json`, hors de Git.
+Le seed initial crée 20 entreprises, 20 contacts, 60 tickets, 25 comptes internes illustratifs et 4 comptes clients, plus un profil client fictif dédié à la présentation. `DEMO_INTERNAL_USERS` configure le nombre initial de comptes internes (4–100). Le seed est idempotent ; il ne réinitialise ni les tickets ni les mots de passe et n’est pas exécuté au démarrage. Les accès générés sont conservés dans `.local/demo-access.json`, hors de Git.
 
 ## Intégrations
 
@@ -44,6 +46,7 @@ npm test
 # Démarrer le serveur pour les contrôles dans le navigateur.
 npm run test:browser
 npm run test:dashboard
+npm run test:devices
 ```
 
 Les tests utilisent exclusivement la base dédiée et suppriment leurs données locales temporaires. Ne pas les exécuter sur une base de production. Tests navigateur avec Google Chrome sur macOS ; `CHROME_PATH` permet un autre chemin Chromium. Pour Railway dev : `QA_BASE_URL=https://service-hub-dev-3fbf.up.railway.app` et `QA_ACCESS_PATH=.local/dev-access.json`. Captures privées dans `.local/screenshots/`.
