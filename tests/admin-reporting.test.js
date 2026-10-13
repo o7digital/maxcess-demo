@@ -5,6 +5,7 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { createApp } from "../server/app.js";
 import { pool } from "../server/db.js";
+import { reportData } from "../server/reporting.js";
 const app = createApp();
 after(() => pool.end());
 async function login(email) {
@@ -202,4 +203,13 @@ test("Floating chat conversation ownership, persistent demo and scoped live adap
       conversation.id,
     ]);
   }
+});
+
+test("Mexico reporting includes the full final day on a UTC database", async()=>{
+ const client=await login('cliente@example.test');const db=await pool.connect();
+ try{
+  await db.query('BEGIN');await db.query("SET LOCAL TIME ZONE 'UTC'");
+  for(const created of ['2026-01-15T05:59:59Z','2026-01-15T06:00:00Z','2026-01-16T05:59:59Z','2026-01-16T06:00:00Z'])await db.query("INSERT INTO tickets(title,company_id,site,category,description,priority,requested_priority,created_by,created_at,due_at) VALUES('QA timezone',$1,'Sede QA','Servicio','QA','Media','Media',$2,$3,$3::timestamptz + interval '24 hours')",[client.user.company_id,client.user.id,created]);
+  const report=await reportData(client.user,{start:'2026-01-15',end:'2026-01-15'},db);assert.equal(report.metrics.total,2);assert.equal(report.series[0].created,2);
+ }finally{await db.query('ROLLBACK');db.release();}
 });

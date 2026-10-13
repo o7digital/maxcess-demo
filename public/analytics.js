@@ -63,5 +63,5 @@ export function charts(data) {
 }
 export function reportDocument(report) {
   const d = report.snapshot;
-  return `<div class="saved-report"><div class="row"><div><div class="eyebrow">INFORME ${e(report.id.slice(0, 8))}</div><h2>Informe de servicio</h2></div><span class="badge">${report.provider === "huggingface" ? "Hugging Face" : "Datos verificados"}</span></div><p class="subtitle">${d.filters.start} — ${d.filters.end} · alcance ${e(d.scope)} · creado ${new Date(report.created_at).toLocaleString("es-MX")}</p>${metricCards(d)}${report.narrative ? `<div class="report-narrative text-block">${e(report.narrative)}</div>` : ""}${charts(d)}</div>`;
+  return `<div class="saved-report"><div class="row"><div><div class="eyebrow">INFORME ${e(report.id.slice(0, 8))}</div><h2>Informe de servicio</h2></div><span class="badge">${report.provider === "huggingface" ? "Hugging Face" : "Datos verificados"}</span></div><p class="subtitle">${d.filters.start} — ${d.filters.end} · alcance ${e(d.scope)} · creado ${new Date(report.created_at).toLocaleString("es-MX")}</p>${d.calculation_version !== 2 ? `<p class="subtitle">Informe anterior al ajuste de zona horaria. Genera uno nuevo para consultar las cifras del periodo corregido.</p>` : ""}${metricCards(d)}${report.narrative ? `<div class="report-narrative text-block">${e(report.narrative)}</div>` : ""}${charts(d)}</div>`;
 }

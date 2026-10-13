@@ -44,9 +44,9 @@ export async function reportData(user, query = {}, db = pool) {
     where += ` AND t.company_id=$${values.length}`;
   }
   values.push(filters.start);
-  where += ` AND t.created_at >= ($${values.length}::date AT TIME ZONE 'America/Mexico_City')`;
+  where += ` AND t.created_at >= ($${values.length}::date::timestamp AT TIME ZONE 'America/Mexico_City')`;
   values.push(filters.end);
-  where += ` AND t.created_at < (($${values.length}::date + 1) AT TIME ZONE 'America/Mexico_City')`;
+  where += ` AND t.created_at < (($${values.length}::date + 1)::timestamp AT TIME ZONE 'America/Mexico_City')`;
   const tickets = (
     await db.query(
       `SELECT t.id,t.company_id,c.name company,t.category,t.priority,t.status,t.created_at,t.due_at,t.resolved_at,t.agent_id FROM tickets t JOIN companies c ON c.id=t.company_id WHERE ${where} ORDER BY t.created_at`,
@@ -102,6 +102,7 @@ export async function reportData(user, query = {}, db = pool) {
   }
   return {
     filters,
+    calculation_version: 2,
     generated_at: new Date().toISOString(),
     scope:
       user.role === "client"
