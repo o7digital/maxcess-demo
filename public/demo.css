@@ -406,3 +406,11 @@ iframe {
 }
 /* Update the frame geometry immediately so no content is clipped during switching. */
 .device-wrapper{transition:none}
+
+/* Strong studio lighting gives the mobile and tablet previews visible depth. */
+.device-stage{padding-top:42px;padding-bottom:76px}
+.device-wrapper{isolation:isolate}
+.device-wrapper::before{content:'';position:absolute;inset:14% -12% -3%;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 50% 62%,rgba(19,40,31,.3),rgba(35,56,36,.12) 45%,transparent 72%);filter:blur(25px)}
+.device-wrapper::after{content:'';position:absolute;left:6%;right:6%;bottom:-32px;height:65px;z-index:-1;pointer-events:none;border-radius:50%;background:rgba(12,31,23,.4);filter:blur(23px)}
+.device-frame.mobile,.device-frame.tablet{box-shadow:0 48px 62px -18px rgba(11,29,22,.58),0 20px 30px -9px rgba(11,29,22,.36),-15px 10px 45px -16px rgba(27,48,31,.3),0 2px 3px rgba(8,24,17,.35),inset 0 1px 0 rgba(255,255,255,.28);border-color:#56715c}
+@media(max-width:800px){.device-stage{padding-bottom:62px}.device-wrapper::before{inset:15% -5% -2%;filter:blur(18px)}.device-wrapper::after{left:10%;right:10%;bottom:-24px;height:48px;filter:blur(17px)}}
