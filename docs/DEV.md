@@ -68,3 +68,9 @@ La session du portail utilise un cookie HttpOnly distinct de celui du cockpit, e
 Le seed ajoute ce profil de démonstration aux quatre comptes clients existants, sans modifier leurs mots de passe ni réinitialiser les tickets. Pour une base déjà déployée, provisionner uniquement ce compte fictif avant de publier la fonctionnalité.
 
 Tests : `npm run test:devices` valide les trois viewports, la rotation, une création réelle de ticket, la persistance après changement de format/rechargement et les sessions admin/client indépendantes dans le même navigateur. Les tests API couvrent également l’interdiction hors dev et les refus de privilèges. Le contrôle visuel est effectué dans Chromium, pas sur un iPad physique.
+
+## Correction de la direction graphique et d’Olivia
+
+Le cockpit dev reprend désormais la disposition du résumé de la version stable production : hero, quatre indicateurs, tickets récents et panneau Olivia, avec les finitions premium. Les rapports et les rôles ajoutés restent accessibles dans leurs espaces dédiés. Le chat flottant a été retiré du cockpit et du portail client selon la demande explicite du propriétaire.
+
+Olivia V3.5 est utilisée directement par le bouton « Preparar con Olivia » dans les fiches de ticket et depuis l’espace Olivia. Le serveur transmet uniquement le cas autorisé et ses événements, valide la structure de la réponse et retourne résumé, catégorie/priorité, brouillon, prochaine action et synthèse. Aucun changement ni publication automatique. Si V3.5 n’est pas configurée, les suggestions sont clairement identifiées comme démo ; une erreur d’un service configuré est explicite et ne génère pas de faux résultat.

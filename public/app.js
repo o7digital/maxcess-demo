@@ -1,5 +1,5 @@
 import { metricCards, charts, reportDocument } from "./analytics.js";
-import { mountChat, resetChat } from "./chat.js";
+const resetChat=()=>document.querySelector("#olivia-widget")?.remove();
 const clientPortal = /^\/cliente\/?$/.test(location.pathname);
 const app = document.querySelector("#app"),
   overlay = document.querySelector("#mx-overlay");
@@ -150,7 +150,7 @@ function shell() {
     return;
   }
   app.innerHTML = `<div class="shell"><aside><div class="brand">${esc(config.brand)}<b>↗</b></div><div class="brand-sub">${esc(config.subtitle)}</div><div class="workspace"><span class="mini-logo">S</span><div><strong>Centro de servicio</strong>${roleLabel(user.role)}</div></div><div class="side-label">MI ESPACIO</div><nav aria-label="Navegación principal">${[
-    ["overview", "◫", "Panel de control"],
+    ["overview", "◫", "Resumen"],
     ["tickets", "▤", user.role === "agent" ? "Mi fila" : "Solicitudes"],
     ...(isGlobal()
       ? [
@@ -176,7 +176,7 @@ function shell() {
       .join(""),
   )}</span><div>${esc(user.name)}<small>${roleLabel(user.role)}</small></div></div></div></aside><section><header class="top"><div class="breadcrumb">Centro de servicio / <b>${roleLabel(user.role)}</b></div><div class="top-right"><span class="demo-tag">${esc(config.environment).toUpperCase()} · DATOS FICTICIOS</span><button class="btn" data-action="refresh">Actualizar</button><button class="btn" data-action="logout">Cerrar sesión</button></div></header><main class="body" id="content"></main></section></div>`;
   render();
-  mountChat(user, api, () => selected, notify);
+
 }
 function table(list) {
   if (user.role === "client") return clientTicketCards(list);
@@ -196,7 +196,7 @@ function render() {
       renderClientHome(el);
       return;
     }
-    renderDashboard(el, false);
+    renderStableOverview(el);
     return;
   } else if (view === "reports") {
     renderDashboard(el, true);
@@ -238,7 +238,7 @@ function render() {
     renderUsers(el);
     return;
   } else if (view === "olivia") {
-    el.innerHTML = `<div class="eyebrow">OLIVIA IA V3.5 · ASISTENCIA DE SERVICIO</div><h1>Contexto para tu criterio.</h1><p class="subtitle">Abre el chat flotante de Olivia para conversar con el asistente. Los borradores de ticket de este espacio siguen identificados como demostración.</p><div class="olivia-stage"><div class="orb">✦</div><h2>Una buena respuesta empieza por <em>entender el caso.</em></h2><p>Elige una solicitud para generar su resumen, sugerir prioridad y categoría, preparar una respuesta, proponer la siguiente acción y sintetizar la resolución.</p><label for="olivia-ticket">Solicitud autorizada</label><select id="olivia-ticket">${tickets.map((t) => `<option value="${t.id}">SH-${t.id} · ${esc(t.title)}</option>`).join("")}</select><div class="actions"><button class="btn primary" data-action="open-olivia" ${tickets.length ? "" : "disabled"}>Abrir espacio Olivia ↗</button></div><p class="notice">Las propuestas requieren validación humana. El chat no publica respuestas ni modifica solicitudes.</p></div>`;
+    el.innerHTML = `<div class="eyebrow">OLIVIA IA V3.5 · ASISTENCIA DE SERVICIO</div><h1>Contexto para tu criterio.</h1><p class="subtitle">Asistencia integrada en cada caso: resumen, clasificación y respuesta preparada con Olivia IA V3.5.</p><div class="olivia-stage"><div class="orb">✦</div><h2>Una buena respuesta empieza por <em>entender el caso.</em></h2><p>Elige una solicitud para generar su resumen, sugerir prioridad y categoría, preparar una respuesta, proponer la siguiente acción y sintetizar la resolución.</p><label for="olivia-ticket">Solicitud autorizada</label><select id="olivia-ticket">${tickets.map((t) => `<option value="${t.id}">SH-${t.id} · ${esc(t.title)}</option>`).join("")}</select><div class="actions"><button class="btn primary" data-action="open-olivia" ${tickets.length ? "" : "disabled"}>Abrir espacio Olivia ↗</button></div><p class="notice">Las propuestas requieren validación humana. Ninguna respuesta se publica automáticamente.</p></div>`;
   }
 }
 function filtered() {
@@ -341,7 +341,7 @@ async function openTicket(ticketId, focusOlivia = false) {
               "",
             )}</select><div class="actions"><button class="btn primary">Asignar agente</button></div></form></div>`
         : ""
-    }${isInternal ? `<div class="panel ai chart-panel"><div class="ai-head"><div class="orb">✦</div><div><b>Olivia IA V3.5</b><div class="muted">MODO DEMO · SIMULADO</div></div></div><p>Propuestas adaptadas al caso. Revisa todos los datos antes de usarlas.</p><button class="btn primary" data-action="suggest">Preparar con Olivia ↗</button><div id="suggestions"></div></div><div class="panel chart-panel"><h3>Clasificación validada</h3><form id="classification-form"><label for="edit-priority">Prioridad</label><select id="edit-priority" name="priority">${option(priorities, t.priority)}</select><label for="edit-category">Categoría</label><select id="edit-category" name="category">${option(categories, t.category)}</select><label class="check"><input type="checkbox" required> Confirmo esta clasificación.</label><button class="btn">Validar clasificación</button></form></div>` : '<div class="panel ai"><h3>Seguimiento compartido</h3><p>Las respuestas validadas y la resolución de tu equipo aparecen en este historial.</p></div>'}</div></div>`,
+    }${isInternal ? `<div class="panel ai chart-panel"><div class="ai-head"><div class="orb">✦</div><div><b>Olivia IA V3.5</b><div class="muted">ASISTENCIA · REVISIÓN HUMANA</div></div></div><p>Propuestas adaptadas al caso. Revisa todos los datos antes de usarlas.</p><button class="btn primary" data-action="suggest">Preparar con Olivia ↗</button><div id="suggestions"></div></div><div class="panel chart-panel"><h3>Clasificación validada</h3><form id="classification-form"><label for="edit-priority">Prioridad</label><select id="edit-priority" name="priority">${option(priorities, t.priority)}</select><label for="edit-category">Categoría</label><select id="edit-category" name="category">${option(categories, t.category)}</select><label class="check"><input type="checkbox" required> Confirmo esta clasificación.</label><button class="btn">Validar clasificación</button></form></div>` : '<div class="panel ai"><h3>Seguimiento compartido</h3><p>Las respuestas validadas y la resolución de tu equipo aparecen en este historial.</p></div>'}</div></div>`,
   );
   selected = t.id;
   for (const [selector, action] of [
@@ -388,7 +388,7 @@ async function suggest() {
     if (selected !== current) return;
     const s = suggestion;
     $("#suggestions").innerHTML =
-      `<p class="badge amber">SIMULACIÓN · REVISIÓN HUMANA</p><h3>Resumen</h3><p>${esc(s.summary)}</p><h3>Clasificación sugerida</h3><p>${esc(s.category)} · ${esc(s.priority)}</p><button class="btn" data-action="copy-classification">Preparar clasificación</button><h3>Borrador de respuesta</h3><p class="text-block">${esc(s.draft)}</p>${$("#reply") ? '<button class="btn" data-action="copy-draft">Copiar al editor para revisar</button>' : ""}<h3>Próxima acción</h3><p>${esc(s.nextAction)}</p><h3>Síntesis de resolución</h3><p>${esc(s.resolution)}</p>${$("#resolution") ? '<button class="btn" data-action="copy-resolution">Preparar resolución para revisar</button>' : ""}`;
+      `<p class="badge amber">${s.mode==='live'?'OLIVIA V3.5':'MODO DEMO'} · REVISIÓN HUMANA</p><h3>Resumen</h3><p>${esc(s.summary)}</p><h3>Clasificación sugerida</h3><p>${esc(s.category)} · ${esc(s.priority)}</p><button class="btn" data-action="copy-classification">Preparar clasificación</button><h3>Borrador de respuesta</h3><p class="text-block">${esc(s.draft)}</p>${$("#reply") ? '<button class="btn" data-action="copy-draft">Copiar al editor para revisar</button>' : ""}<h3>Próxima acción</h3><p>${esc(s.nextAction)}</p><h3>Síntesis de resolución</h3><p>${esc(s.resolution)}</p>${$("#resolution") ? '<button class="btn" data-action="copy-resolution">Preparar resolución para revisar</button>' : ""}`;
   } finally {
     if (button) button.disabled = false;
   }
@@ -797,7 +797,7 @@ function clientShell() {
       "",
     )}</nav><div class="client-menu-footer">${holdingLogo()}<p>Atención con continuidad.<br>Contexto en cada respuesta.</p></div></aside><main class="body client-content" id="content"></main></div></div>`;
   render();
-  mountChat(user, api, () => selected, notify);
+
 }
 function clientTicketCards(list) {
   return list.length
@@ -844,15 +844,20 @@ async function renderClientHome(el) {
       )
       .join(
         "",
-      )}</div><p>¿Necesitas orientación? Abre Olivia, tu asistente de servicio.</p><button class="btn" id="client-open-olivia">Hablar con Olivia ✦</button></section></div><div class="client-home-report"><div><div class="eyebrow">TU PERSPECTIVA</div><h2>El servicio también se ve en los datos.</h2><p>Consulta tus gráficos, exporta indicadores y guarda un informe de tu empresa.</p></div><button class="btn" data-view="reports">Explorar mis informes ↗</button></div>`;
+      )}</div><p>Tu equipo prepara el seguimiento con Olivia y valida cada respuesta antes de publicarla.</p></section></div><div class="client-home-report"><div><div class="eyebrow">TU PERSPECTIVA</div><h2>El servicio también se ve en los datos.</h2><p>Consulta tus gráficos, exporta indicadores y guarda un informe de tu empresa.</p></div><button class="btn" data-view="reports">Explorar mis informes ↗</button></div>`;
     el.querySelectorAll("[data-client-category]").forEach(
       (b) => (b.onclick = () => newTicket(b.dataset.clientCategory)),
     );
-    $("#client-open-olivia").onclick = () =>
-      document.querySelector(".olivia-launcher").click();
+
   } catch (err) {
     if (el.isConnected)
       el.innerHTML = '<p class="empty">No fue posible cargar tu espacio.</p>';
     notify(err.message);
   }
+}
+
+function stats(){const active=tickets.filter(t=>!['Resuelto','Cerrado'].includes(t.status));const resolved=tickets.filter(t=>['Resuelto','Cerrado'].includes(t.status));const slaMet=resolved.filter(t=>new Date(t.resolved_at)<=new Date(t.due_at)).length;return `<div class="stats">${[['Solicitudes activas',active.length,'Abiertas y en curso'],['Urgencias',active.filter(t=>t.priority==='Crítica').length,'Prioridad crítica'],['SLA vencidos',active.filter(t=>sla(t)==='Vencido').length,'Requieren seguimiento'],['SLA de casos atendidos',resolved.length?`${Math.round(slaMet/resolved.length*100)}%`:'—',`${resolved.length} casos resueltos o cerrados`]].map(([l,n,s])=>`<div class="stat"><small>${l}</small><strong>${n}</strong><footer>${s}</footer></div>`).join('')}</div>`;}
+
+function renderStableOverview(el){ el.innerHTML=`<div class="row"><div><div class="eyebrow">SERVICE INTELLIGENCE</div><h1>Hola, ${esc(user.name.split(' ')[0])}.</h1><p class="subtitle">Visibilidad para decidir. Contexto para responder.</p></div>${user.role!=='agent'?'<button class="btn primary" data-action="new">+ Nueva solicitud</button>':''}</div><div class="hero"><div class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> ${user.role==='client'?'TU PORTAL DE ATENCIÓN':'OPERACIÓN CONECTADA'}</div><h2>La atención que avanza.<br>La información que <em>permanece.</em></h2><p>Solicitudes y conversaciones guardadas. Indicadores calculados con los casos autorizados para tu perfil.</p><button class="btn lime" data-view="tickets">Ver solicitudes ↗</button></div><div class="hero-art"><div class="hero-orbit"></div><div class="orb">✦</div><span class="orbit-tag">Olivia IA · V3.5</span></div></div>${stats()}<div class="columns"><div class="panel"><div class="panel-head"><h2>Solicitudes recientes</h2><button class="small-link" data-view="tickets">Ver todas ↗</button></div>${table(tickets.slice(0,6))}</div><div class="secondary-column"><div class="panel ai"><div class="ai-head"><div class="orb">✦</div><div><b>Olivia IA V3.5</b><div class="muted">ASISTENCIA INTEGRADA</div></div></div><div class="insight-label">ASISTENCIA CON CONTEXTO</div><h3>Tu criterio.<br>Una mejor preparación.</h3><p>Resumen, clasificación y borradores por solicitud. Revisión humana antes de publicar.</p>${user.role!=='client'?'<button class="btn primary" data-view="olivia">Explorar Olivia ↗</button>':'<p>Tu equipo de atención mantiene el seguimiento en este portal.</p>'}<span class="ai-footer">Revisión humana antes de publicar.</span></div></div></div>`;
+
 }

@@ -122,53 +122,13 @@ try {
         path: ".local/screenshots/premium-client-mobile.png",
         fullPage: true,
       });
-      await page
-        .getByRole("button", { name: "Abrir chat Olivia", exact: true })
-        .click();
-      await page.locator("#chat-message:not([disabled])").waitFor();
-      const response = page.waitForResponse(
-        (r) =>
-          /\/api\/chat\/conversations\/[^/]+\/messages$/.test(r.url()) &&
-          r.request().method() === "POST",
-        { timeout: 90000 },
-      );
-      response.catch(() => {});
-      await page
-        .locator("#chat-message")
-        .fill(
-          "Resume mis indicadores de servicio sin modificar ningún ticket.",
-        );
-      await page
-        .getByRole("button", { name: "Enviar mensaje a Olivia", exact: true })
-        .click();
-      const chatResponse = await response;
-      assert.equal(chatResponse.status(), 200);
-      conversationIds.push(
-        chatResponse.url().match(/conversations\/([^/]+)/)[1],
-      );
-      await page
-        .locator(".chat-bubble:not(.from-user):not(.typing)")
-        .filter({ hasText: /solicitud|servicio|atención|ticket/i })
-        .last()
-        .waitFor({ timeout: 90000 });
-      await page
-        .locator(".typing")
-        .waitFor({ state: "hidden", timeout: 90000 });
-      assert.ok(
-        await page.evaluate(
-          () => document.documentElement.scrollWidth <= innerWidth,
-        ),
-      );
-      await page.screenshot({
-        path: ".local/screenshots/premium-olivia-mobile.png",
-        fullPage: true,
-      });
+      assert.equal(await page.locator("#olivia-widget").count(),0);
     }
     await context.close();
   }
   assert.deepEqual(errors, []);
   console.log(
-    "Premium dashboard QA passed: 5 roles, company scope, saved reports, CSV, user creation/suspension, floating chat, desktop/mobile and no JS errors.",
+    "Premium dashboard QA passed: 5 roles, company scope, saved reports, CSV, user creation/suspension, no floating chat, desktop/mobile and no JS errors.",
   );
 } catch (error) {
   console.error("Dashboard QA failure:", error.message);

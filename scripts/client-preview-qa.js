@@ -34,7 +34,7 @@ try {
   await page.locator("#email").fill(c.email);
   await page.locator("#password").fill(c.password);
   await page.getByRole("button", { name: "Entrar a mi espacio" }).click();
-  await page.locator(".activity-chart").waitFor();
+  await page.locator(".hero").waitFor();
   await page.goto(base + "/demo");
   const portal = page.frameLocator("#client-preview");
   await portal.locator(".client-service-hero").waitFor();
@@ -145,7 +145,7 @@ try {
   }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('nav [data-view="reports"]').click();
-  await page.locator(".activity-chart").waitFor();
+  await page.locator(".hero").waitFor();
   await page.screenshot({
     path: ".local/screenshots/client-portal-phone-reports.png",
     fullPage: true,
