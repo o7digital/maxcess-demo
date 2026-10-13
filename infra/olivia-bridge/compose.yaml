@@ -1,0 +1,29 @@
+name: maxcess-olivia-dev
+services:
+  bridge:
+    image: node:24-alpine
+    container_name: maxcess-olivia-dev
+    restart: unless-stopped
+    command: ['node', '/app/server.mjs']
+    env_file: ['.env']
+    environment:
+      V3_URL: http://olivia-v3:8093
+    volumes: ['./server.mjs:/app/server.mjs:ro']
+    networks: [o7-apps, v3]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    mem_limit: 96m
+    cpus: 0.25
+    healthcheck:
+      test: ['CMD', 'node', '-e', 'fetch("http://127.0.0.1:3096/health").then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+networks:
+  o7-apps:
+    external: true
+    name: o7-apps
+  v3:
+    external: true
+    name: olivia-v3_olivia-v3-internal

@@ -1,61 +1,200 @@
-import {test,after} from 'node:test';
-import assert from 'node:assert/strict';
-import {readFile} from 'node:fs/promises';
-import request from 'supertest';
-import {createApp} from '../server/app.js';
-import {pool} from '../server/db.js';
-import {migrate} from '../scripts/migrate.js';
-import {seed} from '../scripts/seed.js';
-const app=createApp();
-after(()=>pool.end());
-async function login(email){const credentials=JSON.parse(await readFile('.local/demo-access.json','utf8'));const credential=credentials.find(c=>c.email===email);assert.ok(credential,'Local demo credentials required');const agent=request.agent(app);const boot=await agent.get('/api/bootstrap').expect(200);const res=await agent.post('/api/login').set('X-CSRF-Token',boot.body.csrf).send(credential).expect(200);return {agent,csrf:res.body.csrf,user:res.body.user};}
-const post=(u,path,body)=>u.agent.post('/api'+path).set('X-CSRF-Token',u.csrf).send(body);
-test('Persistent workflow, human approval and company/agent isolation',async()=>{
- const client=await login('cliente@example.test'),other=await login('cliente2@example.test'),manager=await login(process.env.DEMO_MANAGER_EMAIL||'olivier.steineur@o7digitalgroup.com'),agent=await login('agente@example.test');
- await client.agent.get('/api/users').expect(403);
- await request(app).get('/api/tickets').expect(401);
- await client.agent.post('/api/tickets').send({}).expect(403);
- const companies=(await client.agent.get('/api/companies').expect(200)).body;assert.equal(companies.companies.length,1);assert.ok(companies.contacts.every(c=>c.company_id===client.user.company_id));
- const all=(await manager.agent.get('/api/tickets').expect(200)).body.tickets;
- const own=(await client.agent.get('/api/tickets').expect(200)).body.tickets;assert.ok(own.every(t=>t.company_id===client.user.company_id));
- const foreign=all.find(t=>t.company_id!==client.user.company_id);await client.agent.get('/api/tickets/'+foreign.id).expect(404);
- const foreignAgent=all.find(t=>t.agent_id!==agent.user.id);await agent.agent.get('/api/tickets/'+foreignAgent.id).expect(404);
- await post(client,'/tickets',{title:'No autorizado',company_id:other.user.company_id,site:'Prueba',category:'Servicio',description:'Prueba',priority:'Media'}).expect(403);
- const body={title:'QA · Terminal sin conexión',company_id:client.user.company_id,site:'Sede QA',category:'Conectividad',description:'No puede procesar pagos; los servicios están detenidos.',priority:'Alta'};
- await post(client,'/tickets',{...body,category:'Invalid'}).expect(400);
- const {ticket}= (await post(client,'/tickets',body).expect(201)).body;
- const id=ticket.id, action='/tickets/'+id+'/actions';
- try{
-  await other.agent.get('/api/tickets/'+id).expect(404);await post(other,action,{action:'reply',body:'Intrusión'}).expect(404);
-  await agent.agent.get('/api/tickets/'+id).expect(404);
-  await post(client,action,{action:'assign',agent_id:agent.user.id}).expect(403);
-  await post(manager,action,{action:'assign',agent_id:client.user.id}).expect(400);
-  await post(manager,action,{action:'assign',agent_id:agent.user.id}).expect(200);
-  await post(agent,action,{action:'assign',agent_id:agent.user.id}).expect(403);
-  await post(agent,action,{action:'note',body:'INTERNO: diagnóstico confidencial'}).expect(200);
-  const internal=(await agent.agent.get('/api/tickets/'+id).expect(200)).body;assert.ok(internal.events.some(e=>e.internal));
-  const publicTicket=(await client.agent.get('/api/tickets/'+id).expect(200)).body;assert.ok(publicTicket.events.every(e=>!e.internal));assert.ok(!JSON.stringify(publicTicket).includes('diagnóstico confidencial'));
-  await post(client,'/tickets/'+id+'/olivia',{}).expect(403);
-  const before=(await agent.agent.get('/api/tickets/'+id)).body.events.length;
-  const olivia=(await post(agent,'/tickets/'+id+'/olivia',{}).expect(200)).body;assert.equal(olivia.mode,'demo');assert.equal(olivia.priority,'Crítica');assert.ok(olivia.draft.includes(body.title));
-  assert.equal((await agent.agent.get('/api/tickets/'+id)).body.events.length,before);
-  await post(agent,action,{action:'reply',body:olivia.draft}).expect(400);
-  await post(agent,action,{action:'reply',body:olivia.draft,approved:true}).expect(200);
-  assert.ok((await client.agent.get('/api/tickets/'+id)).body.events.some(e=>e.kind==='reply'&&e.body===olivia.draft));
-  await post(client,action,{action:'reply',body:'Confirmamos la información solicitada.'}).expect(200);
-  await post(agent,action,{action:'classify',priority:olivia.priority,category:olivia.category,approved:true}).expect(200);
-  await post(agent,action,{action:'close'}).expect(409);
-  await post(agent,action,{action:'resolve',body:'Red restablecida; sede confirmó el servicio.'}).expect(200);
-  await post(agent,action,{action:'close'}).expect(200);
-  await post(client,action,{action:'reply',body:'Otra consulta'}).expect(409);
-  await post(agent,action,{action:'reopen',body:'La incidencia volvió a presentarse.'}).expect(200);
-  const reopened=(await client.agent.get('/api/tickets/'+id)).body.ticket;assert.equal(reopened.status,'Abierto');assert.ok(new Date(reopened.due_at)>new Date());
-  const beforeCounts=(await pool.query('SELECT (SELECT count(*) FROM tickets) tickets,(SELECT count(*) FROM companies) companies,(SELECT count(*) FROM users) users')).rows[0];
-  await migrate();await seed();assert.deepEqual((await pool.query('SELECT (SELECT count(*) FROM tickets) tickets,(SELECT count(*) FROM companies) companies,(SELECT count(*) FROM users) users')).rows[0],beforeCounts);
-  // A fresh application instance keeps both sessions and the newly created ticket.
-  const credential=JSON.parse(await readFile('.local/demo-access.json','utf8')).find(c=>c.email===client.user.email);
-  const freshAgent=request.agent(createApp());const fb=await freshAgent.get('/api/bootstrap');await freshAgent.post('/api/login').set('X-CSRF-Token',fb.body.csrf).send(credential).expect(200);
-  assert.equal((await freshAgent.get('/api/tickets/'+id).expect(200)).body.ticket.title,body.title);
-  await post(client,'/logout',{}).expect(200);await client.agent.get('/api/tickets').expect(401);
- }finally{await pool.query('DELETE FROM events WHERE ticket_id=$1',[id]);await pool.query('DELETE FROM tickets WHERE id=$1',[id]);}
+import { test, after } from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import request from "supertest";
+import { createApp } from "../server/app.js";
+import { pool } from "../server/db.js";
+import { migrate } from "../scripts/migrate.js";
+import { seed } from "../scripts/seed.js";
+const app = createApp();
+after(() => pool.end());
+async function login(email) {
+  const credentials = JSON.parse(
+    await readFile(".local/demo-access.json", "utf8"),
+  );
+  const credential = credentials.find((c) => c.email === email);
+  assert.ok(credential, "Local demo credentials required");
+  const agent = request.agent(app);
+  const boot = await agent.get("/api/bootstrap").expect(200);
+  const res = await agent
+    .post("/api/login")
+    .set("X-CSRF-Token", boot.body.csrf)
+    .send(credential)
+    .expect(200);
+  return { agent, csrf: res.body.csrf, user: res.body.user };
+}
+const post = (u, path, body) =>
+  u.agent
+    .post("/api" + path)
+    .set("X-CSRF-Token", u.csrf)
+    .send(body);
+test("Persistent workflow, human approval and company/agent isolation", async () => {
+  const client = await login("cliente@example.test"),
+    other = await login("cliente2@example.test"),
+    manager = await login(
+      process.env.DEMO_MANAGER_EMAIL || "olivier.steineur@o7digitalgroup.com",
+    ),
+    agent = await login("agente@example.test");
+  await client.agent.get("/api/users").expect(403);
+  await request(app).get("/api/tickets").expect(401);
+  await client.agent.post("/api/tickets").send({}).expect(403);
+  const companies = (await client.agent.get("/api/companies").expect(200)).body;
+  assert.equal(companies.companies.length, 1);
+  assert.ok(
+    companies.contacts.every((c) => c.company_id === client.user.company_id),
+  );
+  const all = (await manager.agent.get("/api/tickets").expect(200)).body
+    .tickets;
+  const own = (await client.agent.get("/api/tickets").expect(200)).body.tickets;
+  assert.ok(own.every((t) => t.company_id === client.user.company_id));
+  const foreign = all.find((t) => t.company_id !== client.user.company_id);
+  await client.agent.get("/api/tickets/" + foreign.id).expect(404);
+  const foreignAgent = all.find((t) => t.agent_id !== agent.user.id);
+  await agent.agent.get("/api/tickets/" + foreignAgent.id).expect(404);
+  await post(client, "/tickets", {
+    title: "No autorizado",
+    company_id: other.user.company_id,
+    site: "Prueba",
+    category: "Servicio",
+    description: "Prueba",
+    priority: "Media",
+  }).expect(403);
+  const body = {
+    title: "QA · Terminal sin conexión",
+    company_id: client.user.company_id,
+    site: "Sede QA",
+    category: "Conectividad",
+    description: "No puede procesar pagos; los servicios están detenidos.",
+    priority: "Alta",
+  };
+  await post(client, "/tickets", { ...body, category: "Invalid" }).expect(400);
+  const { ticket } = (await post(client, "/tickets", body).expect(201)).body;
+  const id = ticket.id,
+    action = "/tickets/" + id + "/actions";
+  try {
+    await other.agent.get("/api/tickets/" + id).expect(404);
+    await post(other, action, { action: "reply", body: "Intrusión" }).expect(
+      404,
+    );
+    await agent.agent.get("/api/tickets/" + id).expect(404);
+    await post(client, action, {
+      action: "assign",
+      agent_id: agent.user.id,
+    }).expect(403);
+    await post(manager, action, {
+      action: "assign",
+      agent_id: client.user.id,
+    }).expect(400);
+    await post(manager, action, {
+      action: "assign",
+      agent_id: agent.user.id,
+    }).expect(200);
+    await post(agent, action, {
+      action: "assign",
+      agent_id: agent.user.id,
+    }).expect(403);
+    await post(agent, action, {
+      action: "note",
+      body: "INTERNO: diagnóstico confidencial",
+    }).expect(200);
+    const internal = (await agent.agent.get("/api/tickets/" + id).expect(200))
+      .body;
+    assert.ok(internal.events.some((e) => e.internal));
+    const publicTicket = (
+      await client.agent.get("/api/tickets/" + id).expect(200)
+    ).body;
+    assert.ok(publicTicket.events.every((e) => !e.internal));
+    assert.ok(
+      !JSON.stringify(publicTicket).includes("diagnóstico confidencial"),
+    );
+    await post(client, "/tickets/" + id + "/olivia", {}).expect(403);
+    const before = (await agent.agent.get("/api/tickets/" + id)).body.events
+      .length;
+    const olivia = (
+      await post(agent, "/tickets/" + id + "/olivia", {}).expect(200)
+    ).body;
+    assert.equal(olivia.mode, "demo");
+    assert.equal(olivia.priority, "Crítica");
+    assert.ok(olivia.draft.includes(body.title));
+    assert.equal(
+      (await agent.agent.get("/api/tickets/" + id)).body.events.length,
+      before,
+    );
+    await post(agent, action, { action: "reply", body: olivia.draft }).expect(
+      400,
+    );
+    await post(agent, action, {
+      action: "reply",
+      body: olivia.draft,
+      approved: true,
+    }).expect(200);
+    assert.ok(
+      (await client.agent.get("/api/tickets/" + id)).body.events.some(
+        (e) => e.kind === "reply" && e.body === olivia.draft,
+      ),
+    );
+    await post(client, action, {
+      action: "reply",
+      body: "Confirmamos la información solicitada.",
+    }).expect(200);
+    await post(agent, action, {
+      action: "classify",
+      priority: olivia.priority,
+      category: olivia.category,
+      approved: true,
+    }).expect(200);
+    await post(agent, action, { action: "close" }).expect(409);
+    await post(agent, action, {
+      action: "resolve",
+      body: "Red restablecida; sede confirmó el servicio.",
+    }).expect(200);
+    await post(agent, action, { action: "close" }).expect(200);
+    await post(client, action, {
+      action: "reply",
+      body: "Otra consulta",
+    }).expect(409);
+    await post(agent, action, {
+      action: "reopen",
+      body: "La incidencia volvió a presentarse.",
+    }).expect(200);
+    const reopened = (await client.agent.get("/api/tickets/" + id)).body.ticket;
+    assert.equal(reopened.status, "Abierto");
+    assert.ok(new Date(reopened.due_at) > new Date());
+    const beforeCounts = (
+      await pool.query(
+        "SELECT (SELECT count(*) FROM tickets) tickets,(SELECT count(*) FROM companies) companies,(SELECT count(*) FROM users) users",
+      )
+    ).rows[0];
+    await migrate();
+    await seed();
+    assert.deepEqual(
+      (
+        await pool.query(
+          "SELECT (SELECT count(*) FROM tickets) tickets,(SELECT count(*) FROM companies) companies,(SELECT count(*) FROM users) users",
+        )
+      ).rows[0],
+      beforeCounts,
+    );
+    // A fresh application instance keeps both sessions and the newly created ticket.
+    const credential = JSON.parse(
+      await readFile(".local/demo-access.json", "utf8"),
+    ).find((c) => c.email === client.user.email);
+    const freshAgent = request.agent(createApp());
+    const fb = await freshAgent.get("/api/bootstrap");
+    await freshAgent
+      .post("/api/login")
+      .set("X-CSRF-Token", fb.body.csrf)
+      .send(credential)
+      .expect(200);
+    assert.equal(
+      (await freshAgent.get("/api/tickets/" + id).expect(200)).body.ticket
+        .title,
+      body.title,
+    );
+    await post(client, "/logout", {}).expect(200);
+    await client.agent.get("/api/tickets").expect(401);
+  } finally {
+    await pool.query("DELETE FROM events WHERE ticket_id=$1", [id]);
+    await pool.query("DELETE FROM tickets WHERE id=$1", [id]);
+  }
 });

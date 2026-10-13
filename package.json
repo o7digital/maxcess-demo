@@ -1,1 +1,32 @@
-{"name":"service-hub-demo","version":"1.0.0","private":true,"type":"module","engines":{"node":">=22"},"scripts":{"start":"node --env-file-if-exists=.env server/index.js","dev":"node --env-file-if-exists=.env --watch server/index.js","migrate":"node --env-file-if-exists=.env scripts/migrate.js","seed":"node --env-file-if-exists=.env scripts/seed.js","build":"node scripts/build.js","test":"node --env-file-if-exists=.env --test --test-concurrency=1 tests/*.test.js","test:browser":"node --env-file-if-exists=.env scripts/browser-qa.js"},"dependencies":{"bcrypt":"^6.0.0","connect-pg-simple":"^10.0.0","express":"^5.1.0","express-rate-limit":"^8.1.0","express-session":"^1.18.2","helmet":"^8.1.0","pg":"^8.16.3"},"devDependencies":{"@playwright/test":"^1.56.0","supertest":"^7.1.4"}}
+{
+  "name": "service-hub-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server/index.js",
+    "dev": "node --env-file-if-exists=.env --watch server/index.js",
+    "migrate": "node --env-file-if-exists=.env scripts/migrate.js",
+    "seed": "node --env-file-if-exists=.env scripts/seed.js",
+    "build": "node scripts/build.js",
+    "test": "node --env-file-if-exists=.env --test --test-concurrency=1 tests/*.test.js",
+    "test:browser": "node --env-file-if-exists=.env scripts/browser-qa.js",
+    "test:dashboard": "node --env-file-if-exists=.env scripts/dashboard-qa.js"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "connect-pg-simple": "^10.0.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "express-session": "^1.18.2",
+    "helmet": "^8.1.0",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "supertest": "^7.1.4"
+  }
+}

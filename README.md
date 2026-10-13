@@ -1,5 +1,7 @@
 # Service Hub — démo SAV
 
+Version premium de test : https://service-hub-dev-3fbf.up.railway.app · branche `dev`. [Rôles, reporting et intégrations dev](docs/DEV.md).
+
 Application dédiée pour la présentation à Omar : design premium du ZIP, interface espagnole, trois rôles authentifiés et PostgreSQL. Sources : branche `demo/service-hub` du dépôt `o7digital/maxcess-demo`.
 
 Démo déployée : https://service-hub-production-3168.up.railway.app
