@@ -829,3 +829,13 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+@media (min-width: 1400px) {
+  #mx-demo .plan-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+#mx-demo .pricing-saving {
+  color: #45682b;
+  font-weight: 600;
+}

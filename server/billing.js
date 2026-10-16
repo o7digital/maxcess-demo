@@ -1,3 +1,9 @@
+import {
+  CURRENCY,
+  ACTIVATION_CENTS,
+  BILLING_MODEL,
+  periodQuote,
+} from "../public/pricing.js";
 import express from "express";
 import Stripe from "stripe";
 import { pool, transaction } from "./db.js";
@@ -9,7 +15,7 @@ import {
   queueEmail,
   accessState,
 } from "./workspace.js";
-const LICENSE = 39900;
+const LEGACY_LICENSE = 39900;
 export function stripeClient() {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key?.startsWith("sk_test_"))
@@ -20,22 +26,11 @@ export function stripeClient() {
   return new Stripe(key, { maxNetworkRetries: 2, timeout: 20000 });
 }
 export function quote(plan, months) {
-  if (
-    ![1, 3, 6, 12].includes(months) ||
-    !Number.isInteger(plan.monthly_cents) ||
-    plan.monthly_cents < 1
-  )
+  try {
+    return periodQuote(plan, months);
+  } catch {
     throw fail(400, "Elige un plan disponible y un periodo válido");
-  const discount = Number(plan.discounts[String(months)] || 0);
-  return {
-    license_annual_cents: LICENSE,
-    users_period_cents: Math.round(
-      plan.monthly_cents * months * (1 - discount / 100),
-    ),
-    months,
-    discount,
-    currency: "usd",
-  };
+  }
 }
 async function prices(stripe, plan, months, db) {
   const q = quote(plan, months);
@@ -55,36 +50,32 @@ async function prices(stripe, plan, months, db) {
     );
     return price;
   }
-  const license = await cached("license-399-v1", async () => {
+  const activation = await cached("mxn-activation-2999-v1", async () => {
     const product = await stripe.products.create(
-      {
-        name: "Service Hub · Licencia anual de plataforma",
-        metadata: { kind: "license" },
-      },
-      { idempotencyKey: "servicehub-license-product-v1" },
+      { name: "Service Hub · Activación", metadata: { kind: "activation" } },
+      { idempotencyKey: "servicehub-mxn-activation-product-v1" },
     );
     return stripe.prices.create(
       {
         product: product.id,
-        currency: "usd",
-        unit_amount: LICENSE,
-        recurring: { interval: "year" },
-        metadata: { kind: "license" },
+        currency: CURRENCY,
+        unit_amount: ACTIVATION_CENTS,
+        metadata: { kind: "activation" },
       },
-      { idempotencyKey: "servicehub-license-price-399-v1" },
+      { idempotencyKey: "servicehub-mxn-activation-price-2999-v1" },
     );
   });
   const users = await cached(
-    `users-${plan.id}-v${plan.version}-${months}`,
+    `mxn-users-${plan.id}-v${plan.version}-${months}`,
     async () => {
       const product = await stripe.products.create(
         { name: `Service Hub · ${plan.name}`, metadata: { kind: "users" } },
-        { idempotencyKey: `servicehub-plan-${plan.id}-v${plan.version}` },
+        { idempotencyKey: `servicehub-mxn-plan-${plan.id}-v${plan.version}` },
       );
       return stripe.prices.create(
         {
           product: product.id,
-          currency: "usd",
+          currency: CURRENCY,
           unit_amount: q.users_period_cents,
           recurring: { interval: "month", interval_count: months },
           metadata: {
@@ -95,12 +86,12 @@ async function prices(stripe, plan, months, db) {
           },
         },
         {
-          idempotencyKey: `servicehub-price-${plan.id}-v${plan.version}-${months}`,
+          idempotencyKey: `servicehub-mxn-price-${plan.id}-v${plan.version}-${months}`,
         },
       );
     },
   );
-  return { license, users };
+  return { activation, users };
 }
 async function syncSubscription(db, stripe, id) {
   let subscription = await stripe.subscriptions.retrieve(id, {
@@ -119,6 +110,7 @@ async function syncSubscription(db, stripe, id) {
   subscription = await stripe.subscriptions.retrieve(id, {
     expand: ["items.data.price"],
   });
+  if (t?.retired_subscription_ids?.includes(id)) return null;
   if (
     !t ||
     t.is_demo ||
@@ -129,13 +121,13 @@ async function syncSubscription(db, stripe, id) {
   const items = subscription.items.data,
     license = items.find((i) => i.price.metadata?.kind === "license"),
     users = items.find((i) => i.price.metadata?.kind === "users");
-  if (
+  const legacyInvalid =
     items.length !== 2 ||
     !license ||
     !users ||
     license.quantity !== 1 ||
     users.quantity !== 1 ||
-    license.price.unit_amount !== LICENSE ||
+    license.price.unit_amount !== LEGACY_LICENSE ||
     license.price.currency !== "usd" ||
     license.price.recurring?.interval !== "year" ||
     (license.price.recurring.interval_count || 1) !== 1 ||
@@ -143,8 +135,21 @@ async function syncSubscription(db, stripe, id) {
     !Number.isSafeInteger(users.price.unit_amount) ||
     users.price.unit_amount < 1 ||
     users.price.recurring?.interval !== "month" ||
-    ![1, 3, 6, 12].includes(users.price.recurring.interval_count)
-  ) {
+    ![1, 3, 6, 12].includes(users.price.recurring.interval_count);
+  const mxn = subscription.metadata?.billing_model === BILLING_MODEL;
+  const mxnInvalid =
+    items.length !== 1 ||
+    !users ||
+    users.quantity !== 1 ||
+    users.price.currency !== CURRENCY ||
+    !Number.isSafeInteger(users.price.unit_amount) ||
+    users.price.unit_amount < 1 ||
+    users.price.recurring?.interval !== "month" ||
+    ![1, 3, 6, 12].includes(users.price.recurring.interval_count);
+  const invalid = mxn
+    ? mxnInvalid || t.billing_model !== BILLING_MODEL
+    : legacyInvalid || t.billing_model !== "legacy_usd_v1";
+  if (invalid) {
     await db.query(
       "UPDATE tenants SET status='suspended',monthly_recurring_cents=0 WHERE id=$1",
       [tenantId],
@@ -153,6 +158,18 @@ async function syncSubscription(db, stripe, id) {
       "INSERT INTO workspace_audit(tenant_id,action) VALUES($1,'billing.invalid_structure')",
       [tenantId],
     );
+    return tenantId;
+  }
+  if (
+    mxn &&
+    !t.activation_paid_at &&
+    !["canceled", "incomplete_expired"].includes(subscription.status)
+  ) {
+    // A subscription status alone never proves the one-time activation was paid.
+    await db.query("UPDATE tenants SET stripe_subscription_id=$1 WHERE id=$2", [
+      id,
+      tenantId,
+    ]);
     return tenantId;
   }
   const seats = Number(users.price.metadata.seat_limit),
@@ -178,7 +195,7 @@ async function syncSubscription(db, stripe, id) {
     }[subscription.status] || "suspended";
   const recurring = Math.round(
     (users.price.unit_amount || 0) / users.price.recurring.interval_count +
-      LICENSE / 12,
+      (mxn ? 0 : LEGACY_LICENSE / 12),
   );
   const end = Math.min(
     ...items.map((i) => i.current_period_end).filter(Boolean),
@@ -232,10 +249,25 @@ export function installBillingPublic(app, getStripe = stripeClient) {
         if (event.type.startsWith("customer.subscription."))
           await syncSubscription(db, stripe, o.id);
         if (
-          event.type === "checkout.session.completed" &&
+          [
+            "checkout.session.completed",
+            "checkout.session.async_payment_succeeded",
+          ].includes(event.type) &&
           o.mode === "subscription" &&
           o.subscription
-        )
+        ) {
+          if (o.payment_status === "paid" && o.currency === CURRENCY) {
+            await db.query(
+              "UPDATE tenants SET activation_paid_at=COALESCE(activation_paid_at,now()) WHERE checkout_session_id=$1 AND stripe_customer_id=$2 AND checkout_activation_cents=$3 AND checkout_total_cents=$4 AND billing_model=$5 AND NOT is_demo",
+              [
+                o.id,
+                typeof o.customer === "string" ? o.customer : o.customer?.id,
+                ACTIVATION_CENTS,
+                o.amount_total,
+                BILLING_MODEL,
+              ],
+            );
+          }
           await syncSubscription(
             db,
             stripe,
@@ -243,6 +275,7 @@ export function installBillingPublic(app, getStripe = stripeClient) {
               ? o.subscription
               : o.subscription.id,
           );
+        }
         if (
           [
             "invoice.paid",
@@ -311,6 +344,10 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       months: req.tenant.billing_months,
       next_billing_at: req.tenant.billing_period_end,
       cancel_at_period_end: req.tenant.cancel_at_period_end,
+      currency: req.tenant.billing_currency,
+      billing_model: req.tenant.billing_model,
+      activation_cents: ACTIVATION_CENTS,
+      activation_paid: Boolean(req.tenant.activation_paid_at),
       configured: Boolean(
         process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_") &&
         process.env.STRIPE_WEBHOOK_SECRET,
@@ -336,7 +373,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       } = await db.query("SELECT * FROM tenants WHERE id=$1 FOR UPDATE", [
         req.tenant.id,
       ]);
-      if (t.stripe_subscription_id)
+      if (t.stripe_subscription_id && t.status !== "canceled")
         throw fail(
           409,
           "Ya existe una suscripción. Usa Gestionar suscripción.",
@@ -356,7 +393,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       );
       if (Number(count.total) > plan.seat_limit)
         throw fail(409, "Este plan no cubre tus usuarios e invitaciones");
-      if (t.checkout_session_id) {
+      if (t.checkout_session_id && t.status !== "canceled") {
         const old = await stripe.checkout.sessions.retrieve(
           t.checkout_session_id,
         );
@@ -364,12 +401,17 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
         if (old.status === "complete")
           throw fail(409, "El pago está pendiente de confirmación");
       }
-      const remaining = new Date(t.trial_ends_at).getTime() - Date.now();
-      if (remaining > 0 && remaining < 48 * 3600000)
+      if (t.billing_model === "legacy_usd_v1")
         throw fail(
           409,
-          "Tu prueba sigue activa. Podrás suscribirte al finalizar sin perder tus datos.",
+          "Tu contrato anterior se conserva. Contacta con O7 Digital Group para cambiar a MXN.",
         );
+      if (t.status === "canceled")
+        await db.query(
+          "UPDATE tenants SET retired_subscription_ids=array_append(retired_subscription_ids,stripe_subscription_id),stripe_subscription_id=NULL WHERE id=$1",
+          [t.id],
+        );
+      const activationDue = t.activation_paid_at ? 0 : ACTIVATION_CENTS;
       const p = await prices(stripe, plan, req.body.months, db);
       let customer = t.stripe_customer_id;
       if (!customer) {
@@ -388,32 +430,28 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
           t.id,
         ]);
       }
-      const metadata = { tenant_id: String(t.id) };
+      const metadata = {
+        tenant_id: String(t.id),
+        billing_model: BILLING_MODEL,
+      };
       const session = await stripe.checkout.sessions.create(
         {
           mode: "subscription",
           customer,
           line_items: [
-            { price: p.license.id, quantity: 1 },
+            ...(activationDue ? [{ price: p.activation.id, quantity: 1 }] : []),
             { price: p.users.id, quantity: 1 },
           ],
           subscription_data: {
             billing_mode: { type: "flexible" },
             metadata,
-            ...(remaining > 0
-              ? {
-                  trial_end: Math.floor(
-                    new Date(t.trial_ends_at).getTime() / 1000,
-                  ),
-                }
-              : {}),
           },
           metadata,
           success_url: origin + "/subscription?checkout=complete",
           cancel_url: origin + "/subscription",
           custom_text: {
             submit: {
-              message: `Licencia: 399 USD cada 12 meses + ${q.users_period_cents / 100} USD cada ${q.months} mes(es), por adelantado. Primer cargo al terminar la prueba. Renueva automáticamente hasta cancelación. Cancela desde tu suscripción antes de renovar.`,
+              message: `Activación: ${activationDue / 100} MXN una sola vez. Plan: ${q.users_period_cents / 100} MXN cada ${q.months} mes(es). Total inicial: ${(activationDue + q.users_period_cents) / 100} MXN. Al confirmar comienza la suscripción de pago y termina la prueba gratuita. Solo el plan se renueva. Cancela antes de renovar.`,
             },
           },
         },
@@ -421,14 +459,15 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
           idempotencyKey: `servicehub-checkout-${t.id}-${plan.id}-v${plan.version}-${q.months}-${t.checkout_session_id || "initial"}`,
         },
       );
-      await db.query("UPDATE tenants SET checkout_session_id=$1 WHERE id=$2", [
-        session.id,
-        t.id,
-      ]);
+      await db.query(
+        "UPDATE tenants SET checkout_session_id=$1,checkout_total_cents=$3,checkout_activation_cents=$4 WHERE id=$2",
+        [session.id, t.id, q.users_period_cents + activationDue, activationDue],
+      );
       await audit(db, req, "billing.consent", {
         ...q,
+        activation_due_cents: activationDue,
         plan_id: plan.id,
-        terms_version: "2026-10-15",
+        terms_version: "2026-10-16-mxn-v1",
         accepted_at: new Date().toISOString(),
       });
       return { url: session.url };
@@ -458,6 +497,11 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       ]);
       if (!t.stripe_subscription_id)
         throw fail(409, "Primero activa una suscripción");
+      if (t.billing_model !== BILLING_MODEL)
+        throw fail(
+          409,
+          "Contacta con O7 Digital Group para migrar tu contrato anterior a MXN.",
+        );
       const {
         rows: [plan],
       } = await db.query("SELECT * FROM billing_plans WHERE id=$1 AND active", [
@@ -486,7 +530,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       if (users.price.recurring.interval_count !== req.body.months)
         throw fail(
           409,
-          "Contacta con O7 Digital Group para cambiar la periodicidad sin modificar la licencia anual",
+          "Contacta con O7 Digital Group para cambiar la periodicidad sin volver a cobrar la activación",
         );
       const p = await prices(stripe, plan, req.body.months, db);
       await stripe.subscriptions.update(
@@ -520,16 +564,18 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       )
     ).rows;
     const plans = (
-      await pool.query("SELECT * FROM billing_plans ORDER BY seat_limit")
+      await pool.query(
+        "SELECT * FROM billing_plans WHERE currency='mxn' ORDER BY seat_limit",
+      )
     ).rows;
     const revenue = (
       await pool.query(
-        "SELECT COALESCE(sum(monthly_recurring_cents) FILTER(WHERE NOT is_demo AND status='active'),0)::bigint mrr_cents FROM tenants",
+        "SELECT COALESCE(sum(monthly_recurring_cents) FILTER(WHERE NOT is_demo AND status='active' AND billing_currency='mxn'),0)::bigint mrr_cents FROM tenants",
       )
     ).rows[0];
     const payments = (
       await pool.query(
-        "SELECT COALESCE(sum(amount_paid),0)::bigint paid_cents FROM billing_invoices WHERE status='paid' AND currency='usd'",
+        "SELECT COALESCE(sum(amount_paid),0)::bigint paid_cents FROM billing_invoices WHERE status='paid' AND currency='mxn'",
       )
     ).rows[0];
     res.json({
@@ -538,13 +584,17 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       revenue: {
         mrr_cents: Number(revenue.mrr_cents),
         received_cents: Number(payments.paid_cents),
-        currency: "usd",
+        currency: CURRENCY,
       },
       services: {
         database: true,
         stripe: Boolean(process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_")),
         email: Boolean(process.env.SMTP_URL && process.env.MAIL_FROM),
         olivia: process.env.OLIVIA_TENANT_READY === "true",
+        huggingface: Boolean(
+          (process.env.HF_TOKEN || process.env.HUGGING_FACE_TOKEN) &&
+          process.env.HF_REPORT_MODEL,
+        ),
       },
       templates: (
         await pool.query("SELECT * FROM configuration_templates ORDER BY id")
@@ -569,13 +619,13 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       throw fail(400, "Tarifa no válida");
     const discounts = {};
     for (const months of [1, 3, 6, 12]) {
-      const d = b.discounts?.[String(months)];
+      const d = months === 12 ? 100 / 6 : b.discounts?.[String(months)];
       if (!Number.isFinite(d) || d < 0 || d > 80 || (months === 1 && d !== 0))
         throw fail(400, "Descuento no válido");
       discounts[months] = d;
     }
     const r = await pool.query(
-      "UPDATE billing_plans SET name=$1,monthly_cents=$2,discounts=$3,ai_limit=$4,active=$5,version=version+1 WHERE id=$6 RETURNING id",
+      "UPDATE billing_plans SET name=$1,monthly_cents=$2,discounts=$3,ai_limit=$4,active=$5,version=version+1 WHERE id=$6 AND currency='mxn' RETURNING id",
       [
         b.name.trim(),
         b.monthly_cents,

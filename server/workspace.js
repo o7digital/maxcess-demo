@@ -1,3 +1,4 @@
+import { ACTIVATION_CENTS, CURRENCY } from "../public/pricing.js";
 import { resolveStaff, seedRoles } from "./roles.js";
 import { randomBytes, createHash, randomUUID } from "node:crypto";
 import { pool, transaction } from "./db.js";
@@ -312,12 +313,12 @@ export async function consumeAI(req, db = pool) {
 export function installPublicWorkspaceRoutes(app, limit) {
   app.get("/api/plans", async (req, res) =>
     res.json({
-      license_annual_cents: 39900,
-      currency: "usd",
+      activation_cents: ACTIVATION_CENTS,
+      currency: CURRENCY,
       trial_days: 7,
       plans: (
         await pool.query(
-          "SELECT * FROM billing_plans WHERE active ORDER BY seat_limit",
+          "SELECT * FROM billing_plans WHERE active AND currency='mxn' ORDER BY seat_limit",
         )
       ).rows,
     }),

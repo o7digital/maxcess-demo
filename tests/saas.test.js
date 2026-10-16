@@ -19,20 +19,31 @@ process.env.STRIPE_WEBHOOK_SECRET = "whsec_unit_test_only";
 let subscription,
   checkoutBody,
   subscriptionUpdate,
-  priceId = 0;
+  priceId = 0,
+  checkoutId = 0;
+const createdPrices = new Map();
 const sdk = new Stripe("sk_test_fixture");
 const fake = {
   webhooks: sdk.webhooks,
   products: { create: async () => ({ id: "prod_fixture" }) },
   prices: {
-    create: async (body) => ({ id: "price_fixture_" + ++priceId, ...body }),
+    create: async (body) => {
+      const price = { id: "price_fixture_" + ++priceId, ...body };
+      createdPrices.set(price.id, price);
+      return price;
+    },
   },
-  customers: { create: async () => ({ id: "cus_fixture" }) },
+  customers: {
+    create: async (body) => ({ id: "cus_fixture_" + body.metadata.tenant_id }),
+  },
   checkout: {
     sessions: {
       create: async (body) => {
         checkoutBody = body;
-        return { id: "cs_fixture", url: "https://checkout.stripe.com/fixture" };
+        return {
+          id: "cs_fixture_" + ++checkoutId,
+          url: "https://checkout.stripe.com/fixture",
+        };
       },
       retrieve: async () => ({ status: "expired" }),
     },
@@ -819,7 +830,7 @@ test("Invitation acceptance uses a hashed single-use token and cannot elevate ro
   await fresh.get("/api/platform").expect(403);
   await fresh.get("/api/users").expect(403);
 });
-test("Checkout explicitly consents to independently recurring annual license and user plan", async () => {
+test("Checkout consents to a one-time MXN activation and a recurring user plan", async () => {
   await pool.query("UPDATE users SET email_verified_at=now() WHERE id=$1", [
     b.user.id,
   ]);
@@ -849,18 +860,20 @@ test("Checkout explicitly consents to independently recurring annual license and
       checkoutBody.subscription_data.metadata.tenant_id,
       String(b.user.tenant_id),
     );
+    assert.equal(checkoutBody.subscription_data.trial_end, undefined);
     assert.ok(
-      Math.abs(
-        checkoutBody.subscription_data.trial_end -
-          Date.parse(
-            (await b.agent.get("/api/workspace")).body.workspace.trial_ends_at,
-          ) /
-            1000,
-      ) < 2,
+      checkoutBody.custom_text.submit.message.includes(
+        "Activación: 2999 MXN una sola vez",
+      ),
     );
-    assert.ok(
-      checkoutBody.custom_text.submit.message.includes("399 USD cada 12 meses"),
-    );
+    const activation = createdPrices.get(checkoutBody.line_items[0].price),
+      users = createdPrices.get(checkoutBody.line_items[1].price);
+    assert.equal(activation.currency, "mxn");
+    assert.equal(activation.unit_amount, 299900);
+    assert.equal(activation.recurring, undefined);
+    assert.equal(users.currency, "mxn");
+    assert.equal(users.unit_amount, 7125);
+    assert.equal(users.recurring.interval_count, 3);
   } finally {
     await pool.query(
       "UPDATE billing_plans SET monthly_cents=$1,discounts=$2 WHERE id=$3",
@@ -880,11 +893,156 @@ const signed = (event) => {
     .set("Stripe-Signature", signature)
     .send(payload);
 };
+test("MXN activation requires verified paid checkout, is idempotent and is never charged on resubscription", async () => {
+  const m = await register("MXN");
+  await pool.query("UPDATE users SET email_verified_at=now() WHERE id=$1", [
+    m.user.id,
+  ]);
+  await send(m, "/billing/checkout", {
+    plan_id: "team-10",
+    months: 12,
+    accepted_terms: true,
+  }).expect(200);
+  const invoiceUsers = createdPrices.get(checkoutBody.line_items[1].price),
+    activation = createdPrices.get(checkoutBody.line_items[0].price);
+  assert.equal(activation.recurring, undefined);
+  assert.equal(invoiceUsers.unit_amount, 2848100);
+  const stored = (
+    await pool.query(
+      "SELECT checkout_session_id,checkout_total_cents FROM tenants WHERE id=$1",
+      [m.user.tenant_id],
+    )
+  ).rows[0];
+  subscription = {
+    id: "sub_fixture_mxn",
+    customer: "cus_fixture_" + m.user.tenant_id,
+    metadata: {
+      tenant_id: String(m.user.tenant_id),
+      billing_model: "activation_mxn_v1",
+    },
+    status: "active",
+    livemode: false,
+    cancel_at_period_end: false,
+    items: {
+      data: [
+        {
+          id: "si_fixture_mxn",
+          quantity: 1,
+          price: invoiceUsers,
+          current_period_end: 1900000000,
+        },
+      ],
+    },
+  };
+  const subscriptionEvent = {
+    id: "evt_fixture_" + randomUUID(),
+    type: "customer.subscription.updated",
+    livemode: false,
+    data: { object: { id: subscription.id } },
+  };
+  await signed(subscriptionEvent).expect(200);
+  assert.equal((await m.agent.get("/api/billing")).body.activation_paid, false);
+  assert.equal((await m.agent.get("/api/billing")).body.seat_limit, 5);
+  const completed = {
+    id: "evt_fixture_" + randomUUID(),
+    type: "checkout.session.completed",
+    livemode: false,
+    data: {
+      object: {
+        id: stored.checkout_session_id,
+        mode: "subscription",
+        subscription: subscription.id,
+        customer: subscription.customer,
+        currency: "mxn",
+        amount_total: stored.checkout_total_cents,
+        payment_status: "unpaid",
+      },
+    },
+  };
+  await signed(completed).expect(200);
+  assert.equal((await m.agent.get("/api/billing")).body.activation_paid, false);
+  await signed({
+    ...completed,
+    id: "evt_fixture_" + randomUUID(),
+    data: {
+      object: {
+        ...completed.data.object,
+        payment_status: "paid",
+        amount_total: 1,
+      },
+    },
+  }).expect(200);
+  assert.equal((await m.agent.get("/api/billing")).body.activation_paid, false);
+  const paid = {
+    ...completed,
+    id: "evt_fixture_" + randomUUID(),
+    data: { object: { ...completed.data.object, payment_status: "paid" } },
+  };
+  await signed(paid).expect(200);
+  await signed(paid).expect(200);
+  const bill = (await m.agent.get("/api/billing")).body;
+  assert.equal(bill.activation_paid, true);
+  assert.equal(bill.status, "active");
+  assert.equal(bill.seat_limit, 10);
+  const recurring = (
+    await pool.query(
+      "SELECT monthly_recurring_cents FROM tenants WHERE id=$1",
+      [m.user.tenant_id],
+    )
+  ).rows[0].monthly_recurring_cents;
+  assert.equal(recurring, Math.round(2848100 / 12));
+  await send(m, "/billing/change-plan", {
+    plan_id: "team-15",
+    months: 12,
+    accepted_terms: true,
+  }).expect(200);
+  assert.equal(subscriptionUpdate.items.length, 1);
+  assert.equal(
+    createdPrices.get(subscriptionUpdate.items[0].price).metadata.kind,
+    "users",
+  );
+  subscription.status = "canceled";
+  await signed({
+    ...subscriptionEvent,
+    id: "evt_fixture_" + randomUUID(),
+  }).expect(200);
+  await send(m, "/billing/checkout", {
+    plan_id: "team-5",
+    months: 1,
+    accepted_terms: true,
+  }).expect(200);
+  assert.equal(checkoutBody.line_items.length, 1);
+  assert.equal(
+    createdPrices.get(checkoutBody.line_items[0].price).metadata.kind,
+    "users",
+  );
+  assert.ok(
+    checkoutBody.custom_text.submit.message.includes("Activación: 0 MXN"),
+  );
+  // Late events from the retired subscription cannot capture the new checkout.
+  await signed({
+    ...subscriptionEvent,
+    id: "evt_fixture_" + randomUUID(),
+  }).expect(200);
+  assert.equal(
+    (
+      await pool.query(
+        "SELECT stripe_subscription_id FROM tenants WHERE id=$1",
+        [m.user.tenant_id],
+      )
+    ).rows[0].stripe_subscription_id,
+    null,
+  );
+});
 test("Signed webhooks sync current Stripe state, reject forged/live events and handle duplicates", async () => {
+  await pool.query(
+    "UPDATE tenants SET billing_model='legacy_usd_v1',billing_currency='usd' WHERE id=$1",
+    [b.user.tenant_id],
+  );
   subscription = {
     id: "sub_fixture",
     livemode: false,
-    customer: "cus_fixture",
+    customer: "cus_fixture_" + b.user.tenant_id,
     metadata: { tenant_id: String(b.user.tenant_id) },
     status: "active",
     cancel_at_period_end: false,

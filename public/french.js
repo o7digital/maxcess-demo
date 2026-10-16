@@ -35,8 +35,6 @@ Monthly|Mensuel
 Quarterly|Trimestriel
 Every 6 months|Semestriel
 Annual|Annuel
-Platform license|Licence de la plateforme
-399 USD every 12 months, in addition to your user plan. Renews annually.|399 USD tous les 12 mois, en complément de votre offre utilisateurs. Renouvellement annuel.
 Your free trial|Votre essai gratuit
 Your workspace is read only. Your data is retained. Activate your subscription to continue.|Votre espace est en lecture seule. Vos données sont conservées. Activez votre abonnement pour continuer.
 I accept the displayed amounts, automatic renewals and cancellation terms.|J’accepte les montants affichés, les renouvellements automatiques et les conditions de résiliation.
@@ -77,6 +75,23 @@ Networks|Réseau
 Support|Support
 Cybersecurity|Cybersécurité
 Manage roles and collaborators|Gérer les rôles et collaborateurs
+One-time activation|Activation unique
+2,999 MXN once when you activate your subscription. Not charged again at renewal.|2 999 MXN une seule fois à l’activation de votre abonnement. Aucun nouveau frais d’activation lors des renouvellements.
+Activation costs 2,999 MXN once. Your user plan is billed in advance every 1, 3, 6 or 12 months. Annual payment covers 12 months for the price of 10. Confirming your subscription starts the paid period and ends the free trial. Amounts are shown before confirmation. No charge is made without consent.|L’activation coûte 2 999 MXN une seule fois. L’abonnement utilisateurs est payé d’avance pour 1, 3, 6 ou 12 mois. Le paiement annuel couvre 12 mois au prix de 10. La confirmation démarre la période payante et termine l’essai gratuit. Les montants sont affichés avant confirmation. Aucun prélèvement sans consentement.
+Only the user plan renews. Activation is charged once. Confirming starts your paid subscription and ends your free trial. Plan changes may result in prorated adjustments.|Seul l’abonnement utilisateurs est renouvelé. L’activation est facturée une seule fois. La confirmation démarre l’abonnement payant et termine l’essai gratuit. Un changement d’offre peut entraîner un ajustement au prorata.
+MXN subscriptions only; excludes activation fees|Abonnements en MXN uniquement ; frais d’activation exclus
+MXN. Changes apply to new subscriptions or explicit plan changes.|MXN. Les modifications s’appliquent aux nouveaux abonnements ou aux changements d’offre explicites.
+Monthly price in MXN|Prix mensuel en MXN
+Annual: 12 months for the price of 10|Annuel : 12 mois au prix de 10
+month equivalent|mois en équivalent
+12 months of access · 2 months free|12 mois d’accès · 2 mois offerts
+off for advance payment|de réduction pour paiement d’avance
+one-time activation|activation unique
+Activation already paid|Activation déjà payée
+Initial total|Total initial
+Configure services, forms and stages from your workspace.|Configurez vos services, formulaires et étapes depuis votre espace.
+Requests, customers and your team in one place.|Vos demandes, clients et équipes dans un seul espace.
+Import CSV or Excel and adopt the system at your pace.|Importez vos fichiers CSV ou Excel et adoptez le système à votre rythme.
 Overview|Vue d’ensemble
 Requests|Demandes
 My queue|Ma file
@@ -263,7 +278,6 @@ Terms of service|Conditions d’utilisation
 Your workspace and trial|Votre espace et votre essai
 Your free trial lasts 7 days from registration. No card required. At expiry, your workspace becomes read only and your data is retained.|Votre essai gratuit dure 7 jours à compter de l’inscription, sans carte bancaire. À son expiration, votre espace passe en lecture seule et vos données sont conservées.
 Subscriptions and renewals|Abonnements et renouvellements
-The platform license costs 399 USD and renews every 12 months. Your user plan is billed in advance every 1, 3, 6 or 12 months, as selected. Amounts and discounts appear before confirmation. No charge is made without consent.|La licence de la plateforme coûte 399 USD et se renouvelle tous les 12 mois. Votre offre utilisateurs est facturée à l’avance tous les 1, 3, 6 ou 12 mois selon votre choix. Les montants et réductions sont affichés avant confirmation. Aucun prélèvement sans consentement.
 You can cancel before renewal from Subscription. Cancellation stops future renewals and does not immediately erase your data. Plan changes may result in prorated adjustments that require confirmation.|Vous pouvez résilier avant le renouvellement depuis Abonnement. La résiliation arrête les renouvellements futurs sans effacer immédiatement vos données. Un changement d’offre peut entraîner un ajustement au prorata soumis à confirmation.
 Responsible use and AI assistance|Utilisation responsable et assistance IA
 Protect your credentials and manage your team permissions. Olivia suggestions require human review, do not replace your judgment and are never published automatically.|Protégez vos identifiants et gérez les droits de votre équipe. Les suggestions d’Olivia exigent une validation humaine, ne remplacent pas votre jugement et ne sont jamais publiées automatiquement.
@@ -286,7 +300,6 @@ GROW WITH YOUR TEAM|GRANDISSEZ AVEC VOTRE ÉQUIPE
 More than 50 users: a plan tailored to you.|Plus de 50 utilisateurs : une offre adaptée à vos besoins.
 users|utilisateurs
 Coming soon|Prochainement
-per month + annual license|par mois + licence annuelle
 Pricing pending publication|Tarifs en attente de publication
 AI requests / month|requêtes IA / mois
 Company logo|Logo de l’organisation
@@ -379,13 +392,10 @@ First combined amount|Premier montant total
 Change plan|Changer d’offre
 Change requested|Changement demandé
 Contracted monthly recurring revenue|Revenu mensuel récurrent contractuel
-Includes annual licenses normalized per month|Comprend les licences annuelles réparties par mois
 Payments confirmed by Stripe|Paiements confirmés par Stripe
 Setup required|Configuration nécessaire
 Subscriber companies|Organisations abonnées
 Pricing catalog|Catalogue tarifaire
-USD. Changes apply to new subscriptions or explicit plan changes.|USD. Les modifications s’appliquent aux nouveaux abonnements ou aux changements d’offre explicites.
-Monthly price in USD|Prix mensuel en USD
 Discount|Réduction
 months|mois
 month|mois

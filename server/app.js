@@ -862,7 +862,17 @@ export function createApp({ getStripe } = {}) {
   });
   app.post("/api/reports", async (req, res) => {
     const snapshot = await reportData(req.user, req.body.filters || {});
-    const narrative = req.body.ai === true ? await hfNarrative(snapshot) : null;
+    let narrative = null;
+    if (req.body.ai === true) {
+      if (
+        (process.env.HF_TOKEN || process.env.HUGGING_FACE_TOKEN) &&
+        process.env.HF_REPORT_MODEL
+      )
+        await consumeAI(req);
+      const language = req.user.language || settingsOf(req.tenant).language;
+      narrative = await hfNarrative(snapshot, language);
+      snapshot.language = language;
+    }
     const r = (
       await pool.query(
         "INSERT INTO reports(id,user_id,filters,snapshot,narrative,provider,tenant_id) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *",
