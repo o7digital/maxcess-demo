@@ -1,3 +1,4 @@
+import { ticketDepartment } from "./roles.js";
 import { parse } from "csv-parse/sync";
 import ExcelJS from "exceljs";
 import unzipper from "unzipper";
@@ -185,7 +186,7 @@ export function installImportRoutes(app) {
             const {
               rows: [ticket],
             } = await db.query(
-              "INSERT INTO tickets(tenant_id,title,company_id,site,category,description,priority,requested_priority,created_by,due_at,custom_fields,workflow_stage,agent_id) VALUES($1,$2,$3,$4,$5,$6,$7,$7,$8,now()+($9*interval '1 hour'),$10,$11,$12) RETURNING id",
+              "INSERT INTO tickets(tenant_id,title,company_id,site,category,description,priority,requested_priority,created_by,due_at,custom_fields,workflow_stage,agent_id,department_id) VALUES($1,$2,$3,$4,$5,$6,$7,$7,$8,now()+($9*interval '1 hour'),$10,$11,$12,$13) RETURNING id",
               [
                 req.tenant.id,
                 str(v.title, "Asunto"),
@@ -199,6 +200,7 @@ export function installImportRoutes(app) {
                 custom,
                 settings.workflow.find((w) => w.state === "Abierto").name,
                 rule?.agent_id || null,
+                await ticketDepartment(db, req.user, null, rule?.agent_id),
               ],
             );
             await db.query(

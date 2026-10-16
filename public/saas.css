@@ -813,3 +813,19 @@
     justify-self: start;
   }
 }
+
+#mx-demo .staff-role-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin: 12px 0;
+}
+#mx-demo .staff-role-row input {
+  margin: 0;
+}
+@media (max-width: 600px) {
+  #mx-demo .staff-role-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

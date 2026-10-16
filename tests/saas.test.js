@@ -75,6 +75,8 @@ after(async () => {
     await pool.query("DELETE FROM users WHERE tenant_id=$1", [id]);
     await pool.query("DELETE FROM teams WHERE tenant_id=$1", [id]);
     await pool.query("DELETE FROM companies WHERE tenant_id=$1", [id]);
+    await pool.query("DELETE FROM workspace_roles WHERE tenant_id=$1", [id]);
+    await pool.query("DELETE FROM departments WHERE tenant_id=$1", [id]);
     await pool.query("DELETE FROM tenants WHERE id=$1", [id]);
   }
   await pool.query("DELETE FROM billing_events WHERE id LIKE 'evt_fixture_%'");

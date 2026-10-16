@@ -1,3 +1,4 @@
+import { resolveStaff, seedRoles } from "./roles.js";
 import { randomBytes, createHash, randomUUID } from "node:crypto";
 import { pool, transaction } from "./db.js";
 import { hashPassword, exposeUser } from "./identity.js";
@@ -358,6 +359,7 @@ export function installPublicWorkspaceRoutes(app, limit) {
         "INSERT INTO tenants(name,settings) VALUES($1,$2) RETURNING *",
         [business, { ...defaults, language: b.language }],
       );
+      await seedRoles(db, tenant.id);
       const {
         rows: [user],
       } = await db.query(
@@ -430,8 +432,19 @@ export function installPublicWorkspaceRoutes(app, limit) {
       const {
         rows: [u],
       } = await db.query(
-        "INSERT INTO users(tenant_id,email,name,role,company_id,team_id,password_hash) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *",
-        [i.tenant_id, i.email, i.name, i.role, i.company_id, i.team_id, hash],
+        "INSERT INTO users(tenant_id,email,name,role,company_id,team_id,password_hash,role_id,department_id,specialty) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *",
+        [
+          i.tenant_id,
+          i.email,
+          i.name,
+          i.role,
+          i.company_id,
+          i.team_id,
+          hash,
+          i.role_id,
+          i.department_id,
+          i.specialty,
+        ],
       );
       await db.query("UPDATE invitations SET accepted_at=now() WHERE id=$1", [
         i.id,
@@ -456,8 +469,6 @@ export function installWorkspaceRoutes(app) {
       b = req.body;
     if (target === req.user.id)
       throw fail(403, "No puedes cambiar tus propios permisos");
-    if (!["admin", "manager", "agent", "client"].includes(b.role))
-      throw fail(400, "Rol no válido");
     await transaction(async (db) => {
       const {
         rows: [user],
@@ -468,9 +479,12 @@ export function installWorkspaceRoutes(app) {
       if (!user) throw fail(404, "Usuario no disponible");
       if (user.role === "platform_admin" || user.is_platform_owner)
         throw fail(403, "Cuenta protegida");
-      const company = b.role === "client" ? Number(b.company_id) : null;
+      const staff = await resolveStaff(db, req.tenant.id, b, user);
+      if (staff.role === "platform_admin")
+        throw fail(403, "Rol reservado a O7 Digital Group");
+      const company = staff.role === "client" ? Number(b.company_id) : null;
       if (
-        b.role === "client" &&
+        staff.role === "client" &&
         (!Number.isSafeInteger(company) ||
           !(
             await db.query(
@@ -493,12 +507,21 @@ export function installWorkspaceRoutes(app) {
       )
         throw fail(400, "Equipo no válido");
       await db.query(
-        "UPDATE users SET role=$1,company_id=$2,team_id=$5 WHERE tenant_id=$3 AND id=$4",
-        [b.role, company, req.tenant.id, target, team],
+        "UPDATE users SET role=$1,company_id=$2,team_id=$5,role_id=$6,department_id=$7,specialty=$8 WHERE tenant_id=$3 AND id=$4",
+        [
+          staff.role,
+          company,
+          req.tenant.id,
+          target,
+          team,
+          staff.role_id,
+          staff.department_id,
+          staff.specialty,
+        ],
       );
       await audit(db, req, "user.permissions_updated", {
         user_id: target,
-        role: b.role,
+        role: staff.role,
         company_id: company,
       });
     });
@@ -560,6 +583,17 @@ export function installWorkspaceRoutes(app) {
         ).rowCount !== new Set(agents).size
       )
         throw fail(400, "Regla: agente no autorizado");
+      for (const department of settings.departments)
+        await db.query(
+          "INSERT INTO departments(tenant_id,name) VALUES($1,$2) ON CONFLICT DO NOTHING",
+          [req.tenant.id, department],
+        );
+      settings.departments = (
+        await db.query(
+          "SELECT name FROM departments WHERE tenant_id=$1 ORDER BY name",
+          [req.tenant.id],
+        )
+      ).rows.map((d) => d.name);
       await db.query(
         "UPDATE tenants SET name=$1,settings=$2,onboarding_completed=$3,configuration_version=configuration_version+1 WHERE id=$4",
         [
@@ -650,13 +684,15 @@ export function installWorkspaceRoutes(app) {
   app.post("/api/invitations", async (req, res) => {
     owner(req);
     const b = req.body;
-    if (!["admin", "manager", "agent", "client"].includes(b.role))
-      throw fail(400, "Rol no válido");
+
     const token = randomBytes(32).toString("hex"),
       origin = publicOrigin();
     await transaction(async (db) => {
       await seats(db, req.tenant);
-      const company = b.role === "client" ? Number(b.company_id) : null,
+      const staff = await resolveStaff(db, req.tenant.id, b);
+      if (staff.role === "platform_admin")
+        throw fail(400, "Rol reservado a O7 Digital Group");
+      const company = staff.role === "client" ? Number(b.company_id) : null,
         team = b.team_id ? Number(b.team_id) : null;
       if (
         company &&
@@ -668,7 +704,7 @@ export function installWorkspaceRoutes(app) {
         ).rowCount
       )
         throw fail(400, "Empresa no válida");
-      if (b.role === "client" && !company)
+      if (staff.role === "client" && !company)
         throw fail(400, "Selecciona una empresa cliente");
       if (
         team &&
@@ -688,16 +724,19 @@ export function installWorkspaceRoutes(app) {
         throw fail(409, "El correo ya tiene una cuenta");
       const invitationId = randomUUID();
       await db.query(
-        "INSERT INTO invitations(id,tenant_id,email,name,role,company_id,team_id,token_hash) VALUES($1,$2,$3,$4,$5,$6,$7,$8)",
+        "INSERT INTO invitations(id,tenant_id,email,name,role,company_id,team_id,token_hash,role_id,department_id,specialty) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",
         [
           invitationId,
           req.tenant.id,
           mail,
           str(b.name, "Nombre", 100),
-          b.role,
+          staff.role,
           company,
           team,
           tokenHash(token),
+          staff.role_id,
+          staff.department_id,
+          staff.specialty,
         ],
       );
       await queueEmail(

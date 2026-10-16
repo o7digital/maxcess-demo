@@ -7,6 +7,7 @@ const app = document.querySelector("#app"),
   overlay = document.querySelector("#mx-overlay");
 let overviewMetrics,
   workspace,
+  staffCatalog = { roles: [], departments: [] },
   config,
   csrf,
   user,
@@ -154,13 +155,18 @@ function welcome() {
 }
 
 async function load() {
-  const [t, c, u, w, metrics] = await Promise.all([
+  user = (await api("/me")).user;
+  const [t, c, u, w, metrics, staff] = await Promise.all([
     api("/tickets"),
     api("/companies"),
     isGlobal() ? api("/users") : Promise.resolve({ users: [] }),
     api("/workspace"),
     api("/analytics"),
+    user.role !== "client"
+      ? api("/staff/catalog")
+      : Promise.resolve({ roles: [], departments: [] }),
   ]);
+  staffCatalog = staff;
   tickets = t.tickets;
   ticketTotal = t.total;
   nextCursor = t.next_cursor;
@@ -184,7 +190,7 @@ function shell() {
     clientShell();
     return;
   }
-  app.innerHTML = `<div class="shell"><aside><div class="brand">${workspace?.settings.logo ? `<img class="workspace-logo" src="${esc(workspace.settings.logo)}" alt="">` : ""}${esc(config.brand)}<b>↗</b></div><div class="brand-sub">${esc(config.subtitle)}</div><div class="workspace"><span class="mini-logo">S</span><div><strong>Centro de servicio</strong>${roleLabel(user.role)}</div></div><div class="side-label">MI ESPACIO</div><nav aria-label="Navegación principal">${[
+  app.innerHTML = `<div class="shell"><aside><div class="brand">${workspace?.settings.logo ? `<img class="workspace-logo" src="${esc(workspace.settings.logo)}" alt="">` : ""}${esc(config.brand)}<b>↗</b></div><div class="brand-sub">${esc(config.subtitle)}</div><div class="workspace"><span class="mini-logo">S</span><div><strong>Centro de servicio</strong>${esc(user.role_name || roleLabel(user.role))}</div></div><div class="side-label">MI ESPACIO</div><nav aria-label="Navegación principal">${[
     ["overview", "◫", "Resumen"],
     ["tickets", "▤", user.role === "agent" ? "Mi fila" : "Solicitudes"],
     ...(isGlobal()
@@ -217,7 +223,7 @@ function shell() {
       .map((s) => s[0])
       .slice(0, 2)
       .join(""),
-  )}</span><div>${esc(user.name)}<small>${roleLabel(user.role)}</small></div></div></div></aside><section><header class="top"><div class="breadcrumb">Centro de servicio / <b>${roleLabel(user.role)}</b></div><div class="top-right">${workspace?.is_demo ? '<span class="demo-tag">ESPACIO ILUSTRATIVO · DATOS FICTICIOS</span>' : `<span class="workspace-label">${esc(workspace?.name)}</span>`}${saas.languagePicker()}<button class="btn" data-action="refresh">Actualizar</button><button class="btn" data-action="logout">Cerrar sesión</button></div></header><main class="body" id="content"></main></section></div>`;
+  )}</span><div>${esc(user.name)}<small>${esc(user.role_name || roleLabel(user.role))}</small></div></div></div></aside><section><header class="top"><div class="breadcrumb">Centro de servicio / <b>${esc(user.role_name || roleLabel(user.role))}</b></div><div class="top-right">${workspace?.is_demo ? '<span class="demo-tag">ESPACIO ILUSTRATIVO · DATOS FICTICIOS</span>' : `<span class="workspace-label">${esc(workspace?.name)}</span>`}${saas.languagePicker()}<button class="btn" data-action="refresh">Actualizar</button><button class="btn" data-action="logout">Cerrar sesión</button></div></header><main class="body" id="content"></main></section></div>`;
   if (workspace && workspace.access !== "full")
     document
       .querySelector("#content")
@@ -427,7 +433,7 @@ function closeDialog() {
 }
 function newTicket(category) {
   showDialog(
-    `<div class="row"><div><div class="eyebrow">PORTAL DE ATENCIÓN</div><h2 id="dialog-title">Nueva solicitud</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">Describe lo que ocurre. El equipo validará la prioridad y te dará seguimiento.</p><form id="new-ticket"><label for="title">Asunto</label><input name="title" id="title" maxlength="160" required><div class="field-row"><div><label for="company">Cliente</label><select name="company_id" id="company" required>${companies.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div><div><label for="branch">Filial</label><select id="branch" name="branch_id"></select><label for="site">Sede</label><input name="site" id="site" maxlength="160" value="${esc(companies[0]?.site)}" required></div></div><div class="field-row"><div><label for="category">Categoría</label><select name="category" id="category">${option(categories, category)}</select></div><div><label for="new-priority">Prioridad deseada</label><select name="priority" id="new-priority">${option(priorities, "Media")}</select></div></div><label for="description">Descripción</label><textarea name="description" id="description" maxlength="4000" rows="5" required></textarea><p class="subtitle">No incluyas contraseñas ni datos bancarios. Las piezas adjuntas no están habilitadas.</p>${saas.customFields(workspace.settings)}<button type="submit" class="btn primary">Registrar solicitud ↗</button></form>`,
+    `<div class="row"><div><div class="eyebrow">PORTAL DE ATENCIÓN</div><h2 id="dialog-title">Nueva solicitud</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">Describe lo que ocurre. El equipo validará la prioridad y te dará seguimiento.</p><form id="new-ticket"><label for="title">Asunto</label><input name="title" id="title" maxlength="160" required><div class="field-row"><div><label for="company">Cliente</label><select name="company_id" id="company" required>${companies.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div><div><label for="branch">Filial</label><select id="branch" name="branch_id"></select><label for="site">Sede</label><input name="site" id="site" maxlength="160" value="${esc(companies[0]?.site)}" required></div></div>${user.role !== "client" ? `<label for="ticket-department">${saas.tr("Departamento", "Department")}</label><select id="ticket-department" name="department_id"><option value="">—</option>${staffCatalog.departments.map((d) => `<option value="${d.id}" ${d.id === user.department_id ? "selected" : ""}>${esc(d.name)}</option>`).join("")}</select>` : ""}<div class="field-row"><div><label for="category">Categoría</label><select name="category" id="category">${option(categories, category)}</select></div><div><label for="new-priority">Prioridad deseada</label><select name="priority" id="new-priority">${option(priorities, "Media")}</select></div></div><label for="description">Descripción</label><textarea name="description" id="description" maxlength="4000" rows="5" required></textarea><p class="subtitle">No incluyas contraseñas ni datos bancarios. Las piezas adjuntas no están habilitadas.</p>${saas.customFields(workspace.settings)}<button type="submit" class="btn primary">Registrar solicitud ↗</button></form>`,
   );
   const updateBranch = () => {
     const c = companies.find((c) => c.id === Number($("#company").value));
@@ -479,7 +485,7 @@ async function openTicket(ticketId, focusOlivia = false) {
   const isInternal = user.role !== "client",
     active = !["Resuelto", "Cerrado"].includes(t.status);
   showDialog(
-    `<div class="row"><div><div class="eyebrow">SH-${t.id} · ${esc(company(t))}</div><h2 id="dialog-title">${esc(t.title)}</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">${esc(t.site)} · ${esc(t.category)} · Creada ${date(t.created_at, branch?.timezone)}</p>${branch ? `<p class="subtitle branch-context">${esc(branch.name)} · ${esc(saas.countryName(branch.country_code))} · ${esc(branch.city)} · ${esc(branch.timezone)} · ${esc(branch.language.toUpperCase())}</p>` : ""}<div class="row"><div>${badge(t.status)} ${badge(t.priority)}</div><span class="subtitle">SLA: ${esc(sla(t))} · ${date(t.due_at, branch?.timezone)}</span></div><div class="dialog-grid"><div><div class="panel"><h3>Descripción</h3><div class="text-block">${esc(t.description)}</div>${Object.entries(
+    `<div class="row"><div><div class="eyebrow">SH-${t.id} · ${esc(company(t))}</div><h2 id="dialog-title">${esc(t.title)}</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">${esc(t.site)} · ${esc(t.category)} · Creada ${date(t.created_at, branch?.timezone)}</p>${isInternal && t.department_id ? `<p class="subtitle department-context">${saas.tr("Departamento", "Department")} · ${esc(staffCatalog.departments.find((d) => d.id === t.department_id)?.name || "—")}</p>` : ""}${branch ? `<p class="subtitle branch-context">${esc(branch.name)} · ${esc(saas.countryName(branch.country_code))} · ${esc(branch.city)} · ${esc(branch.timezone)} · ${esc(branch.language.toUpperCase())}</p>` : ""}<div class="row"><div>${badge(t.status)} ${badge(t.priority)}</div><span class="subtitle">SLA: ${esc(sla(t))} · ${date(t.due_at, branch?.timezone)}</span></div><div class="dialog-grid"><div><div class="panel"><h3>Descripción</h3><div class="text-block">${esc(t.description)}</div>${Object.entries(
       t.custom_fields || {},
     )
       .map(
@@ -879,55 +885,7 @@ async function saveReport(ai) {
   }
 }
 function renderUsers(el) {
-  const allowed =
-    user.role === "platform_admin"
-      ? ["platform_admin", "admin", "manager", "agent", "client"]
-      : user.role === "admin"
-        ? ["manager", "agent", "client"]
-        : ["agent", "client"];
-  el.innerHTML = `<div class="row page-heading"><div><div class="eyebrow">PERSONAS Y PERMISOS</div><h1>Administración</h1><p class="subtitle">Admins y gerentes: todas las empresas. Técnicos: solicitudes asignadas. Clientes: su empresa.</p></div><button class="btn primary" id="create-user">+ Nuevo usuario</button></div><div class="panel"><div class="panel-head"><h2>Usuarios de la plataforma</h2><span class="subtitle">${users.length} cuentas</span></div><div class="table-wrap"><table><thead><tr><th>USUARIO</th><th>ROL</th><th>ALCANCE</th><th>ESTADO</th><th>ACCESO</th></tr></thead><tbody>${users.map((u) => `<tr><td><b>${esc(u.name)}</b><small>${esc(u.email)}</small></td><td>${roleLabel(u.role)}</td><td>${u.role === "client" ? esc(companies.find((c) => c.id === u.company_id)?.name) : u.role === "agent" ? "Solicitudes asignadas" : "Todos los clientes"}</td><td>${badge(u.active ? "Activo" : "Desactivado")}</td><td>${u.id !== user.id && allowed.includes(u.role) ? `<button class="btn" data-user-access="${u.id}" data-enabled="${u.active}">${u.active ? "Desactivar" : "Activar"}</button>` : "—"}</td></tr>`).join("")}</tbody></table></div></div>`;
-  el.querySelectorAll("[data-user-access]").forEach(
-    (b) =>
-      (b.onclick = async () => {
-        b.disabled = true;
-        try {
-          await api("/users/" + b.dataset.userAccess + "/access", "POST", {
-            active: b.dataset.enabled !== "true",
-          });
-          await load();
-          renderUsers(el);
-          notify("Acceso actualizado");
-        } catch (err) {
-          notify(err.message);
-          b.disabled = false;
-        }
-      }),
-  );
-  $("#create-user").onclick = () => {
-    showDialog(
-      `<div class="row"><div><div class="eyebrow">ADMINISTRACIÓN</div><h2 id="dialog-title">Nuevo usuario</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><form id="user-form"><label for="user-name">Nombre completo</label><input id="user-name" name="name" maxlength="100" required><label for="user-email">Correo electrónico</label><input id="user-email" name="email" type="email" required><label for="user-role">Rol</label><select id="user-role" name="role">${allowed.map((r) => `<option value="${r}">${roleLabel(r)}</option>`).join("")}</select><div id="user-company-field" hidden><label for="user-company">Cliente</label><select id="user-company" name="company_id">${companies.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div><label for="user-password">Contraseña inicial (12 caracteres mínimo)</label><input id="user-password" name="password" type="password" minlength="12" maxlength="72" autocomplete="new-password" required><p class="subtitle">Comparte el acceso por un canal privado. No se envía ningún correo automáticamente.</p><button class="btn primary">Crear cuenta</button></form>`,
-    );
-    $("#user-role").onchange = () =>
-      ($("#user-company-field").hidden = $("#user-role").value !== "client");
-    $("#user-form").onsubmit = async (evt) => {
-      evt.preventDefault();
-      evt.submitter.disabled = true;
-      try {
-        await api(
-          "/users",
-          "POST",
-          Object.fromEntries(new FormData(evt.target)),
-        );
-        closeDialog();
-        await load();
-        renderUsers(el);
-        notify("Usuario creado");
-      } catch (err) {
-        notify(err.message);
-        evt.submitter.disabled = false;
-      }
-    };
-  };
+  saas.staff(el).catch((error) => notify(error.message));
 }
 function clientWelcome() {
   app.classList.add("client-experience");

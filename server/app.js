@@ -1,3 +1,11 @@
+import {
+  installRoleRoutes,
+  resolveStaff,
+  departmentManager,
+  ticketDepartment,
+  accessScope,
+  conversationScope,
+} from "./roles.js";
 import { countries } from "../public/international.js";
 import { installInternationalRoutes } from "./international.js";
 import express from "express";
@@ -207,7 +215,10 @@ export function createApp({ getStripe } = {}) {
     const email = text(req.body.email, "Correo", 200).toLowerCase(),
       password = text(req.body.password, "Contraseña", 200);
     const user = (
-      await pool.query("SELECT * FROM users WHERE lower(email)=$1", [email])
+      await pool.query(
+        "SELECT u.*,(SELECT name FROM workspace_roles r WHERE r.tenant_id=u.tenant_id AND r.id=u.role_id) role_name FROM users u WHERE lower(email)=$1",
+        [email],
+      )
     ).rows[0];
     // Fixed bcrypt cost also for unknown accounts.
     const valid = await verifyPassword(
@@ -240,7 +251,7 @@ export function createApp({ getStripe } = {}) {
       return next(fail(401, "Inicia sesión para continuar"));
     const user = (
       await pool.query(
-        "SELECT id,email,name,role,company_id,active,tenant_id,is_platform_owner,team_id,email_verified_at,language FROM users WHERE id=$1",
+        "SELECT u.id,u.email,u.name,u.role,u.company_id,u.active,u.tenant_id,u.is_platform_owner,u.team_id,u.email_verified_at,u.language,u.role_id,u.department_id,u.specialty,(SELECT name FROM workspace_roles r WHERE r.tenant_id=u.tenant_id AND r.id=u.role_id) role_name FROM users u WHERE u.id=$1",
         [req.session.userId],
       )
     ).rows[0];
@@ -286,6 +297,7 @@ export function createApp({ getStripe } = {}) {
   });
   installBillingRoutes(app, getStripe);
   installWorkspaceRoutes(app);
+  installRoleRoutes(app);
   installInternationalRoutes(app);
   installLogoRoutes(app);
   installAccountPrivate(app);
@@ -344,8 +356,11 @@ export function createApp({ getStripe } = {}) {
     res.json({
       users: (
         await pool.query(
-          "SELECT id,name,email,role,company_id,active,team_id FROM users WHERE tenant_id=$1 ORDER BY role,name",
-          [req.user.tenant_id],
+          "SELECT u.id,u.name,u.email,u.role,u.company_id,u.active,u.team_id,u.role_id,u.department_id,u.specialty,(SELECT name FROM workspace_roles r WHERE r.tenant_id=u.tenant_id AND r.id=u.role_id) role_name FROM users u WHERE u.tenant_id=$1 AND ($2::int IS NULL OR u.department_id=$2) ORDER BY u.role,u.name",
+          [
+            req.user.tenant_id,
+            departmentManager(req.user) ? req.user.department_id : null,
+          ],
         )
       ).rows,
     });
@@ -464,10 +479,16 @@ export function createApp({ getStripe } = {}) {
     const settings = settingsOf(req.tenant);
     const custom = customFields(b.custom_fields, settings);
     const rule = settings.rules.find((r) => r.category === b.category);
+    const department = await ticketDepartment(
+      pool,
+      req.user,
+      b.department_id,
+      rule?.agent_id,
+    );
     const t = await transaction(async (db) => {
       const t = (
         await db.query(
-          "INSERT INTO tickets(title,company_id,site,category,description,priority,requested_priority,created_by,due_at,tenant_id,custom_fields,agent_id,workflow_stage,branch_id) VALUES($1,$2,$3,$4,$5,$6,$6,$7,now()+($8 * interval '1 hour'),$9,$10,$11,$12,$13) RETURNING *",
+          "INSERT INTO tickets(title,company_id,site,category,description,priority,requested_priority,created_by,due_at,tenant_id,custom_fields,agent_id,workflow_stage,branch_id,department_id) VALUES($1,$2,$3,$4,$5,$6,$6,$7,now()+($8 * interval '1 hour'),$9,$10,$11,$12,$13,$14) RETURNING *",
           [
             text(b.title, "Asunto", 160),
             company,
@@ -482,6 +503,7 @@ export function createApp({ getStripe } = {}) {
             rule?.agent_id || null,
             settings.workflow.find((w) => w.state === "Abierto").name,
             branch?.id || null,
+            department,
           ],
         )
       ).rows[0];
@@ -526,16 +548,22 @@ export function createApp({ getStripe } = {}) {
               throw fail(403, "Solo administración o gerencia puede asignar");
             const agent = (
               await db.query(
-                "SELECT id,name FROM users WHERE id=$1 AND role='agent' AND active=true AND tenant_id=$2",
+                "SELECT id,name,department_id FROM users WHERE id=$1 AND role='agent' AND active=true AND tenant_id=$2",
                 [id(b.agent_id), req.user.tenant_id],
               )
             ).rows[0];
             if (!agent) throw fail(400, "Agente no válido");
+            const department = await ticketDepartment(
+              db,
+              req.user,
+              t.department_id,
+              agent.id,
+            );
             if (["Resuelto", "Cerrado"].includes(t.status))
               throw fail(409, "Reabre la solicitud antes de asignar");
             await db.query(
-              "UPDATE tickets SET agent_id=$1,status='En curso' WHERE id=$2",
-              [agent.id, t.id],
+              "UPDATE tickets SET agent_id=$1,status='En curso',department_id=$3 WHERE id=$2",
+              [agent.id, t.id, department],
             );
             await event(db, t, req.user, "history", `Asignado a ${agent.name}`);
             break;
@@ -681,14 +709,17 @@ export function createApp({ getStripe } = {}) {
   app.post("/api/users", async (req, res) => {
     if (!globalAccess(req.user))
       throw fail(403, "Acceso reservado a administración");
-    const b = req.body,
-      role = choice(b.role, [
-        "platform_admin",
-        "admin",
-        "manager",
-        "agent",
-        "client",
-      ]);
+    const b = req.body;
+    const staff = await resolveStaff(pool, req.user.tenant_id, b);
+    const role = staff.role;
+    if (departmentManager(req.user)) {
+      if (
+        staff.department_id !== null &&
+        staff.department_id !== req.user.department_id
+      )
+        throw fail(403, "Departamento no autorizado");
+      staff.department_id = req.user.department_id;
+    }
     const allowed =
       req.user.role === "platform_admin"
         ? ["platform_admin", "admin", "manager", "agent", "client"]
@@ -727,7 +758,7 @@ export function createApp({ getStripe } = {}) {
         throw fail(409, "Este correo ya existe");
       const u = (
         await db.query(
-          "INSERT INTO users(email,name,role,company_id,password_hash,tenant_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING id,email,name,role,company_id,active",
+          "INSERT INTO users(email,name,role,company_id,password_hash,tenant_id,role_id,department_id,specialty) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id,email,name,role,company_id,active,role_id,department_id,specialty",
           [
             email,
             text(b.name, "Nombre", 100),
@@ -735,6 +766,9 @@ export function createApp({ getStripe } = {}) {
             company,
             await hashPassword(password),
             req.user.tenant_id,
+            staff.role_id,
+            staff.department_id,
+            staff.specialty,
           ],
         )
       ).rows[0];
@@ -761,6 +795,11 @@ export function createApp({ getStripe } = {}) {
         )
       ).rows[0];
       if (!target) throw fail(404, "Usuario no disponible");
+      if (
+        departmentManager(req.user) &&
+        target.department_id !== req.user.department_id
+      )
+        throw fail(403, "Usuario fuera de tu departamento");
       const allowed =
         req.user.role === "platform_admin"
           ? ["admin", "manager", "agent", "client"]
@@ -806,7 +845,9 @@ export function createApp({ getStripe } = {}) {
         ? "empresa"
         : req.user.role === "agent"
           ? "asignados"
-          : "global";
+          : departmentManager(req.user)
+            ? accessScope(req.user)
+            : "global";
     const list = (
       await pool.query(
         "SELECT * FROM reports WHERE user_id=$1 AND snapshot->>'scope'=$2 ORDER BY created_at DESC LIMIT 30",
@@ -841,8 +882,13 @@ export function createApp({ getStripe } = {}) {
   app.post("/api/chat/conversations", async (req, res) => {
     const c = (
       await pool.query(
-        "INSERT INTO ai_conversations(id,user_id,tenant_id) VALUES($1,$2,$3) RETURNING id",
-        [randomUUID(), req.user.id, req.user.tenant_id],
+        "INSERT INTO ai_conversations(id,user_id,tenant_id,access_scope) VALUES($1,$2,$3,$4) RETURNING id",
+        [
+          randomUUID(),
+          req.user.id,
+          req.user.tenant_id,
+          conversationScope(req.user),
+        ],
       )
     ).rows[0];
     res.status(201).json({ conversation: c });
@@ -851,8 +897,8 @@ export function createApp({ getStripe } = {}) {
     res.json({
       conversations: (
         await pool.query(
-          "SELECT id,created_at FROM ai_conversations WHERE user_id=$1 ORDER BY created_at DESC LIMIT 20",
-          [req.user.id],
+          "SELECT id,created_at FROM ai_conversations WHERE user_id=$1 AND access_scope=$2 ORDER BY created_at DESC LIMIT 20",
+          [req.user.id, conversationScope(req.user)],
         )
       ).rows,
     }),
@@ -860,8 +906,8 @@ export function createApp({ getStripe } = {}) {
   app.get("/api/chat/conversations/:id", async (req, res) => {
     const c = (
       await pool.query(
-        "SELECT id FROM ai_conversations WHERE id=$1 AND user_id=$2",
-        [req.params.id, req.user.id],
+        "SELECT id FROM ai_conversations WHERE id=$1 AND user_id=$2 AND access_scope=$3",
+        [req.params.id, req.user.id, conversationScope(req.user)],
       )
     ).rows[0];
     if (!c) throw fail(404, "Conversación no disponible");
@@ -892,8 +938,8 @@ export function createApp({ getStripe } = {}) {
       const result = await transaction(async (db) => {
         const c = (
           await db.query(
-            "SELECT * FROM ai_conversations WHERE id=$1 AND user_id=$2 FOR UPDATE",
-            [req.params.id, req.user.id],
+            "SELECT * FROM ai_conversations WHERE id=$1 AND user_id=$2 AND access_scope=$3 FOR UPDATE",
+            [req.params.id, req.user.id, conversationScope(req.user)],
           )
         ).rows[0];
         if (!c) throw fail(404, "Conversación no disponible");

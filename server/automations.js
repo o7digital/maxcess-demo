@@ -23,18 +23,18 @@ export async function runAutomations() {
           const {
             rows: [agent],
           } = await db.query(
-            "SELECT id,name,email FROM users WHERE tenant_id=$1 AND id=$2 AND role='agent' AND active",
+            "SELECT id,name,email,department_id FROM users WHERE tenant_id=$1 AND id=$2 AND role='agent' AND active",
             [tenant.id, rule.agent_id],
           );
           if (!agent) continue;
           const { rows: tickets } = await db.query(
-            "SELECT id,title FROM tickets WHERE tenant_id=$1 AND priority=$2 AND status IN ('Abierto','En curso') AND escalated_at IS NULL AND due_at+($3*interval '1 hour')<=now() ORDER BY due_at LIMIT 50 FOR UPDATE SKIP LOCKED",
-            [tenant.id, rule.priority, rule.after_hours],
+            "SELECT id,title FROM tickets WHERE tenant_id=$1 AND priority=$2 AND status IN ('Abierto','En curso') AND escalated_at IS NULL AND (department_id IS NULL OR $4::int IS NULL OR department_id=$4) AND due_at+($3*interval '1 hour')<=now() ORDER BY due_at LIMIT 50 FOR UPDATE SKIP LOCKED",
+            [tenant.id, rule.priority, rule.after_hours, agent.department_id],
           );
           for (const ticket of tickets) {
             await db.query(
-              "UPDATE tickets SET agent_id=$1,escalated_at=now(),updated_at=now() WHERE tenant_id=$2 AND id=$3",
-              [agent.id, tenant.id, ticket.id],
+              "UPDATE tickets SET agent_id=$1,department_id=COALESCE(department_id,$4),escalated_at=now(),updated_at=now() WHERE tenant_id=$2 AND id=$3",
+              [agent.id, tenant.id, ticket.id, agent.department_id],
             );
             await db.query(
               "INSERT INTO events(tenant_id,ticket_id,actor_id,kind,body,internal) VALUES($1,$2,$3,'history',$4,true)",

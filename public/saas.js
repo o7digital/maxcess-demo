@@ -1,3 +1,4 @@
+import { createStaffUI } from "./staff.js";
 import { inFrench } from "./french.js";
 import { countries, languages, countryName } from "./international.js";
 const translations = {
@@ -520,11 +521,11 @@ export function createSaas({
       .map(([p, h]) => input("sla-" + p, p, "number", h))
       .join(
         "",
-      )}<h3>${tr("Tu dashboard", "Your dashboard")}</h3>${["active", "critical", "overdue", "sla_percent", "total", "resolved"].map((key, i) => `<label class="check"><input type="checkbox" data-metric="${key}" ${w.settings.dashboard.includes(key) ? "checked" : ""}>${tr(["Activas", "Críticas", "Vencidas", "Cumplimiento SLA", "Total", "Resueltas"][i], ["Active", "Critical", "Overdue", "SLA compliance", "Total", "Resolved"][i])}</label>`).join("")}<p class="notice">${tr("Los SLA se calculan en horas corridas. Los cambios se aplican a nuevas solicitudes y reclasificaciones.", "SLAs use elapsed hours. Changes apply to new requests and reclassifications.")}</p></section><section class="panel"><h2>${tr("Constructor de formularios", "Form builder")}</h2><p>${tr("Añade campos a todas las solicitudes de tu espacio.", "Add fields to every request in your workspace.")}</p><div id="fields-builder"></div><button type="button" class="btn" id="add-field">+ ${tr("Añadir campo", "Add field")}</button></section><section class="panel"><h2>${tr("Etapas de trabajo", "Workflow stages")}</h2><p>${tr("Define nombres, orden y el estado operativo de cada etapa.", "Define the name, order and operational state of each stage.")}</p><div id="workflow-builder"></div><button type="button" class="btn" id="add-stage">+ ${tr("Añadir etapa", "Add stage")}</button></section><section class="panel"><h2>${tr("Reglas de asignación", "Assignment rules")}</h2><p>${tr("La primera regla que coincide asigna al técnico y puede enviar una notificación.", "The first matching rule assigns the technician and can send a notification.")}</p><div id="rules-builder"></div><button type="button" class="btn" id="add-rule">+ ${tr("Añadir regla", "Add rule")}</button></section><section class="panel"><h2>${tr("Escalaciones de SLA", "SLA escalations")}</h2><p>${tr("Cuando un SLA lleva el tiempo indicado vencido, asigna al técnico seleccionado. La regla requiere tu aprobación al guardar.", "When an SLA is overdue for the specified time, assign the selected technician. Saving the configuration approves the rule.")}</p><div id="escalations-builder"></div><button type="button" class="btn" id="add-escalation">+ ${tr("Añadir escalación", "Add escalation")}</button></section><section class="panel"><h2>${tr("Equipos y colaboradores", "Teams and collaborators")}</h2><div id="teams-list">${data.teams.map((team) => `<p>${e(team.name)}</p>`).join("") || tr("Sin equipos todavía", "No teams yet")}</div><button type="button" class="btn" id="new-team">+ ${tr("Crear equipo", "Create team")}</button><button type="button" class="btn" id="invite">+ ${tr("Invitar colaborador", "Invite teammate")}</button><div id="invitations-list"></div><h3>${tr("Roles y equipos", "Roles and teams")}</h3><div id="membership-list">${users
+      )}<h3>${tr("Tu dashboard", "Your dashboard")}</h3>${["active", "critical", "overdue", "sla_percent", "total", "resolved"].map((key, i) => `<label class="check"><input type="checkbox" data-metric="${key}" ${w.settings.dashboard.includes(key) ? "checked" : ""}>${tr(["Activas", "Críticas", "Vencidas", "Cumplimiento SLA", "Total", "Resueltas"][i], ["Active", "Critical", "Overdue", "SLA compliance", "Total", "Resolved"][i])}</label>`).join("")}<p class="notice">${tr("Los SLA se calculan en horas corridas. Los cambios se aplican a nuevas solicitudes y reclasificaciones.", "SLAs use elapsed hours. Changes apply to new requests and reclassifications.")}</p></section><section class="panel"><h2>${tr("Constructor de formularios", "Form builder")}</h2><p>${tr("Añade campos a todas las solicitudes de tu espacio.", "Add fields to every request in your workspace.")}</p><div id="fields-builder"></div><button type="button" class="btn" id="add-field">+ ${tr("Añadir campo", "Add field")}</button></section><section class="panel"><h2>${tr("Etapas de trabajo", "Workflow stages")}</h2><p>${tr("Define nombres, orden y el estado operativo de cada etapa.", "Define the name, order and operational state of each stage.")}</p><div id="workflow-builder"></div><button type="button" class="btn" id="add-stage">+ ${tr("Añadir etapa", "Add stage")}</button></section><section class="panel"><h2>${tr("Reglas de asignación", "Assignment rules")}</h2><p>${tr("La primera regla que coincide asigna al técnico y puede enviar una notificación.", "The first matching rule assigns the technician and can send a notification.")}</p><div id="rules-builder"></div><button type="button" class="btn" id="add-rule">+ ${tr("Añadir regla", "Add rule")}</button></section><section class="panel"><h2>${tr("Escalaciones de SLA", "SLA escalations")}</h2><p>${tr("Cuando un SLA lleva el tiempo indicado vencido, asigna al técnico seleccionado. La regla requiere tu aprobación al guardar.", "When an SLA is overdue for the specified time, assign the selected technician. Saving the configuration approves the rule.")}</p><div id="escalations-builder"></div><button type="button" class="btn" id="add-escalation">+ ${tr("Añadir escalación", "Add escalation")}</button></section><section class="panel"><h2>${tr("Equipos y colaboradores", "Teams and collaborators")}</h2><div id="teams-list">${data.teams.map((team) => `<p>${e(team.name)}</p>`).join("") || tr("Sin equipos todavía", "No teams yet")}</div><button type="button" class="btn" id="new-team">+ ${tr("Crear equipo", "Create team")}</button><button type="button" class="btn" id="invite">+ ${tr("Invitar colaborador", "Invite teammate")}</button><div id="invitations-list"></div><h3>${tr("Roles y equipos", "Roles and teams")}</h3><div id="membership-list"><button type="button" class="btn" data-view="team">${tr("Gestionar roles y colaboradores", "Manage roles and collaborators")} ↗</button>${users
       .filter((u) => u.id !== getUser().id && u.role !== "platform_admin")
       .map(
         (u) =>
-          `<div class="builder-row" data-member="${u.id}"><b>${e(u.name)}</b><small>${e(u.email)}</small><select data-member-role aria-label="Role">${["admin", "manager", "agent", "client"].map((r) => `<option ${r === u.role ? "selected" : ""}>${r}</option>`).join("")}</select><select data-member-team aria-label="Team"><option value="">—</option>${data.teams.map((team) => `<option value="${team.id}" ${team.id === u.team_id ? "selected" : ""}>${e(team.name)}</option>`).join("")}</select><select data-member-company aria-label="Customer company"><option value="">—</option>${customerCompanies.map((c) => `<option value="${c.id}" ${c.id === u.company_id ? "selected" : ""}>${e(c.name)}</option>`).join("")}</select><button type="button" class="btn" data-save-member="${u.id}">${t("save")}</button></div>`,
+          `<div class="builder-row" data-member="${u.id}"><b data-user-content>${e(u.name)}</b><small data-user-content>${e(u.role_name || u.role)}</small><select data-member-team aria-label="Team"><option value="">—</option>${data.teams.map((team) => `<option value="${team.id}" ${team.id === u.team_id ? "selected" : ""}>${e(team.name)}</option>`).join("")}</select><button type="button" class="btn" data-save-member="${u.id}">${t("save")}</button></div>`,
       )
       .join(
         "",
@@ -768,36 +769,47 @@ export function createSaas({
       (button) =>
         (button.onclick = safe(async () => {
           const row = button.closest("[data-member]");
-          await api(
-            "/users/" + button.dataset.saveMember + "/permissions",
-            "PUT",
-            {
-              role: row.querySelector("[data-member-role]").value,
-              team_id:
-                Number(row.querySelector("[data-member-team]").value) || null,
-              company_id:
-                Number(row.querySelector("[data-member-company]").value) ||
-                null,
-            },
-          );
+          await api("/users/" + button.dataset.saveMember + "/team", "PUT", {
+            team_id:
+              Number(row.querySelector("[data-member-team]").value) || null,
+          });
           notify(t("saveSuccess"));
         })),
     );
     bindUserLanguage();
   }
   async function invite(el, teams) {
-    const { companies } = await api("/companies");
+    const [{ companies }, catalog] = await Promise.all([
+      api("/companies"),
+      api("/staff/catalog"),
+    ]);
     const section = document.createElement("section");
     section.className = "panel invite-panel";
-    section.innerHTML = `<h2>${tr("Invita a tu equipo", "Invite your team")}</h2><form id="invite-form">${input("invite-name", t("name"))}${input("invite-email", t("email"), "email")}<label>Rol<select id="invite-role">${["admin", "manager", "agent", "client"].map((r) => `<option>${r}</option>`).join("")}</select></label><label>${tr("Cliente", "Customer")}<select id="invite-company"><option value="">—</option>${companies.map((c) => `<option value="${c.id}">${e(c.name)}</option>`).join("")}</select></label><label>${tr("Equipo", "Team")}<select id="invite-team"><option value="">—</option>${teams.map((c) => `<option value="${c.id}">${e(c.name)}</option>`).join("")}</select></label><p class="notice">${tr("La invitación se enviará por correo cuando el servicio de correo esté configurado. Caduca en 72 horas.", "The invitation will be emailed when the email service is configured. Expires in 72 hours.")}</p><button class="btn primary">${tr("Enviar invitación", "Send invitation")} ↗</button><button type="button" class="btn" id="cancel-invite">${tr("Cancelar", "Cancel")}</button></form>`;
+    section.innerHTML = `<h2>${tr("Invita a tu equipo", "Invite your team")}</h2><form id="invite-form">${input("invite-name", t("name"))}${input("invite-email", t("email"), "email")}<label>${tr("Rol", "Role")}<select id="invite-role">${catalog.roles.map((r) => `<option value="custom:${r.id}" data-profile="${r.base_role}" ${r.base_role === "agent" ? "selected" : ""}>${e(r.name)}</option>`).join("")}<option value="legacy:client" data-profile="client">${tr("Cliente", "Customer")}</option></select></label><label>${tr("Departamento", "Department")}<select id="invite-department"><option value="">—</option>${catalog.departments.map((d) => `<option value="${d.id}">${e(d.name)}</option>`).join("")}</select></label>${input("invite-specialty", tr("Especialidad / función (libre)", "Specialty / function (free text)"), "text", "", false)}<label>${tr("Cliente", "Customer")}<select id="invite-company"><option value="">—</option>${companies.map((c) => `<option value="${c.id}">${e(c.name)}</option>`).join("")}</select></label><label>${tr("Equipo", "Team")}<select id="invite-team"><option value="">—</option>${teams.map((c) => `<option value="${c.id}">${e(c.name)}</option>`).join("")}</select></label><p class="notice">${tr("La invitación se enviará por correo cuando el servicio de correo esté configurado. Caduca en 72 horas.", "The invitation will be emailed when the email service is configured. Expires in 72 hours.")}</p><button class="btn primary">${tr("Enviar invitación", "Send invitation")} ↗</button><button type="button" class="btn" id="cancel-invite">${tr("Cancelar", "Cancel")}</button></form>`;
     el.prepend(section);
     section.scrollIntoView();
+    const updateInviteRole = () => {
+      section.querySelector("#invite-department").required =
+        section.querySelector("#invite-role").selectedOptions[0].dataset
+          .profile === "manager";
+    };
+    section.querySelector("#invite-role").onchange = updateInviteRole;
+    updateInviteRole();
     section.querySelector("#cancel-invite").onclick = () => section.remove();
     section.querySelector("form").onsubmit = safe(async () => {
       await api("/invitations", "POST", {
         name: section.querySelector("#invite-name").value,
         email: section.querySelector("#invite-email").value,
-        role: section.querySelector("#invite-role").value,
+        role: section.querySelector("#invite-role").selectedOptions[0].dataset
+          .profile,
+        role_id: section
+          .querySelector("#invite-role")
+          .value.startsWith("custom:")
+          ? Number(section.querySelector("#invite-role").value.split(":")[1])
+          : null,
+        department_id:
+          Number(section.querySelector("#invite-department").value) || null,
+        specialty: section.querySelector("#invite-specialty").value,
         company_id:
           Number(section.querySelector("#invite-company").value) || null,
         team_id: Number(section.querySelector("#invite-team").value) || null,
@@ -1061,6 +1073,7 @@ export function createSaas({
       await reload("clients");
     });
   }
+  const staff = createStaffUI({ api, e, tr, notify, getUser, reload });
   const languagePicker = () => language();
   function bindUserLanguage() {
     const node = document.querySelector("#language");
@@ -1107,6 +1120,7 @@ export function createSaas({
     platform,
     importer,
     companyForm,
+    staff,
     branchForm,
     countryName: (code) => countryName(code, lang),
     languagePicker,

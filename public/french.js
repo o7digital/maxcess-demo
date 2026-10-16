@@ -49,6 +49,34 @@ Ready|Prêt
 Services / categories|Services / catégories
 Sites|Sites
 Service workspace /|Centre de service /
+Department manager|Responsable de département
+Technician / engineer|Technicien / ingénieur
+PEOPLE AND PERMISSIONS|PERSONNES ET AUTORISATIONS
+Roles and collaborators|Rôles et collaborateurs
+Define your roles and specialties. Department managers access their department requests; technicians access assigned requests.|Définissez vos fonctions et spécialités. Les responsables accèdent aux demandes de leur département ; les techniciens, aux demandes attribuées.
+Create role|Créer un rôle
+Create department|Créer un département
+Collaborators|Collaborateurs
+User|Utilisateur
+Department|Département
+Specialty / function|Spécialité / fonction
+Edit|Modifier
+Deactivate|Désactiver
+Activate|Activer
+Your roles|Vos rôles
+Choose any role name. Its permission profile is fixed at creation. Customer roles cannot grant O7 administration access.|Choisissez librement l’intitulé du rôle. Son profil de droits est fixé à la création. Aucun rôle client ne peut donner accès à l’administration O7.
+Role name|Nom du rôle
+Save|Enregistrer
+e.g. Cybersecurity engineer|Ex. : Ingénieur cybersécurité
+Permission profile|Profil de droits
+Administrator: manages the workspace. Manager: manages department requests. Technician: assigned requests. Customer: their customer organization.|Administrateur : gestion de l’espace. Responsable : demandes de son département. Technicien : demandes attribuées. Client : son organisation cliente.
+Edit collaborator|Modifier le collaborateur
+Initial password (at least 12 characters)|Mot de passe initial (12 caractères minimum)
+Specialty / function (free text)|Spécialité / fonction (saisie libre)
+Networks|Réseau
+Support|Support
+Cybersecurity|Cybersécurité
+Manage roles and collaborators|Gérer les rôles et collaborateurs
 Overview|Vue d’ensemble
 Requests|Demandes
 My queue|Ma file

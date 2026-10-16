@@ -1,3 +1,4 @@
+import { departmentManager, accessScope } from "./roles.js";
 import { pool } from "./db.js";
 import { scope } from "./permissions.js";
 const error = (status, message) =>
@@ -113,7 +114,9 @@ export async function reportData(user, query = {}, db = pool) {
         ? "empresa"
         : user.role === "agent"
           ? "asignados"
-          : "global",
+          : departmentManager(user)
+            ? accessScope(user)
+            : "global",
     metrics: {
       total: tickets.length,
       active: active.length,

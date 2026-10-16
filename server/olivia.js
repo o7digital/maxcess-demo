@@ -1,3 +1,4 @@
+import { departmentManager } from "./roles.js";
 const fail = (status, message) => Object.assign(new Error(message), { status });
 
 export function oliviaStatus(user) {
@@ -7,14 +8,18 @@ export function oliviaStatus(user) {
     process.env.OLIVIA_TENANT_READY === "true";
   return {
     configured: Boolean(
-      ready && process.env.OLIVIA_BASE_URL && process.env.OLIVIA_API_KEY,
+      ready &&
+      !departmentManager(user) &&
+      process.env.OLIVIA_BASE_URL &&
+      process.env.OLIVIA_API_KEY,
     ),
     version: "3.5",
-    mode: !ready
-      ? "unavailable"
-      : process.env.OLIVIA_BASE_URL && process.env.OLIVIA_API_KEY
-        ? "live"
-        : "demo",
+    mode:
+      !ready || departmentManager(user)
+        ? "unavailable"
+        : process.env.OLIVIA_BASE_URL && process.env.OLIVIA_API_KEY
+          ? "live"
+          : "demo",
   };
 }
 export async function oliviaChat(message, conversationId, user) {

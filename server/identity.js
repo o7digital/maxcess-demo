@@ -12,6 +12,10 @@ export const exposeUser = ({
   tenant_id,
   is_platform_owner,
   language,
+  role_id,
+  department_id,
+  specialty,
+  role_name,
 }) => ({
   id,
   email,
@@ -21,4 +25,8 @@ export const exposeUser = ({
   tenant_id,
   is_platform_owner: Boolean(is_platform_owner),
   language,
+  role_id,
+  department_id,
+  specialty,
+  role_name,
 });
