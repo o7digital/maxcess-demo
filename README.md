@@ -1,12 +1,12 @@
 # Service Hub — support et intelligence de service
 
-Version premium de test : **https://service-hub-dev-3fbf.up.railway.app** · branche **dev**.
+Frontend de la démo : **https://maxcess-demo.vercel.app** (Vercel). Backend et PostgreSQL : Railway, environnement **dev**, **https://service-hub-dev-3fbf.up.railway.app**.
 
 Dashboard client et opérationnel, graphiques depuis PostgreSQL, rapports sauvegardés, export CSV, administration des comptes et chat flottant relié à Olivia V3.5 sur VPS2. Interface espagnole, design graphite/ivoire/citron et logo lié à O7 Digital Group Holding.
 
 La version stable initiale est conservée sur `main` et `demo/service-hub`, à https://service-hub-production-3168.up.railway.app. `dev` a été créée depuis cette base commune. L’environnement Railway `dev` utilise une base indépendante et un secret de session distinct.
 
-Démo utilisateur : [aperçus mobile / iPad / desktop](https://service-hub-dev-3fbf.up.railway.app/demo) · [portail client plein écran](https://service-hub-dev-3fbf.up.railway.app/cliente).
+Démo utilisateur : [aperçus mobile / iPad / desktop](https://maxcess-demo.vercel.app/demo) · [portail client plein écran](https://maxcess-demo.vercel.app/cliente).
 
 ## Accès et permissions
 
@@ -52,6 +52,17 @@ npm run test:devices
 Les tests utilisent exclusivement la base dédiée et suppriment leurs données locales temporaires. Ne pas les exécuter sur une base de production. Tests navigateur avec Google Chrome sur macOS ; `CHROME_PATH` permet un autre chemin Chromium. Pour Railway dev : `QA_BASE_URL=https://service-hub-dev-3fbf.up.railway.app` et `QA_ACCESS_PATH=.local/dev-access.json`. Captures privées dans `.local/screenshots/`.
 
 ## Déployer sur dev
+
+Le frontend est publié sur le projet Vercel existant `maxcess-demo` :
+
+```sh
+vercel link --project maxcess-demo --scope olivier-steineur --yes
+vercel deploy --prod --yes
+```
+
+`vercel.json` publie uniquement `public/` après vérification du build. Les routes `/api/*` et `/health` sont relayées vers le backend Railway **dev**, qui conserve les comptes, sessions, intégrations et données de la version premium. Le navigateur utilise la même origine Vercel pour les cookies sécurisés et la protection CSRF. Aucune variable serveur ni base de données n'est nécessaire sur Vercel. Les chemins `/demo` et `/cliente` sont servis par Vercel. L'environnement Railway `production` reste la version stable initiale indépendante.
+
+Pour mettre à jour le backend uniquement :
 
 ```sh
 railway environment link dev
