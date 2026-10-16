@@ -92,6 +92,8 @@ Initial total|Total initial
 Configure services, forms and stages from your workspace.|Configurez vos services, formulaires et étapes depuis votre espace.
 Requests, customers and your team in one place.|Vos demandes, clients et équipes dans un seul espace.
 Import CSV or Excel and adopt the system at your pace.|Importez vos fichiers CSV ou Excel et adoptez le système à votre rythme.
+Email recovery is temporarily unavailable. Contact O7 Digital Group to restore your access.|La récupération par e-mail est temporairement indisponible. Contactez O7 Digital Group pour rétablir votre accès.
+Contact O7 Digital Group|Contacter O7 Digital Group
 Overview|Vue d’ensemble
 Requests|Demandes
 My queue|Ma file

@@ -9,12 +9,28 @@ import {
   publicOrigin,
   fail,
 } from "./workspace.js";
+export function emailRecoveryAvailable() {
+  return Boolean(
+    process.env.SMTP_URL &&
+    process.env.MAIL_FROM &&
+    /^https:\/\//.test(process.env.PUBLIC_APP_URL || ""),
+  );
+}
 export async function issueToken(db, user, purpose) {
   const token = randomBytes(32).toString("hex");
-  await db.query(
-    "UPDATE account_tokens SET consumed_at=now() WHERE user_id=$1 AND purpose=$2 AND consumed_at IS NULL",
+  const previous = await db.query(
+    "UPDATE account_tokens SET consumed_at=now() WHERE user_id=$1 AND purpose=$2 AND consumed_at IS NULL RETURNING token_hash",
     [user.id, purpose],
   );
+  if (previous.rowCount)
+    await db.query(
+      "DELETE FROM notification_outbox WHERE tenant_id=$1 AND recipient=$2 AND sent_at IS NULL AND dedupe_key=ANY($3::text[])",
+      [
+        user.tenant_id,
+        user.email,
+        previous.rows.map((row) => "account:" + purpose + ":" + row.token_hash),
+      ],
+    );
   await db.query(
     "INSERT INTO account_tokens(user_id,token_hash,purpose,expires_at) VALUES($1,$2,$3,now()+interval '1 hour')",
     [user.id, tokenHash(token), purpose],
@@ -39,6 +55,11 @@ export async function issueToken(db, user, purpose) {
 export function installAccountPublic(app, limit) {
   app.post("/api/account/recover", limit, async (req, res) => {
     const address = email(req.body.email);
+    if (!emailRecoveryAvailable())
+      throw fail(
+        503,
+        "La recuperación por correo no está disponible temporalmente. Contacta con O7 Digital Group.",
+      );
     await transaction(async (db) => {
       const {
         rows: [u],

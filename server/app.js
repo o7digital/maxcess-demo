@@ -33,7 +33,11 @@ import {
 } from "./workspace.js";
 import { installBillingPublic, installBillingRoutes } from "./billing.js";
 import { installAssistantRoutes } from "./assistant.js";
-import { installAccountPublic, installAccountPrivate } from "./account.js";
+import {
+  installAccountPublic,
+  installAccountPrivate,
+  emailRecoveryAvailable,
+} from "./account.js";
 import { installImportRoutes } from "./imports.js";
 const categories = [
   "Conectividad",
@@ -160,6 +164,7 @@ export function createApp({ getStripe } = {}) {
       demo: process.env.DEMO_MODE === "true",
       clientDemo: clientDemoEnabled(),
       registration: process.env.REGISTRATION_ENABLED === "true",
+      recoveryAvailable: emailRecoveryAvailable(),
       ...(process.env.COMMERCIAL_MODE !== "true"
         ? { environment: process.env.APP_ENV || "dev" }
         : {}),

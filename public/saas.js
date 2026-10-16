@@ -111,6 +111,7 @@ export function createSaas({
   onLogin,
   getUser,
   getWorkspace,
+  getConfig = () => ({}),
   reload,
 }) {
   let lang = localStorage.getItem("servicehub-language") || "es";
@@ -223,6 +224,14 @@ export function createSaas({
     ) {
       const verify = path === "/verify-email",
         reset = path === "/reset-password";
+      if (!verify && !reset && getConfig().recoveryAvailable === false) {
+        app.innerHTML =
+          header() +
+          `<section class="panel legal"><h1>${tr("Recuperar acceso", "Recover access")}</h1><p role="status">${tr("La recuperación por correo no está disponible temporalmente. Contacta con O7 Digital Group para recuperar tu acceso.", "Email recovery is temporarily unavailable. Contact O7 Digital Group to restore your access.")}</p><div class="actions"><a class="btn primary" href="https://www.o7digitalgroup.com/">${tr("Contactar a O7 Digital Group", "Contact O7 Digital Group")} ↗</a><a class="btn" href="/login">${t("login")} ↗</a></div></section>` +
+          footer();
+        bindLanguage(publicPage);
+        return;
+      }
       app.innerHTML =
         header() +
         `<section class="panel legal"><h1>${verify ? tr("Confirma tu correo", "Confirm your email") : reset ? tr("Nueva contraseña", "New password") : tr("Recuperar acceso", "Recover access")}</h1><form id="account-form">${verify ? "" : reset ? input("password", t("password"), "password") : input("email", t("email"), "email")}<p id="account-result" role="status"></p><button class="btn primary">${verify ? tr("Confirmar correo", "Confirm email") : reset ? t("save") : tr("Enviar enlace", "Send link")} ↗</button></form></section>` +

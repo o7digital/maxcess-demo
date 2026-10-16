@@ -134,3 +134,11 @@ Le domaine d'attente commercial propose désormais **Iniciar sesión** ; `/login
 Hugging Face : voir [la configuration requise](HUGGING-FACE.md). Les variables de token/modèle ne sont pas configurées sur Railway ; aucun appel live n'a été validé. Le code est préparé pour les rapports ES/EN/FR et les noms de clients sont anonymisés avant envoi des agrégats.
 
 Validation : `npm run build`, `npm test`, `npm run test:saas` et `node scripts/pricing-browser-qa.js` (avec le même `QA_BASE_URL` pour le navigateur). Tests de devis exacts, d'activation unique, de refus sans preuve de paiement, d'idempotence et de réabonnement sans nouveau frais ; vérification Chrome des cinq paliers et quatre périodes en espagnol, anglais et français, ainsi que sur mobile.
+
+## Récupération d'accès et disponibilité de l'e-mail
+
+Le bootstrap expose `recoveryAvailable`, calculé à partir de la configuration du service d'envoi et de l'origine publique. Sans service configuré, la page de récupération affiche l'indisponibilité et un contact O7 dans les trois langues, et l'API retourne le même statut 503 pour les adresses existantes et inconnues. Aucun nouveau jeton n'est émis dans ce cas. Lorsque le service est configuré, la réponse générique protège toujours l'existence des comptes et le lien est mis en file pour envoi.
+
+L'émission d'un nouveau jeton invalide les précédents du même usage et retire leurs messages non envoyés de la file pour éviter l'envoi ultérieur de liens déjà invalides. La réinitialisation conserve le contrôle du jeton haché, l'expiration d'une heure, l'usage unique et la révocation des sessions. Un lien d'assistance peut être émis par l'opérateur habilité et remis dans un fichier local privé, sans exposer de secret dans Git ou créer un accès public d'administration.
+
+Validation : `npm run build`, `npm test` et `node scripts/recovery-browser-qa.js` ; configuration SMTP simulée uniquement dans les tests de la file, refus uniforme sans service, formulaire de réinitialisation accessible, connexion avec mot de passe existant et affichage ES/EN/FR de l'indisponibilité.

@@ -12,10 +12,14 @@ const previous = {
   registration: process.env.REGISTRATION_ENABLED,
   origin: process.env.PUBLIC_APP_URL,
   webhook: process.env.STRIPE_WEBHOOK_SECRET,
+  smtp: process.env.SMTP_URL,
+  mailFrom: process.env.MAIL_FROM,
 };
 process.env.REGISTRATION_ENABLED = "true";
 process.env.PUBLIC_APP_URL = "https://servicehub.example.org";
 process.env.STRIPE_WEBHOOK_SECRET = "whsec_unit_test_only";
+process.env.SMTP_URL = "smtp://127.0.0.1:1";
+process.env.MAIL_FROM = "Service Hub <noreply@example.test>";
 let subscription,
   checkoutBody,
   subscriptionUpdate,
@@ -97,6 +101,10 @@ after(async () => {
   process.env.REGISTRATION_ENABLED = previous.registration;
   process.env.PUBLIC_APP_URL = previous.origin;
   process.env.STRIPE_WEBHOOK_SECRET = previous.webhook;
+  if (previous.smtp === undefined) delete process.env.SMTP_URL;
+  else process.env.SMTP_URL = previous.smtp;
+  if (previous.mailFrom === undefined) delete process.env.MAIL_FROM;
+  else process.env.MAIL_FROM = previous.mailFrom;
   await pool.end();
 });
 async function register(label) {
@@ -646,6 +654,40 @@ test("SLA escalations run once, stay in the workspace and queue the configured n
     [a.user.tenant_id],
   );
   assert.equal(Number(count.count), 1);
+});
+test("Recovery reports missing email service honestly without revealing accounts or issuing tokens", async () => {
+  const smtp = process.env.SMTP_URL;
+  delete process.env.SMTP_URL;
+  try {
+    assert.equal(
+      (await a.agent.get("/api/bootstrap")).body.recoveryAvailable,
+      false,
+    );
+    const before = (
+      await pool.query(
+        "SELECT count(*) FROM account_tokens WHERE user_id=$1 AND purpose='reset'",
+        [a.user.id],
+      )
+    ).rows[0].count;
+    const known = await send(a, "/account/recover", {
+      email: a.credentials.email,
+    }).expect(503);
+    const unknown = await send(a, "/account/recover", {
+      email: "missing-" + randomUUID() + "@example.test",
+    }).expect(503);
+    assert.deepEqual(known.body, unknown.body);
+    assert.equal(
+      (
+        await pool.query(
+          "SELECT count(*) FROM account_tokens WHERE user_id=$1 AND purpose='reset'",
+          [a.user.id],
+        )
+      ).rows[0].count,
+      before,
+    );
+  } finally {
+    process.env.SMTP_URL = smtp;
+  }
 });
 test("Email verification and recovery links are single use, expire and revoke existing sessions on reset", async () => {
   const {

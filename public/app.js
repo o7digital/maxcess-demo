@@ -123,6 +123,7 @@ const saas = createSaas({
   notify,
   getUser: () => user,
   getWorkspace: () => workspace,
+  getConfig: () => config,
   onLogin: async (data) => {
     user = data.user;
     csrf = data.csrf;
