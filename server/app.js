@@ -4,6 +4,7 @@ import pgSession from "connect-pg-simple";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
 import { randomBytes, randomUUID } from "node:crypto";
+import { installLogoAssetRoute, installLogoRoutes } from "./logos.js";
 import { readdirSync } from "node:fs";
 import { pool, transaction } from "./db.js";
 import { exposeUser, verifyPassword, hashPassword } from "./identity.js";
@@ -139,6 +140,7 @@ export function createApp({ getStripe } = {}) {
     res.set("Cache-Control", "no-store");
     next();
   });
+  installLogoAssetRoute(app);
   app.get("/api/bootstrap", (req, res) => {
     req.session.csrf ||= randomBytes(24).toString("hex");
     res.json({
@@ -282,6 +284,7 @@ export function createApp({ getStripe } = {}) {
   });
   installBillingRoutes(app, getStripe);
   installWorkspaceRoutes(app);
+  installLogoRoutes(app);
   installAccountPrivate(app);
   installAssistantRoutes(app);
   installImportRoutes(app);

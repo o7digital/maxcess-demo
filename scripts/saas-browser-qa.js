@@ -2,6 +2,7 @@ import { chromium } from "@playwright/test";
 import { mkdir, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
+import sharp from "sharp";
 const base = process.env.QA_BASE_URL || "http://127.0.0.1:3100";
 const browser = await chromium.launch({
   executablePath:
@@ -61,10 +62,32 @@ try {
     .click();
   await page.getByRole("heading", { name: "Hazlo tuyo." }).waitFor();
   console.log("Registered; onboarding");
+  const logo = await sharp({
+    create: {
+      width: 120,
+      height: 60,
+      channels: 4,
+      background: { r: 40, g: 80, b: 20, alpha: 0.5 },
+    },
+  })
+    .png()
+    .toBuffer();
   for (let step = 0; step < 5; step++) {
     console.log("Onboarding step", step + 1);
-    if (step === 0)
+    if (step === 0) {
       await page.locator("#sector").fill("Servicios profesionales");
+      await page
+        .locator("#logo-file")
+        .setInputFiles({
+          name: "company-logo.png",
+          mimeType: "image/png",
+          buffer: logo,
+        });
+      await page.getByText("Logo guardado", { exact: true }).waitFor();
+      await page.waitForFunction(
+        () => document.querySelector("#logo-preview")?.naturalWidth > 0,
+      );
+    }
     if (step === 1) await page.locator("[name=template][value=it]").check();
     if (step === 2) await page.locator("#team").fill("Equipo central");
     if (step === 3)
@@ -85,6 +108,8 @@ try {
   const workspace = await page.evaluate(
     async () => (await (await fetch("/api/workspace")).json()).workspace,
   );
+  assert.match(workspace.settings.logo, /^\/api\/workspace\/logo\//);
+  await page.locator(".workspace-logo").waitFor();
   await writeFile(
     ".local/saas-browser-access.json",
     JSON.stringify({ ...credentials, tenant_id: workspace.id, base }, null, 2),
@@ -92,6 +117,25 @@ try {
   );
   await page.locator('nav [data-view="settings"]').click();
   await page.locator("#workspace-settings").waitFor();
+  const replacement = await sharp(logo)
+    .flatten({ background: "#ffffff" })
+    .jpeg()
+    .toBuffer();
+  await page
+    .locator("#logo-file")
+    .setInputFiles({
+      name: "updated-logo.jpg",
+      mimeType: "image/jpeg",
+      buffer: replacement,
+    });
+  await page.getByText("Logo guardado", { exact: true }).waitFor();
+  await page.waitForFunction(
+    () => document.querySelector("#logo-preview")?.naturalWidth > 0,
+  );
+  assert.notEqual(
+    await page.locator("#logo-preview").getAttribute("src"),
+    workspace.settings.logo,
+  );
   await page.locator("#add-field").click();
   await page.locator("[data-property=label]").fill("Número de activo");
   await page.locator("[data-property=key]").fill("asset_number");
@@ -168,11 +212,17 @@ try {
       `Settings overflow at ${width}`,
     );
   }
+  await page.locator("#remove-logo").click();
+  await page.getByText("Logo eliminado", { exact: true }).waitFor();
+  await page.reload();
+  await page.locator("#workspace-settings").waitFor();
+  assert.equal(await page.locator(".workspace-logo").count(), 0);
+  assert.equal(await page.locator("input[type=url][id=logo]").count(), 0);
   await page.goto(base + "/verify-email#invalid-preview-token");
   await page.getByRole("heading", { name: "Confirma tu correo" }).waitFor();
   assert.deepEqual(errors, []);
   console.log(
-    "Browser QA passed: ES/EN landing, registration, 5-step onboarding, persistent form configuration, required custom field, ticket, session reload, billing and 390/820/1440 layouts.",
+    "Browser QA passed: ES/EN landing, registration, logo upload/replacement/removal, 5-step onboarding, persistent form configuration, required custom field, ticket, session reload, billing and 390/820/1440 layouts.",
   );
   console.log(
     `QA workspace ${workspace.id} retained for review; private credentials in .local/saas-browser-access.json.`,

@@ -753,3 +753,31 @@
 #mx-demo .stats {
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
+#mx-demo .logo-picker {
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px dashed #c9d4bd;
+  border-radius: 10px;
+  background: #f8faf4;
+}
+#mx-demo .logo-preview {
+  display: block;
+  max-width: 180px;
+  max-height: 110px;
+  object-fit: contain;
+  margin: 12px 0;
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+}
+#mx-demo .logo-preview[hidden] {
+  display: none;
+}
+#mx-demo .logo-picker small {
+  color: #768270;
+  font-size: 11px;
+}
+#mx-demo #logo-status {
+  font-size: 11px;
+  color: #536c3f;
+}

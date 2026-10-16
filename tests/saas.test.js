@@ -2,6 +2,7 @@ import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import request from "supertest";
 import Stripe from "stripe";
+import sharp from "sharp";
 import ExcelJS from "exceljs";
 import { randomUUID } from "node:crypto";
 import { createApp } from "../server/app.js";
@@ -54,6 +55,7 @@ const app = createApp({ getStripe: () => fake }),
 after(async () => {
   for (const id of created) {
     for (const table of [
+      "workspace_logos",
       "configuration_proposals",
       "notification_outbox",
       "workspace_audit",
@@ -196,6 +198,90 @@ test("Server validates onboarding, settings, forms, foreign rules and membership
   );
   await send(b, `/users/${b.user.id}/team`, { team_id: team.id }, "put").expect(
     400,
+  );
+});
+test("Logos upload from files, persist as PNG, stay tenant-owned and can be replaced or removed", async () => {
+  const image = await sharp({
+    create: {
+      width: 900,
+      height: 450,
+      channels: 4,
+      background: { r: 70, g: 90, b: 20, alpha: 0.5 },
+    },
+  })
+    .png()
+    .toBuffer();
+  await a.agent
+    .put("/api/workspace/logo")
+    .send({ type: "image/png", file: image.toString("base64") })
+    .expect(403);
+  await send(
+    a,
+    "/workspace/logo",
+    { type: "image/svg+xml", file: Buffer.from("<svg/>").toString("base64") },
+    "put",
+  ).expect(400);
+  await send(
+    a,
+    "/workspace/logo",
+    { type: "image/png", file: Buffer.from("Not an image").toString("base64") },
+    "put",
+  ).expect(400);
+  const { body: uploaded } = await send(
+    a,
+    "/workspace/logo",
+    { type: "image/png", file: image.toString("base64") },
+    "put",
+  ).expect(200);
+  assert.match(uploaded.url, /^\/api\/workspace\/logo\/[0-9a-f-]+$/);
+  const stored = await request(app)
+    .get(uploaded.url)
+    .expect(200)
+    .expect("Content-Type", /image\/png/);
+  const metadata = await sharp(stored.body).metadata();
+  assert.equal(metadata.width, 512);
+  assert.equal(metadata.height, 256);
+  assert.equal(
+    (await a.agent.get("/api/workspace")).body.workspace.settings.logo,
+    uploaded.url,
+  );
+  const other = (await b.agent.get("/api/workspace")).body.workspace;
+  await send(
+    b,
+    "/workspace",
+    { name: other.name, settings: { ...other.settings, logo: uploaded.url } },
+    "put",
+  ).expect(400);
+  const staff = request.agent(app),
+    boot = await staff.get("/api/bootstrap");
+  const login = await staff
+    .post("/api/login")
+    .set("X-CSRF-Token", boot.body.csrf)
+    .send({ email: agentA.email, password: "Secure-password-2026!" })
+    .expect(200);
+  await staff
+    .put("/api/workspace/logo")
+    .set("X-CSRF-Token", login.body.csrf)
+    .send({ type: "image/png", file: image.toString("base64") })
+    .expect(403);
+  const webp = await sharp(image).webp().toBuffer();
+  const replacement = (
+    await send(
+      a,
+      "/workspace/logo",
+      { type: "image/webp", file: webp.toString("base64") },
+      "put",
+    ).expect(200)
+  ).body;
+  assert.notEqual(replacement.url, uploaded.url);
+  await request(app).get(uploaded.url).expect(404);
+  await send(b, "/workspace/logo", {}, "delete").expect(200);
+  await request(app).get(replacement.url).expect(200);
+  await send(a, "/workspace/logo", {}, "delete").expect(200);
+  await request(app).get(replacement.url).expect(404);
+  assert.equal(
+    (await a.agent.get("/api/workspace")).body.workspace.settings.logo,
+    "",
   );
 });
 test("Tickets apply tenant forms, assignments, SLA and workflows; cross-tenant reads and writes fail", async () => {

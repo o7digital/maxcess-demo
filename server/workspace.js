@@ -75,7 +75,11 @@ export function validateSettings(input) {
     s.logo.length > 2000
   )
     throw fail(400, "Identidad no válida");
-  if (s.logo && !/^https:\/\//.test(s.logo))
+  if (
+    s.logo &&
+    !/^https:\/\//.test(s.logo) &&
+    !/^\/api\/workspace\/logo\/[0-9a-f-]{36}$/i.test(s.logo)
+  )
     throw fail(400, "El logo debe usar una URL HTTPS");
   for (const key of ["categories", "departments", "sites"]) {
     if (
@@ -390,13 +394,11 @@ export function installPublicWorkspaceRoutes(app, limit) {
     );
     req.session.userId = result.user.id;
     req.session.csrf = randomBytes(24).toString("hex");
-    res
-      .status(201)
-      .json({
-        user: exposeUser(result.user),
-        csrf: req.session.csrf,
-        trial_ends_at: result.tenant.trial_ends_at,
-      });
+    res.status(201).json({
+      user: exposeUser(result.user),
+      csrf: req.session.csrf,
+      trial_ends_at: result.tenant.trial_ends_at,
+    });
   });
   app.post("/api/invitations/accept", limit, async (req, res) => {
     const hash = await hashPassword(password(req.body.password));
@@ -536,6 +538,14 @@ export function installWorkspaceRoutes(app) {
       name = str(b.name, "Empresa"),
       settings = validateSettings(b.settings);
     await transaction(async (db) => {
+      if (settings.logo.startsWith("/api/workspace/logo/")) {
+        const asset = await db.query(
+          "SELECT id FROM workspace_logos WHERE id=$1 AND tenant_id=$2",
+          [settings.logo.split("/").at(-1), req.tenant.id],
+        );
+        if (!asset.rowCount)
+          throw fail(400, "Logo no disponible para este espacio");
+      }
       const agents = [...settings.rules, ...settings.escalations].map(
         (r) => r.agent_id,
       );

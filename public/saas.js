@@ -267,6 +267,111 @@ export function createSaas({
     }
     bindLanguage(publicPage);
   }
+  function logoPicker(url) {
+    return `<div class="logo-picker"><label for="logo-file">${tr("Logo de tu empresa", "Company logo")}</label><img id="logo-preview" class="logo-preview" ${url ? `src="${e(url)}"` : "hidden"} alt="${tr("Tu logo", "Your logo")}"><input id="logo-file" type="file" accept="image/png,image/jpeg,image/webp"><small>PNG, JPG, WebP · ${tr("máximo 1 MB", "up to 1 MB")}</small><p id="logo-status" role="status"></p><button type="button" class="btn" id="remove-logo" ${url ? "" : "hidden"}>${tr("Quitar logo", "Remove logo")}</button></div>`;
+  }
+  function bindLogoPicker(el, settings) {
+    const fileInput = el.querySelector("#logo-file");
+    if (!fileInput) return;
+    let busy = false;
+    const run = async (callback) => {
+      if (busy) return;
+      busy = true;
+      const buttons = [
+        ...el.querySelectorAll(
+          "#wizard .wizard-actions button,.sticky-save button",
+        ),
+      ].map((button) => ({ button, disabled: button.disabled }));
+      buttons.forEach(({ button }) => (button.disabled = true));
+      fileInput.disabled = true;
+      const remove = el.querySelector("#remove-logo");
+      remove.disabled = true;
+      try {
+        await callback();
+      } catch (err) {
+        notify(err.message);
+        el.querySelector("#logo-status").textContent = err.message;
+      } finally {
+        busy = false;
+        fileInput.disabled = false;
+        remove.disabled = false;
+        fileInput.value = "";
+        buttons.forEach(({ button, disabled }) => (button.disabled = disabled));
+      }
+    };
+    fileInput.onchange = () =>
+      run(async () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+        if (
+          !["image/png", "image/jpeg", "image/webp"].includes(file.type) ||
+          file.size > 1000000
+        )
+          throw new Error(
+            tr(
+              "Selecciona un PNG, JPG o WebP de hasta 1 MB",
+              "Choose a PNG, JPG or WebP up to 1 MB",
+            ),
+          );
+        el.querySelector("#logo-status").textContent = tr(
+          "Guardando logo…",
+          "Saving logo…",
+        );
+        const encoded = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(",")[1]);
+          reader.onerror = () =>
+            reject(
+              new Error(
+                tr("No se pudo leer la imagen", "Could not read image"),
+              ),
+            );
+          reader.readAsDataURL(file);
+        });
+        const { url } = await api("/workspace/logo", "PUT", {
+          file: encoded,
+          type: file.type,
+        });
+        settings.logo = url;
+        if (getWorkspace()) getWorkspace().settings.logo = url;
+        if (!document.querySelector(".workspace-logo")) {
+          const brand = document.querySelector(".shell>aside>.brand");
+          if (brand) {
+            const img = document.createElement("img");
+            img.className = "workspace-logo";
+            img.alt = "";
+            img.src = url;
+            brand.prepend(img);
+          }
+        }
+        const preview = el.querySelector("#logo-preview");
+        preview.src = url;
+        preview.hidden = false;
+        el.querySelector("#remove-logo").hidden = false;
+        document
+          .querySelectorAll(".workspace-logo")
+          .forEach((img) => (img.src = url));
+        el.querySelector("#logo-status").textContent = tr(
+          "Logo guardado",
+          "Logo saved",
+        );
+      });
+    el.querySelector("#remove-logo").onclick = () =>
+      run(async () => {
+        await api("/workspace/logo", "DELETE");
+        settings.logo = "";
+        if (getWorkspace()) getWorkspace().settings.logo = "";
+        el.querySelector("#logo-preview").hidden = true;
+        el.querySelector("#remove-logo").hidden = true;
+        document
+          .querySelectorAll(".workspace-logo")
+          .forEach((img) => img.remove());
+        el.querySelector("#logo-status").textContent = tr(
+          "Logo eliminado",
+          "Logo removed",
+        );
+      });
+  }
   async function onboarding(el) {
     let step = 0;
     const data = await api("/workspace"),
@@ -283,7 +388,7 @@ export function createSaas({
       el.innerHTML = `<div class="onboarding-heading"><div class="eyebrow">${tr("BIENVENIDO A SERVICE HUB", "WELCOME TO SERVICE HUB")}</div><h1>${t("configure")}</h1><p class="subtitle">${t("onboarding")}</p></div><div class="wizard-steps">${steps.map((label, i) => `<span class="${i === step ? "current" : i < step ? "done" : ""}"><b>${i < step ? "✓" : i + 1}</b>${label}</span>`).join("")}</div><div class="panel wizard-panel"><form id="wizard"><div id="wizard-content"></div><div class="wizard-actions">${step ? `<button type="button" class="btn" id="wizard-back">${t("back")}</button>` : ""}<button class="btn primary">${step === 4 ? t("finish") : t("next")}</button></div></form></div>`;
       const content = el.querySelector("#wizard-content");
       if (step === 0)
-        content.innerHTML = `<h2>${tr("Un espacio con tu identidad.", "A workspace with your identity.")}</h2>${input("business", t("company"), "text", current.name)}${input("sector", tr("Sector de actividad", "Industry"), "text", current.settings.sector, false)}${input("logo", tr("URL de tu logo (HTTPS)", "Logo URL (HTTPS)"), "url", current.settings.logo, false)}<div class="field-row"><div><label for="workspace-language">${tr("Idioma", "Language")}</label><select id="workspace-language"><option value="es" ${current.settings.language === "es" ? "selected" : ""}>Español</option><option value="en" ${current.settings.language === "en" ? "selected" : ""}>English</option></select></div><div>${input("timezone", tr("Zona horaria", "Time zone"), "text", current.settings.timezone)}</div></div>`;
+        content.innerHTML = `<h2>${tr("Un espacio con tu identidad.", "A workspace with your identity.")}</h2>${input("business", t("company"), "text", current.name)}${input("sector", tr("Sector de actividad", "Industry"), "text", current.settings.sector, false)}${logoPicker(current.settings.logo)}<div class="field-row"><div><label for="workspace-language">${tr("Idioma", "Language")}</label><select id="workspace-language"><option value="es" ${current.settings.language === "es" ? "selected" : ""}>Español</option><option value="en" ${current.settings.language === "en" ? "selected" : ""}>English</option></select></div><div>${input("timezone", tr("Zona horaria", "Time zone"), "text", current.settings.timezone)}</div></div>`;
       if (step === 1)
         content.innerHTML = `<h2>${tr("Empieza con una buena base.", "Start with a good foundation.")}</h2><p class="subtitle">${tr("Podrás cambiar todos los ajustes después.", "You can change every setting later.")}</p><div class="template-grid">${templates.map((template, i) => `<label class="template-option"><input type="radio" name="template" value="${e(template.id)}" ${i === 0 ? "checked" : ""}><b>${e(template.name)}</b><small>${e((template.settings.categories || []).join(" · "))}</small></label>`).join("")}</div>`;
       if (step === 2) {
@@ -293,6 +398,7 @@ export function createSaas({
         content.innerHTML = `<h2>${tr("Tu primer servicio, listo.", "Your first service, ready.")}</h2><label for="categories">${tr("Servicios y categorías (una por línea)", "Services and categories (one per line)")}</label><textarea id="categories" rows="5" required>${e(current.settings.categories.join("\n"))}</textarea><label for="sites">${tr("Sedes (una por línea)", "Sites (one per line)")}</label><textarea id="sites" rows="2">${e(current.settings.sites.join("\n"))}</textarea><p class="subtitle">${tr("Se inicia con cuatro etapas: abierto, en curso, resuelto y cerrado. Personaliza etapas, formularios y SLA en Configuración.", "Start with four stages: open, in progress, resolved and closed. Customize stages, forms and SLAs in Settings.")}</p>`;
       if (step === 4)
         content.innerHTML = `<div class="wizard-ready"><div class="ready-icon">↗</div><h2>${tr("Todo empieza aquí.", "It all starts here.")}</h2><p>${e(current.name)} · ${current.settings.categories.length} ${tr("servicios configurados", "services configured")}</p><p>${tr("Crea tu primera solicitud, invita a tu equipo o importa tus empresas clientes. Tu espacio ya está conectado.", "Create your first request, invite your team or import your customer companies. Your workspace is connected.")}</p><div class="notice">${t("nocard")}</div></div>`;
+      if (step === 0) bindLogoPicker(el, current.settings);
       el.querySelector("#wizard-back")?.addEventListener("click", () => {
         step--;
         draw();
@@ -303,7 +409,7 @@ export function createSaas({
           current.settings = {
             ...current.settings,
             sector: el.querySelector("#sector").value,
-            logo: el.querySelector("#logo").value,
+            logo: current.settings.logo,
             timezone: el.querySelector("#timezone").value,
             language: el.querySelector("#workspace-language").value,
           };
@@ -312,7 +418,17 @@ export function createSaas({
           const selected = templates.find(
             (t) => t.id === new FormData(event.target).get("template"),
           );
-          current.settings = { ...current.settings, ...selected.settings };
+          const identity = {
+            logo: current.settings.logo,
+            sector: current.settings.sector,
+            language: current.settings.language,
+            timezone: current.settings.timezone,
+          };
+          current.settings = {
+            ...current.settings,
+            ...selected.settings,
+            ...identity,
+          };
         }
         if (step === 2) {
           const team = el.querySelector("#team").value.trim();
@@ -360,7 +476,7 @@ export function createSaas({
         api("/companies"),
         api("/integrations"),
       ]);
-    el.innerHTML = `<div class="row"><div><div class="eyebrow">${tr("A TU MANERA", "YOUR WAY")}</div><h1>${t("settings")}</h1><p class="subtitle">${tr("Tus cambios se aplican a las solicitudes reales.", "Your changes apply to real requests.")}</p></div>${language()}</div><section class="panel config-assistant"><div class="eyebrow">OLIVIA IA · ${w.ai_used} / ${w.ai_limit}</div><h2>${tr("Dale forma a tu servicio con Olivia.", "Shape your service with Olivia.")}</h2><p>${tr("Describe tu operación. Revisa los servicios y campos sugeridos antes de aplicar cualquier cambio.", "Describe your operation. Review suggested services and fields before applying any changes.")}</p><label for="configuration-goal">${tr("¿Cómo trabaja tu equipo?", "How does your team work?")}</label><textarea id="configuration-goal" maxlength="1000" rows="2" ${integrations.olivia.configured ? "" : "disabled"}></textarea><button type="button" class="btn" id="suggest-configuration" ${integrations.olivia.configured ? "" : "disabled"}>${tr("Preparar propuesta con Olivia", "Prepare proposal with Olivia")} ✦</button>${!integrations.olivia.configured ? `<p class="subtitle">${tr("La asistencia IA todavía no está disponible para este espacio. Puedes configurar todo manualmente.", "AI assistance is not yet available for this workspace. You can configure everything manually.")}</p>` : ""}<div id="configuration-proposal"></div></section><form id="workspace-settings"><div class="settings-grid"><section class="panel"><h2>${tr("Identidad y organización", "Identity and organization")}</h2>${input("business", t("company"), "text", w.name)}${input("sector", tr("Sector", "Industry"), "text", w.settings.sector, false)}${input("logo", tr("Logo (URL HTTPS)", "Logo (HTTPS URL)"), "url", w.settings.logo, false)}${input("timezone", tr("Zona horaria", "Time zone"), "text", w.settings.timezone)}<label>${tr("Idioma del espacio", "Workspace language")}<select id="workspace-language"><option value="es" ${w.settings.language === "es" ? "selected" : ""}>Español</option><option value="en" ${w.settings.language === "en" ? "selected" : ""}>English</option></select></label>${["categories", "departments", "sites"].map((key, i) => `<label for="config-${key}">${tr(["Servicios / categorías", "Departamentos", "Sedes"][i], ["Services / categories", "Departments", "Sites"][i])}</label><textarea id="config-${key}" rows="3">${e(w.settings[key].join("\n"))}</textarea>`).join("")}</section><section class="panel"><h2>SLA · ${tr("Horas de atención", "Service hours")}</h2>${Object.entries(
+    el.innerHTML = `<div class="row"><div><div class="eyebrow">${tr("A TU MANERA", "YOUR WAY")}</div><h1>${t("settings")}</h1><p class="subtitle">${tr("Tus cambios se aplican a las solicitudes reales.", "Your changes apply to real requests.")}</p></div>${language()}</div><section class="panel config-assistant"><div class="eyebrow">OLIVIA IA · ${w.ai_used} / ${w.ai_limit}</div><h2>${tr("Dale forma a tu servicio con Olivia.", "Shape your service with Olivia.")}</h2><p>${tr("Describe tu operación. Revisa los servicios y campos sugeridos antes de aplicar cualquier cambio.", "Describe your operation. Review suggested services and fields before applying any changes.")}</p><label for="configuration-goal">${tr("¿Cómo trabaja tu equipo?", "How does your team work?")}</label><textarea id="configuration-goal" maxlength="1000" rows="2" ${integrations.olivia.configured ? "" : "disabled"}></textarea><button type="button" class="btn" id="suggest-configuration" ${integrations.olivia.configured ? "" : "disabled"}>${tr("Preparar propuesta con Olivia", "Prepare proposal with Olivia")} ✦</button>${!integrations.olivia.configured ? `<p class="subtitle">${tr("La asistencia IA todavía no está disponible para este espacio. Puedes configurar todo manualmente.", "AI assistance is not yet available for this workspace. You can configure everything manually.")}</p>` : ""}<div id="configuration-proposal"></div></section><form id="workspace-settings"><div class="settings-grid"><section class="panel"><h2>${tr("Identidad y organización", "Identity and organization")}</h2>${input("business", t("company"), "text", w.name)}${input("sector", tr("Sector", "Industry"), "text", w.settings.sector, false)}${logoPicker(w.settings.logo)}${input("timezone", tr("Zona horaria", "Time zone"), "text", w.settings.timezone)}<label>${tr("Idioma del espacio", "Workspace language")}<select id="workspace-language"><option value="es" ${w.settings.language === "es" ? "selected" : ""}>Español</option><option value="en" ${w.settings.language === "en" ? "selected" : ""}>English</option></select></label>${["categories", "departments", "sites"].map((key, i) => `<label for="config-${key}">${tr(["Servicios / categorías", "Departamentos", "Sedes"][i], ["Services / categories", "Departments", "Sites"][i])}</label><textarea id="config-${key}" rows="3">${e(w.settings[key].join("\n"))}</textarea>`).join("")}</section><section class="panel"><h2>SLA · ${tr("Horas de atención", "Service hours")}</h2>${Object.entries(
       w.settings.sla,
     )
       .map(([p, h]) => input("sla-" + p, p, "number", h))
@@ -389,6 +505,7 @@ export function createSaas({
         await reload("settings");
       });
     });
+    bindLogoPicker(el, w.settings);
     function drawFields() {
       el.querySelector("#fields-builder").innerHTML = fields
         .map(
@@ -561,7 +678,7 @@ export function createSaas({
         rules,
         escalations,
         sector: el.querySelector("#sector").value,
-        logo: el.querySelector("#logo").value,
+        logo: w.settings.logo,
         timezone: el.querySelector("#timezone").value,
         language: el.querySelector("#workspace-language").value,
       };

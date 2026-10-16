@@ -84,3 +84,9 @@ Pour un retour applicatif, redéployer l'artefact précédemment validé. Les mi
 ## Contrôle du démarrage Railway
 
 Le contrôle après publication a révélé que la commande de migration pré-déploiement n'était pas exécutée par la configuration effective du service. Les migrations ont été appliquées explicitement à Railway dev. Le serveur les exécute désormais aussi au démarrage sous verrou transactionnel, de manière idempotente, avant d'écouter. `/health` vérifie la dernière migration livrée et répond 503 si elle manque. Aucun seed n'est exécuté par ce mécanisme. La configuration Railway historique reste compatible, mais sa migration vers la configuration d'infrastructure prise en charge par la plateforme doit être planifiée avant sa date de retrait annoncée par la CLI.
+
+## Chargement du logo depuis un fichier
+
+Le champ URL a été remplacé dans l'onboarding et les paramètres par un sélecteur de fichier avec aperçu, remplacement et suppression. PNG, JPG et WebP jusqu'à 1 Mo ; les images sont décodées, réorientées et normalisées en PNG, sans agrandissement et avec un maximum de 512 × 512 pixels. L'image est conservée dans PostgreSQL, une seule par abonné, et reste disponible après redéploiement. Les administrateurs de l'espace peuvent la modifier ; un autre abonné ne peut pas lui affecter son logo. Les logos sont des images de marque publiquement consultables par identifiant opaque, sans exposition des autres données de l'espace. Le chargement et la suppression enregistrent immédiatement le logo ; les autres réglages gardent leur bouton de sauvegarde. Les anciennes URL HTTPS restent compatibles côté serveur.
+
+Tests : décodage réel, mauvais formats, CSRF, droits, isolation, redimensionnement, remplacement, suppression ; parcours navigateur dans l'onboarding puis les paramètres, et conservation après rechargement.
