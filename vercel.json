@@ -117,5 +117,22 @@
   ],
   "git": {
     "deploymentEnabled": false
-  }
+  },
+  "redirects": [
+    {
+      "source": "/demo",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/demo/:path*",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/demo.html",
+      "destination": "/",
+      "permanent": true
+    }
+  ]
 }
