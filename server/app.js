@@ -1,3 +1,5 @@
+import { countries } from "../public/international.js";
+import { installInternationalRoutes } from "./international.js";
 import express from "express";
 import session from "express-session";
 import pgSession from "connect-pg-simple";
@@ -238,7 +240,7 @@ export function createApp({ getStripe } = {}) {
       return next(fail(401, "Inicia sesión para continuar"));
     const user = (
       await pool.query(
-        "SELECT id,email,name,role,company_id,active,tenant_id,is_platform_owner,team_id,email_verified_at FROM users WHERE id=$1",
+        "SELECT id,email,name,role,company_id,active,tenant_id,is_platform_owner,team_id,email_verified_at,language FROM users WHERE id=$1",
         [req.session.userId],
       )
     ).rows[0];
@@ -271,7 +273,7 @@ export function createApp({ getStripe } = {}) {
       !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
       accessState(tenant) !== "full" &&
       !req.path.startsWith("/billing") &&
-      req.path !== "/logout" &&
+      !["/logout", "/preferences"].includes(req.path) &&
       !user.is_platform_owner
     )
       return next(
@@ -284,6 +286,7 @@ export function createApp({ getStripe } = {}) {
   });
   installBillingRoutes(app, getStripe);
   installWorkspaceRoutes(app);
+  installInternationalRoutes(app);
   installLogoRoutes(app);
   installAccountPrivate(app);
   installAssistantRoutes(app);
@@ -321,7 +324,19 @@ export function createApp({ getStripe } = {}) {
         [companies.map((c) => c.id)],
       )
     ).rows;
-    res.json({ companies, contacts });
+    const branches = (
+      await pool.query(
+        "SELECT * FROM customer_branches WHERE tenant_id=$1 AND company_id=ANY($2::int[]) ORDER BY name",
+        [req.user.tenant_id, companies.map((c) => c.id)],
+      )
+    ).rows;
+    res.json({
+      companies: companies.map((c) => ({
+        ...c,
+        branches: branches.filter((b) => b.company_id === c.id),
+      })),
+      contacts,
+    });
   });
   app.get("/api/users", async (req, res) => {
     if (!globalAccess(req.user))
@@ -364,6 +379,14 @@ export function createApp({ getStripe } = {}) {
     if (req.query.priority)
       add("t.priority=?", choice(req.query.priority, priorities));
     if (req.query.company_id) add("t.company_id=?", id(req.query.company_id));
+    if (req.query.country_code) {
+      if (!countries.includes(req.query.country_code))
+        throw fail(400, "País no válido");
+      add(
+        "EXISTS (SELECT 1 FROM customer_branches cb WHERE cb.id=t.branch_id AND cb.tenant_id=t.tenant_id AND cb.company_id=t.company_id AND cb.country_code=?)",
+        req.query.country_code,
+      );
+    }
     if (req.query.agent_id === "none") where += " AND t.agent_id IS NULL";
     else if (req.query.agent_id) add("t.agent_id=?", id(req.query.agent_id));
     const total = Number(
@@ -423,6 +446,20 @@ export function createApp({ getStripe } = {}) {
       )
     ).rows[0];
     if (!c) throw fail(400, "Empresa no válida");
+    let branch = null;
+    if (
+      b.branch_id !== undefined &&
+      b.branch_id !== null &&
+      b.branch_id !== ""
+    ) {
+      branch = (
+        await pool.query(
+          "SELECT * FROM customer_branches WHERE tenant_id=$1 AND company_id=$2 AND id=$3",
+          [req.user.tenant_id, company, id(b.branch_id)],
+        )
+      ).rows[0];
+      if (!branch) throw fail(400, "Filial no disponible para este cliente");
+    }
     const priority = choice(b.priority, priorities);
     const settings = settingsOf(req.tenant);
     const custom = customFields(b.custom_fields, settings);
@@ -430,11 +467,11 @@ export function createApp({ getStripe } = {}) {
     const t = await transaction(async (db) => {
       const t = (
         await db.query(
-          "INSERT INTO tickets(title,company_id,site,category,description,priority,requested_priority,created_by,due_at,tenant_id,custom_fields,agent_id,workflow_stage) VALUES($1,$2,$3,$4,$5,$6,$6,$7,now()+($8 * interval '1 hour'),$9,$10,$11,$12) RETURNING *",
+          "INSERT INTO tickets(title,company_id,site,category,description,priority,requested_priority,created_by,due_at,tenant_id,custom_fields,agent_id,workflow_stage,branch_id) VALUES($1,$2,$3,$4,$5,$6,$6,$7,now()+($8 * interval '1 hour'),$9,$10,$11,$12,$13) RETURNING *",
           [
             text(b.title, "Asunto", 160),
             company,
-            text(b.site, "Sede", 160),
+            branch ? branch.name : text(b.site, "Sede", 160),
             choice(b.category, settings.categories),
             text(b.description, "Descripción"),
             priority,
@@ -444,6 +481,7 @@ export function createApp({ getStripe } = {}) {
             custom,
             rule?.agent_id || null,
             settings.workflow.find((w) => w.state === "Abierto").name,
+            branch?.id || null,
           ],
         )
       ).rows[0];

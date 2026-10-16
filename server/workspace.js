@@ -61,7 +61,8 @@ export function validateSettings(input) {
     if (!Object.hasOwn(defaults, key))
       throw fail(400, `Configuración desconocida: ${key}`);
   const s = { ...defaults, ...input };
-  if (!["es", "en"].includes(s.language)) throw fail(400, "Idioma no válido");
+  if (!["es", "en", "fr"].includes(s.language))
+    throw fail(400, "Idioma no válido");
   try {
     new Intl.DateTimeFormat("en", { timeZone: s.timezone });
   } catch {
@@ -340,7 +341,7 @@ export function installPublicWorkspaceRoutes(app, limit) {
       name = str(b.name, "Nombre", 100),
       business = str(b.company, "Empresa");
     const hash = await hashPassword(password(b.password));
-    if (b.accepted_terms !== true || !["es", "en"].includes(b.language))
+    if (b.accepted_terms !== true || !["es", "en", "fr"].includes(b.language))
       throw fail(400, "Acepta las condiciones y selecciona el idioma");
     const result = await transaction(async (db) => {
       if (

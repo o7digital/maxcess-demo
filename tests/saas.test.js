@@ -68,6 +68,7 @@ after(async () => {
       "events",
       "tickets",
       "invitations",
+      "customer_branches",
       "contacts",
     ])
       await pool.query(`DELETE FROM ${table} WHERE tenant_id=$1`, [id]);
@@ -374,6 +375,145 @@ test("Database foreign keys reject cross-tenant references even when bypassing A
     ),
     { code: "23503" },
   );
+});
+test("International branches stay customer-scoped and user language persists independently", async () => {
+  const path = `/companies/${aCompany.id}/branches`;
+  const body = {
+    name: "Paris",
+    country_code: "FR",
+    city: "Paris",
+    address: "8 rue du Service",
+    language: "fr",
+    timezone: "Europe/Paris",
+  };
+  const paris = (await send(a, path, body).expect(201)).body.branch;
+  const mexico = (
+    await send(a, path, {
+      ...body,
+      name: "Monterrey",
+      country_code: "MX",
+      language: "es",
+      timezone: "America/Monterrey",
+    }).expect(201)
+  ).body.branch;
+  const technician = request.agent(app),
+    technicianBoot = await technician.get("/api/bootstrap");
+  const technicianLogin = await technician
+    .post("/api/login")
+    .set("X-CSRF-Token", technicianBoot.body.csrf)
+    .send({ email: agentA.email, password: "Secure-password-2026!" })
+    .expect(200);
+  await technician
+    .post("/api" + path)
+    .set("X-CSRF-Token", technicianLogin.body.csrf)
+    .send({ ...body, name: "Forbidden" })
+    .expect(403);
+  await technician
+    .put("/api" + path + "/" + paris.id)
+    .set("X-CSRF-Token", technicianLogin.body.csrf)
+    .send(body)
+    .expect(403);
+  assert.notEqual(paris.id, mexico.id);
+  assert.equal(paris.company_id, aCompany.id);
+  assert.equal(paris.tenant_id, a.user.tenant_id);
+  for (const patch of [
+    { country_code: "XX" },
+    { country_code: "fr" },
+    { language: "xx" },
+    { timezone: "Europe/Nowhere" },
+  ])
+    await send(a, path, { ...body, ...patch }).expect(400);
+  await send(b, path, body).expect(404);
+  await send(b, path + "/" + paris.id, body, "put").expect(404);
+  await send(
+    a,
+    `/companies/${bCompany.id}/branches/${paris.id}`,
+    body,
+    "put",
+  ).expect(404);
+  await send(a, path + "/" + paris.id, { ...body, city: "Lyon" }, "put").expect(
+    200,
+  );
+  const customer = (
+    await a.agent.get("/api/companies").expect(200)
+  ).body.companies.find((c) => c.id === aCompany.id);
+  assert.equal(customer.branches.length, 2);
+  assert.equal(customer.branches.find((v) => v.id === paris.id).city, "Lyon");
+  assert.ok(
+    (await b.agent.get("/api/companies").expect(200)).body.companies.every(
+      (c) => !c.branches.some((v) => v.id === paris.id),
+    ),
+  );
+  const ticketBody = {
+    title: "International branch request",
+    company_id: aCompany.id,
+    branch_id: paris.id,
+    description: "Service abroad",
+    category: "Mantenimiento",
+    priority: "Media",
+    custom_fields: { asset: "FR-01" },
+  };
+  const ticket = (await send(a, "/tickets", ticketBody).expect(201)).body
+    .ticket;
+  assert.equal(ticket.branch_id, paris.id);
+  assert.equal(ticket.site, "Paris");
+  assert.equal(
+    (await a.agent.get("/api/tickets?country_code=FR")).body.total,
+    1,
+  );
+  assert.equal(
+    (await a.agent.get("/api/tickets?country_code=MX")).body.total,
+    0,
+  );
+  assert.equal(
+    (await b.agent.get("/api/tickets?country_code=FR")).body.total,
+    0,
+  );
+  await a.agent.get("/api/tickets?country_code=XX").expect(400);
+  await send(b, "/tickets", { ...ticketBody, company_id: bCompany.id }).expect(
+    400,
+  );
+  const other = (
+    await pool.query(
+      "INSERT INTO companies(tenant_id,name,sector,site) VALUES($1,'Other branch customer','Services','HQ') RETURNING id",
+      [a.user.tenant_id],
+    )
+  ).rows[0];
+  await send(a, "/tickets", { ...ticketBody, company_id: other.id }).expect(
+    400,
+  );
+  await assert.rejects(
+    pool.query("UPDATE tickets SET company_id=$1 WHERE id=$2", [
+      other.id,
+      ticket.id,
+    ]),
+    { code: "23503" },
+  );
+  await pool.query("DELETE FROM companies WHERE id=$1", [other.id]);
+  await send(a, "/preferences", { language: "fr" }, "put").expect(200);
+  assert.equal(
+    (await a.agent.get("/api/me").expect(200)).body.user.language,
+    "fr",
+  );
+  assert.notEqual(
+    (await b.agent.get("/api/me").expect(200)).body.user.language,
+    "fr",
+  );
+  assert.equal(
+    (await a.agent.get("/api/workspace").expect(200)).body.workspace.settings
+      .language,
+    "es",
+  );
+  await send(a, "/preferences", { language: "xx" }, "put").expect(400);
+  const fresh = request.agent(app),
+    boot = await fresh.get("/api/bootstrap");
+  const login = await fresh
+    .post("/api/login")
+    .set("X-CSRF-Token", boot.body.csrf)
+    .send({ email: a.credentials.email, password: a.credentials.password })
+    .expect(200);
+  assert.equal(login.body.user.language, "fr");
+  await send(a, "/preferences", { language: "es" }, "put").expect(200);
 });
 test("CSV and XLSX imports validate mappings, isolate data and persist rows transactionally", async () => {
   const upload = {

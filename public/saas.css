@@ -781,3 +781,35 @@
   font-size: 11px;
   color: #536c3f;
 }
+
+#mx-demo .branch-summary {
+  margin: 18px 0;
+}
+#mx-demo .branch-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px solid #e0e5da;
+}
+#mx-demo .branch-row strong {
+  font-size: 13px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+#mx-demo .branch-row small {
+  display: block;
+  margin-top: 5px;
+  font-size: 11px;
+  color: #728071;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  #mx-demo .branch-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #mx-demo .branch-row .btn {
+    justify-self: start;
+  }
+}

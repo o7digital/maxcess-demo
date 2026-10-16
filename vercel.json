@@ -5,16 +5,6 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/((?!launch\\.css$|favicon\\.svg$).*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "servicehub.o7digitalgroup.com"
-        }
-      ],
-      "destination": "/launch.html"
-    },
-    {
       "source": "/api/:path*",
       "destination": "https://service-hub-dev-3fbf.up.railway.app/api/:path*"
     },
@@ -119,6 +109,17 @@
     "deploymentEnabled": false
   },
   "redirects": [
+    {
+      "source": "/((?!launch\\.html$|launch\\.css$|favicon\\.svg$).*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "servicehub.o7digitalgroup.com"
+        }
+      ],
+      "destination": "/launch.html",
+      "permanent": false
+    },
     {
       "source": "/demo",
       "destination": "/",

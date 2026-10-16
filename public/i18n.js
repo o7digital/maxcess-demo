@@ -1,12 +1,18 @@
+import { inFrench } from "./french.js";
 // Translate the retained operational screens while keeping canonical API values.
 const english = {
   Resumen: "Overview",
   Solicitudes: "Requests",
   "Mi fila": "My queue",
-  Empresas: "Companies",
+  Clientes: "Customers",
+  "Todos los clientes": "All customers",
+  "CLIENTE / SEDE": "CUSTOMER / SITE",
+  Filial: "Branch",
+  "Sede general": "General site",
   Administración: "Users & access",
   Informes: "Reports",
   "Centro de servicio": "Service workspace",
+  "Centro de servicio /": "Service workspace /",
   "MI ESPACIO": "MY WORKSPACE",
   Superadministrador: "Super administrator",
   Administrador: "Administrator",
@@ -16,7 +22,7 @@ const english = {
   Actualizar: "Refresh",
   "Cerrar sesión": "Sign out",
   "RELACIONES DE SERVICIO": "SERVICE RELATIONSHIPS",
-  "+ Nueva empresa": "+ New company",
+  "+ Nuevo cliente": "+ New customer",
   "Importar CSV / Excel ↗": "Import CSV / Excel ↗",
   "Contactos y seguimiento por sede.": "Contacts and follow-up by site.",
   "Ver solicitudes ↗": "View requests ↗",
@@ -183,7 +189,7 @@ export function installLegacyTranslations(root) {
   const translate = () => {
     queued = false;
     if (
-      document.documentElement.lang !== "en" ||
+      !["en", "fr"].includes(document.documentElement.lang) ||
       root.classList.contains("commercial")
     )
       return;
@@ -192,7 +198,7 @@ export function installLegacyTranslations(root) {
     while ((node = walker.nextNode())) {
       if (
         node.parentElement.closest(
-          "script,style,textarea,.ticket-title,.client-banner,.client-company,.profile,.workspace-label,input",
+          "script,style,textarea,[data-user-content],.ticket-title,.client-banner,.client-company,.profile,.workspace-label,input",
         )
       )
         continue;
@@ -202,6 +208,10 @@ export function installLegacyTranslations(root) {
       if (!value && /^Hola, .+\.$/.test(trim))
         value = trim.replace(/^Hola, /, "Hello, ");
       if (!value) continue;
+      if (document.documentElement.lang === "fr")
+        value = /^Hello, /.test(value)
+          ? value.replace(/^Hello, /, "Bonjour, ")
+          : inFrench(value);
       const option = node.parentElement.closest("option");
       if (option && !option.hasAttribute("value"))
         option.value = option.textContent;
