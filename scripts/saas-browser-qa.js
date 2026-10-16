@@ -76,13 +76,11 @@ try {
     console.log("Onboarding step", step + 1);
     if (step === 0) {
       await page.locator("#sector").fill("Servicios profesionales");
-      await page
-        .locator("#logo-file")
-        .setInputFiles({
-          name: "company-logo.png",
-          mimeType: "image/png",
-          buffer: logo,
-        });
+      await page.locator("#logo-file").setInputFiles({
+        name: "company-logo.png",
+        mimeType: "image/png",
+        buffer: logo,
+      });
       await page.getByText("Logo guardado", { exact: true }).waitFor();
       await page.waitForFunction(
         () => document.querySelector("#logo-preview")?.naturalWidth > 0,
@@ -121,13 +119,11 @@ try {
     .flatten({ background: "#ffffff" })
     .jpeg()
     .toBuffer();
-  await page
-    .locator("#logo-file")
-    .setInputFiles({
-      name: "updated-logo.jpg",
-      mimeType: "image/jpeg",
-      buffer: replacement,
-    });
+  await page.locator("#logo-file").setInputFiles({
+    name: "updated-logo.jpg",
+    mimeType: "image/jpeg",
+    buffer: replacement,
+  });
   await page.getByText("Logo guardado", { exact: true }).waitFor();
   await page.waitForFunction(
     () => document.querySelector("#logo-preview")?.naturalWidth > 0,
@@ -140,6 +136,9 @@ try {
   await page.locator("[data-property=label]").fill("Número de activo");
   await page.locator("[data-property=key]").fill("asset_number");
   await page.locator("[data-property=required]").check();
+  const previousSettingsForm = await page
+    .locator("#workspace-settings")
+    .elementHandle();
   await Promise.all([
     page.waitForResponse(
       (r) =>
@@ -149,9 +148,8 @@ try {
     ),
     page.locator(".sticky-save button").click(),
   ]);
-  await page.waitForResponse(
-    (r) => r.url().endsWith("/api/workspace") && r.request().method() === "GET",
-  );
+  await page.waitForFunction((form) => !form.isConnected, previousSettingsForm);
+  await page.locator("#workspace-settings").waitFor();
   await page.locator("[data-property=label]").waitFor();
   assert.equal(
     await page.locator("[data-property=label]").inputValue(),
