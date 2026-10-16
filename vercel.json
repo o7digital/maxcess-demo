@@ -110,6 +110,17 @@
   },
   "redirects": [
     {
+      "source": "/login",
+      "has": [
+        {
+          "type": "host",
+          "value": "servicehub.o7digitalgroup.com"
+        }
+      ],
+      "destination": "https://servicehub-o7.vercel.app/login",
+      "permanent": false
+    },
+    {
       "source": "/((?!launch\\.html$|launch\\.css$|favicon\\.svg$).*)",
       "has": [
         {

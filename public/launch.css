@@ -78,3 +78,6 @@ footer {
     letter-spacing: -2px;
   }
 }
+
+.secondary { background: transparent; border: 1px solid #d4dccd; margin-left: 12px; }
+@media (max-width: 600px) { .secondary { margin-left: 0; } }
