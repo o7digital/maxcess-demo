@@ -70,7 +70,7 @@ export async function seed() {
     for (let i = 0; i < 20; i++) {
       const c = (
         await db.query(
-          "INSERT INTO companies(name,sector,site) VALUES($1,$2,$3) ON CONFLICT(name) DO UPDATE SET name=EXCLUDED.name RETURNING *",
+          "INSERT INTO companies(name,sector,site) VALUES($1,$2,$3) ON CONFLICT(tenant_id,name) DO UPDATE SET name=EXCLUDED.name RETURNING *",
           [
             names[i],
             ["Salud", "Comercio", "Servicios", "Industria"][i % 4],
@@ -80,7 +80,7 @@ export async function seed() {
       ).rows[0];
       companies.push(c);
       await db.query(
-        "INSERT INTO contacts(company_id,name,email,function) VALUES($1,$2,$3,$4) ON CONFLICT(email) DO NOTHING",
+        "INSERT INTO contacts(company_id,name,email,function) VALUES($1,$2,$3,$4) ON CONFLICT DO NOTHING",
         [
           c.id,
           `Contacto ficticio ${i + 1}`,

@@ -1,12 +1,10 @@
-# Service Hub — support et intelligence de service
+# Service Hub — O7 Digital Group
 
-Frontend de la démo : **https://maxcess-demo.vercel.app** (Vercel). Backend et PostgreSQL : Railway, environnement **dev**, **https://service-hub-dev-3fbf.up.railway.app**.
+Plateforme de service SaaS en cours de validation. Frontend **Vercel** (projet `servicehub`), API et PostgreSQL **Railway**. Domaine commercial réservé : **https://servicehub.o7digitalgroup.com** ; ouverture maintenue en attente de validation complète. URL de revue : **https://servicehub-o7.vercel.app**.
 
-Dashboard client et opérationnel, graphiques depuis PostgreSQL, rapports sauvegardés, export CSV, administration des comptes et chat flottant relié à Olivia V3.5 sur VPS2. Interface espagnole, design graphite/ivoire/citron et logo lié à O7 Digital Group Holding.
+Inscription, essai gratuit de sept jours, onboarding, espaces abonnés isolés, configuration des formulaires/workflows/SLA, équipes et invitations, imports CSV/Excel, catalogue tarifaire O7 et intégration Stripe exclusivement en mode test. Les prix utilisateurs, clés Stripe, SMTP et scopes Olivia multi-abonnés restent à configurer avant la mise en vente. La licence de plateforme est récurrente : **399 USD chaque année**, en plus de l'abonnement utilisateurs.
 
-La version stable initiale est conservée sur `main` et `demo/service-hub`, à https://service-hub-production-3168.up.railway.app. `dev` a été créée depuis cette base commune. L’environnement Railway `dev` utilise une base indépendante et un secret de session distinct.
-
-Démo utilisateur : [aperçus mobile / iPad / desktop](https://maxcess-demo.vercel.app/demo) · [portail client plein écran](https://maxcess-demo.vercel.app/cliente).
+[État détaillé, tests, limites, DNS et procédure de lancement](docs/SAAS-DELIVERY.md). Travail sur `main` ; sauvegarde du code initial sur `backup`. Le backend de validation est Railway `dev`, avec sa base indépendante. Railway `production` n'est pas modifié. Les données et comptes illustratifs sont isolés dans leur propre espace ; les nouveaux comptes partent avec un espace vide.
 
 ## Accès et permissions
 
@@ -53,14 +51,14 @@ Les tests utilisent exclusivement la base dédiée et suppriment leurs données 
 
 ## Déployer sur dev
 
-Le frontend est publié sur le projet Vercel existant `maxcess-demo` :
+Le frontend commercial est publié sur le projet Vercel `servicehub` :
 
 ```sh
-vercel link --project maxcess-demo --scope olivier-steineur --yes
+vercel link --project servicehub --scope olivier-steineur --yes
 vercel deploy --prod --yes
 ```
 
-`vercel.json` publie uniquement `public/` après vérification du build. Les routes `/api/*` et `/health` sont relayées vers le backend Railway **dev**, qui conserve les comptes, sessions, intégrations et données de la version premium. Le navigateur utilise la même origine Vercel pour les cookies sécurisés et la protection CSRF. Aucune variable serveur ni base de données n'est nécessaire sur Vercel. Les chemins `/demo` et `/cliente` sont servis par Vercel. L'environnement Railway `production` reste la version stable initiale indépendante.
+`vercel.json` publie uniquement `dist/` après vérification du build. Le build exclut les aperçus illustratifs. Les routes `/api/*` et `/health` sont relayées vers le backend Railway **dev**, qui conserve les comptes, sessions, intégrations et données de la version premium. Le navigateur utilise la même origine Vercel pour les cookies sécurisés et la protection CSRF. Aucune variable serveur ni base de données n'est nécessaire sur Vercel. Les chemins `/demo` et `/cliente` sont servis par Vercel. L'environnement Railway `production` reste la version stable initiale indépendante.
 
 Pour mettre à jour le backend uniquement :
 

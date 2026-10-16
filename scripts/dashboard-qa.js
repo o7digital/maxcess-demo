@@ -55,7 +55,7 @@ try {
       if (m.type() === "error" && !m.text().includes("401"))
         errors.push(m.text());
     });
-    await page.goto(base);
+    await page.goto(base + "/login");
     await page.locator("#email").fill(credential.email);
     await page.locator("#password").fill(credential.password);
     await page.getByRole("button", { name: "Entrar a mi espacio" }).click();

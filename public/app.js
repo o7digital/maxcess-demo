@@ -1,12 +1,19 @@
+import { installLegacyTranslations } from "./i18n.js";
+import { createSaas } from "./saas.js";
 import { metricCards, charts, reportDocument } from "./analytics.js";
-const resetChat=()=>document.querySelector("#olivia-widget")?.remove();
+const resetChat = () => document.querySelector("#olivia-widget")?.remove();
 const clientPortal = /^\/cliente\/?$/.test(location.pathname);
 const app = document.querySelector("#app"),
   overlay = document.querySelector("#mx-overlay");
-let config,
+let overviewMetrics,
+  workspace,
+  config,
   csrf,
   user,
   tickets = [],
+  ticketTotal = 0,
+  nextCursor = null,
+  ticketSearchVersion = 0,
   companies = [],
   contacts = [],
   users = [],
@@ -16,14 +23,14 @@ let config,
   lastFocus,
   guide = false;
 const statuses = ["Abierto", "En curso", "Resuelto", "Cerrado"],
-  priorities = ["Baja", "Media", "Alta", "Crítica"],
-  categories = [
-    "Conectividad",
-    "Equipos",
-    "Facturación",
-    "Accesos",
-    "Servicio",
-  ];
+  priorities = ["Baja", "Media", "Alta", "Crítica"];
+let categories = [
+  "Conectividad",
+  "Equipos",
+  "Facturación",
+  "Accesos",
+  "Servicio",
+];
 const esc = (v) =>
   String(v ?? "").replace(
     /[&<>"']/g,
@@ -49,7 +56,7 @@ const date = (v) =>
   new Date(v).toLocaleString("es-MX", {
     dateStyle: "short",
     timeStyle: "short",
-    timeZone: "America/Mexico_City",
+    timeZone: workspace?.settings.timezone || "America/Mexico_City",
   });
 const option = (values, current) =>
   values
@@ -98,58 +105,73 @@ async function api(path, method = "GET", body) {
   }
   return data;
 }
+installLegacyTranslations(app);
+const saas = createSaas({
+  api,
+  esc,
+  app,
+  notify,
+  getUser: () => user,
+  getWorkspace: () => workspace,
+  onLogin: async (data) => {
+    user = data.user;
+    csrf = data.csrf;
+    await load();
+    view = workspace.onboarding_completed ? "overview" : "onboarding";
+    shell();
+  },
+  reload: async (nextView) => {
+    await load();
+    view = nextView || "overview";
+    shell();
+  },
+});
 async function bootstrap() {
   config = await api("/bootstrap");
   csrf = config.csrf;
   document.title = `${config.brand} — ${config.subtitle}`;
 }
 function welcome() {
+  app.classList.remove("commercial");
+  if (!clientPortal) {
+    saas.publicPage();
+    return;
+  }
   app.classList.toggle("client-experience", clientPortal);
   if (clientPortal) {
     clientWelcome();
     return;
   }
-  app.innerHTML = `<div class="login"><div class="row welcome-heading"><div><h2>${esc(config.brand)} ↗</h2><p class="subtitle">${esc(config.subtitle)}</p></div>${holdingLogo()}<span class="demo-tag">ENTORNO ${esc(config.environment).toUpperCase()} · DATOS FICTICIOS</span></div><div class="welcome-grid"><div class="hero"><div class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> ATENCIÓN CON CONTINUIDAD</div><h1>Cada solicitud.<br>Una respuesta<br><em>con contexto.</em></h1><p>Un espacio compartido para clientes, agentes y responsables. Del primer contacto a la resolución, sin perder el hilo.</p><div class="actions"><button class="btn lime" data-action="guide">Recorrido guiado ↗</button><button class="btn" data-action="try">Probar la plataforma</button>${config.clientDemo ? '<a class="btn demo-entry-link" href="/demo">Demo cliente · móvil / tablet / desktop ↗</a>' : ""}</div></div></div><div class="panel"><div class="eyebrow">TU ESPACIO DE SERVICIO</div><h2>Iniciar sesión</h2><p class="subtitle">Usa los accesos de demostración compartidos por el equipo. Cada perfil tiene permisos propios.</p><form id="login"><label for="email">Correo electrónico</label><input id="email" name="email" type="email" autocomplete="username" required placeholder="nombre@example.test"><label for="password">Contraseña</label><input id="password" name="password" type="password" autocomplete="current-password" required><p id="login-error" role="alert"></p><button class="btn primary" type="submit">Entrar a mi espacio ↗</button></form><p class="notice">20 empresas ficticias · equipo interno ilustrativo de 25 cuentas por defecto. La distribución no constituye un acuerdo de licencias.</p></div></div><div id="guide" class="guide" ${guide ? "" : "hidden"}><div class="eyebrow">RECORRIDO GUIADO · 5 MINUTOS</div><h2>Una solicitud, tres perspectivas.</h2><p>1. <b>Cliente:</b> inicia sesión y registra una solicitud con sede y prioridad.<br>2. <b>Responsable:</b> entra con tu cuenta y asigna la solicitud a Ana López.<br>3. <b>Agente:</b> revisa el historial, solicita un borrador a Olivia y valida la respuesta.<br>4. <b>Cliente:</b> vuelve al portal para leer y responder.<br>5. <b>Agente:</b> documenta la resolución, cierra y prueba la reapertura.</p><p class="subtitle">Cierra la sesión antes de cambiar de cuenta. Olivia trabaja en modo demo: ninguna sugerencia se publica automáticamente.</p></div></div>`;
-  $("#login").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const b = e.submitter;
-    b.disabled = true;
-    try {
-      const data = await api(
-        "/login",
-        "POST",
-        Object.fromEntries(new FormData(e.target)),
-      );
-      user = data.user;
-      csrf = data.csrf;
-      view = "overview";
-      await load();
-      shell();
-    } catch (err) {
-      $("#login-error").textContent = err.message;
-    } finally {
-      b.disabled = false;
-    }
-  });
 }
+
 async function load() {
-  const [t, c, u] = await Promise.all([
+  const [t, c, u, w, metrics] = await Promise.all([
     api("/tickets"),
     api("/companies"),
     isGlobal() ? api("/users") : Promise.resolve({ users: [] }),
+    api("/workspace"),
+    api("/analytics"),
   ]);
   tickets = t.tickets;
+  ticketTotal = t.total;
+  nextCursor = t.next_cursor;
   companies = c.companies;
   contacts = c.contacts;
   users = u.users;
+  workspace = w.workspace;
+  overviewMetrics = metrics.metrics;
+  categories = workspace.settings.categories;
+  config.clientDemo = config.clientDemo && workspace.is_demo;
+  saas.setLanguage(workspace.settings.language);
 }
 function shell() {
+  app.classList.remove("commercial");
   app.classList.toggle("client-experience", user.role === "client");
   if (user.role === "client") {
     clientShell();
     return;
   }
-  app.innerHTML = `<div class="shell"><aside><div class="brand">${esc(config.brand)}<b>↗</b></div><div class="brand-sub">${esc(config.subtitle)}</div><div class="workspace"><span class="mini-logo">S</span><div><strong>Centro de servicio</strong>${roleLabel(user.role)}</div></div><div class="side-label">MI ESPACIO</div><nav aria-label="Navegación principal">${[
+  app.innerHTML = `<div class="shell"><aside><div class="brand">${workspace?.settings.logo ? `<img class="workspace-logo" src="${esc(workspace.settings.logo)}" alt="">` : ""}${esc(config.brand)}<b>↗</b></div><div class="brand-sub">${esc(config.subtitle)}</div><div class="workspace"><span class="mini-logo">S</span><div><strong>Centro de servicio</strong>${roleLabel(user.role)}</div></div><div class="side-label">MI ESPACIO</div><nav aria-label="Navegación principal">${[
     ["overview", "◫", "Resumen"],
     ["tickets", "▤", user.role === "agent" ? "Mi fila" : "Solicitudes"],
     ...(isGlobal()
@@ -159,6 +181,14 @@ function shell() {
         ]
       : []),
     ["reports", "▧", "Informes"],
+    ...(["admin", "platform_admin"].includes(user.role)
+      ? [
+          ["settings", "⚙", saas.t("settings")],
+          ["subscription", "◈", saas.t("billing")],
+          ["import", "↥", saas.t("import")],
+        ]
+      : []),
+    ...(user.is_platform_owner ? [["platform", "◫", saas.t("admin")]] : []),
     ...(config.clientDemo ? [["demo", "▣", "Demo cliente"]] : []),
     ...(user.role !== "client" ? [["olivia", "✦", "Olivia IA"]] : []),
   ]
@@ -174,9 +204,15 @@ function shell() {
       .map((s) => s[0])
       .slice(0, 2)
       .join(""),
-  )}</span><div>${esc(user.name)}<small>${roleLabel(user.role)}</small></div></div></div></aside><section><header class="top"><div class="breadcrumb">Centro de servicio / <b>${roleLabel(user.role)}</b></div><div class="top-right"><span class="demo-tag">${esc(config.environment).toUpperCase()} · DATOS FICTICIOS</span><button class="btn" data-action="refresh">Actualizar</button><button class="btn" data-action="logout">Cerrar sesión</button></div></header><main class="body" id="content"></main></section></div>`;
+  )}</span><div>${esc(user.name)}<small>${roleLabel(user.role)}</small></div></div></div></aside><section><header class="top"><div class="breadcrumb">Centro de servicio / <b>${roleLabel(user.role)}</b></div><div class="top-right">${workspace?.is_demo ? '<span class="demo-tag">ESPACIO ILUSTRATIVO · DATOS FICTICIOS</span>' : `<span class="workspace-label">${esc(workspace?.name)}</span>`}<button class="btn" data-action="refresh">Actualizar</button><button class="btn" data-action="logout">Cerrar sesión</button></div></header><main class="body" id="content"></main></section></div>`;
+  if (workspace && workspace.access !== "full")
+    document
+      .querySelector("#content")
+      .insertAdjacentHTML(
+        "beforebegin",
+        `<div class="subscription-banner">${esc(saas.t("readonly"))} <button class="btn" data-view="subscription">${esc(saas.t("billing"))} ↗</button></div>`,
+      );
   render();
-
 }
 function table(list) {
   if (user.role === "client") return clientTicketCards(list);
@@ -187,6 +223,20 @@ function table(list) {
 function render() {
   const el = $("#content");
   if (!el) return;
+  const routes = {
+    settings: saas.settings,
+    onboarding: saas.onboarding,
+    subscription: saas.billing,
+    platform: saas.platform,
+    import: saas.importer,
+  };
+  if (routes[view]) {
+    el.innerHTML = '<p class="empty">' + esc(saas.t("loading")) + "</p>";
+    routes[view](el).catch((err) => {
+      el.innerHTML = '<p class="empty">' + esc(err.message) + "</p>";
+    });
+    return;
+  }
   if (view === "demo") {
     location.href = "/demo";
     return;
@@ -202,7 +252,7 @@ function render() {
     renderDashboard(el, true);
     return;
   } else if (view === "tickets") {
-    el.innerHTML = `<div class="row"><div><div class="eyebrow">${user.role === "client" ? "PORTAL CLIENTE" : "CENTRO DE SERVICIO"}</div><h1>${user.role === "agent" ? "Mi fila de atención" : "Solicitudes"}</h1><p class="subtitle">${user.role === "client" ? "Consulta y responde a los casos de tu empresa." : "Cada caso, su responsable y su siguiente paso."}</p></div><div class="actions">${user.role !== "agent" ? '<button class="btn primary" data-action="new">+ Nueva solicitud</button>' : ""}<button class="btn" data-action="export">Exportar CSV</button></div></div><div class="toolbar"><input id="search" aria-label="Buscar solicitudes" placeholder="Buscar asunto, empresa o número…"><select id="status" aria-label="Filtrar por estado">${option(["Todos los estados", ...statuses])}</select><select id="priority" aria-label="Filtrar por prioridad">${option(["Todas las prioridades", ...priorities])}</select>${
+    el.innerHTML = `<div class="row"><div><div class="eyebrow">${user.role === "client" ? "PORTAL CLIENTE" : "CENTRO DE SERVICIO"}</div><h1>${user.role === "agent" ? "Mi fila de atención" : "Solicitudes"}</h1><p class="subtitle">${user.role === "client" ? "Consulta y responde a los casos de tu empresa." : "Cada caso, su responsable y su siguiente paso."}</p></div><div class="actions">${user.role !== "agent" ? '<button class="btn primary" data-action="new">+ Nueva solicitud</button>' : ""}<button class="btn" data-action="export">Exportar vista CSV</button></div></div><div class="toolbar"><input id="search" aria-label="Buscar solicitudes" placeholder="Buscar asunto, empresa o número…"><select id="status" aria-label="Filtrar por estado">${option(["Todos los estados", ...statuses])}</select><select id="priority" aria-label="Filtrar por prioridad">${option(["Todas las prioridades", ...priorities])}</select>${
       isGlobal()
         ? `<select id="company-filter" aria-label="Filtrar por empresa"><option value="">Todas las empresas</option>${companies.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select><select id="agent-filter" aria-label="Filtrar por agente"><option value="">Todos los agentes</option><option value="none">Sin asignar</option>${users
             .filter((u) => u.role === "agent")
@@ -217,13 +267,16 @@ function render() {
       "#company-filter",
       "#agent-filter",
     ])
-      $(s)?.addEventListener("input", renderResults);
+      $(s)?.addEventListener("input", () => {
+        clearTimeout(renderResults.timer);
+        renderResults.timer = setTimeout(() => renderResults(), 200);
+      });
     renderResults();
   } else if (view === "clients") {
-    el.innerHTML = `<div class="eyebrow">RELACIONES DE SERVICIO</div><h1>Empresas</h1><p class="subtitle">20 organizaciones ficticias. Contactos y seguimiento por sede.</p><div class="client-grid">${companies
+    el.innerHTML = `<div class="eyebrow">RELACIONES DE SERVICIO</div><h1>Empresas</h1><div class="actions"><button class="btn primary" id="new-company">+ Nueva empresa</button><button class="btn" data-view="import">Importar CSV / Excel ↗</button></div><p class="subtitle">${workspace.is_demo ? "Organizaciones ficticias. " : ""}Contactos y seguimiento por sede.</p><div class="client-grid">${companies
       .map((c) => {
         const ts = tickets.filter((t) => t.company_id === c.id);
-        return `<div class="panel"><div class="client-banner"><div class="big-client">${esc(c.name)}</div><small>${esc(c.sector)} · EMPRESA FICTICIA</small></div><p>${esc(c.site)}</p><p class="subtitle">${ts.length} solicitudes · ${ts.filter((t) => !["Resuelto", "Cerrado"].includes(t.status)).length} activas</p>${contacts
+        return `<div class="panel"><div class="client-banner"><div class="big-client">${esc(c.name)}</div><small>${esc(c.sector)}${workspace.is_demo ? " · EMPRESA FICTICIA" : ""}</small></div><p>${esc(c.site)}</p><p class="subtitle">${ts.length} solicitudes · ${ts.filter((t) => !["Resuelto", "Cerrado"].includes(t.status)).length} activas</p>${contacts
           .filter((n) => n.company_id === c.id)
           .map(
             (n) =>
@@ -234,6 +287,7 @@ function render() {
           )}<button class="btn" data-company="${c.id}">Ver solicitudes ↗</button></div>`;
       })
       .join("")}</div>`;
+    $("#new-company").onclick = () => saas.companyForm(el);
   } else if (view === "team") {
     renderUsers(el);
     return;
@@ -256,10 +310,36 @@ function filtered() {
       (!a || (a === "none" ? t.agent_id === null : t.agent_id === Number(a))),
   );
 }
-function renderResults() {
-  const list = filtered();
+async function renderResults(append = false) {
+  const version = ++ticketSearchVersion;
+  const params = new URLSearchParams();
+  const filters = {
+    q: $("#search")?.value,
+    status: $("#status")?.value,
+    priority: $("#priority")?.value,
+    company_id: $("#company-filter")?.value,
+    agent_id: $("#agent-filter")?.value,
+  };
+  for (const [key, value] of Object.entries(filters))
+    if (
+      value &&
+      !["Todos los estados", "Todas las prioridades"].includes(value)
+    )
+      params.set(key, value);
+  if (append && nextCursor) params.set("before", nextCursor);
+  try {
+    const data = await api("/tickets?" + params);
+    if (version !== ticketSearchVersion || view !== "tickets") return;
+    tickets = append ? [...tickets, ...data.tickets] : data.tickets;
+    ticketTotal = data.total;
+    nextCursor = data.next_cursor;
+  } catch (err) {
+    notify(err.message);
+    return;
+  }
+  const list = tickets;
   $("#result-count").textContent =
-    `${list.length} de ${tickets.length} solicitudes autorizadas`;
+    `${list.length} de ${ticketTotal} solicitudes autorizadas`;
   $("#ticket-results").innerHTML =
     mode === "list"
       ? `<div class="panel">${table(list)}</div>`
@@ -275,6 +355,13 @@ function renderResults() {
                 .join("")}</div>`,
           )
           .join("")}</div>`;
+  if (nextCursor) {
+    $("#ticket-results").insertAdjacentHTML(
+      "beforeend",
+      `<button class="btn load-more" id="load-more">${saas.tr("Cargar más solicitudes", "Load more requests")} ↗</button>`,
+    );
+    $("#load-more").onclick = () => renderResults(true);
+  }
 }
 function showDialog(html) {
   lastFocus = document.activeElement;
@@ -293,7 +380,7 @@ function closeDialog() {
 }
 function newTicket(category) {
   showDialog(
-    `<div class="row"><div><div class="eyebrow">PORTAL DE ATENCIÓN</div><h2 id="dialog-title">Nueva solicitud</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">Describe lo que ocurre. El equipo validará la prioridad y te dará seguimiento.</p><form id="new-ticket"><label for="title">Asunto</label><input name="title" id="title" maxlength="160" required><div class="field-row"><div><label for="company">Empresa</label><select name="company_id" id="company" required>${companies.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div><div><label for="site">Sede</label><input name="site" id="site" maxlength="160" value="${esc(companies[0]?.site)}" required></div></div><div class="field-row"><div><label for="category">Categoría</label><select name="category" id="category">${option(categories, category)}</select></div><div><label for="new-priority">Prioridad deseada</label><select name="priority" id="new-priority">${option(priorities, "Media")}</select></div></div><label for="description">Descripción</label><textarea name="description" id="description" maxlength="4000" rows="5" required></textarea><p class="subtitle">No incluyas contraseñas ni datos bancarios. Las piezas adjuntas no están habilitadas en esta demostración.</p><button type="submit" class="btn primary">Registrar solicitud ↗</button></form>`,
+    `<div class="row"><div><div class="eyebrow">PORTAL DE ATENCIÓN</div><h2 id="dialog-title">Nueva solicitud</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">Describe lo que ocurre. El equipo validará la prioridad y te dará seguimiento.</p><form id="new-ticket"><label for="title">Asunto</label><input name="title" id="title" maxlength="160" required><div class="field-row"><div><label for="company">Empresa</label><select name="company_id" id="company" required>${companies.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div><div><label for="site">Sede</label><input name="site" id="site" maxlength="160" value="${esc(companies[0]?.site)}" required></div></div><div class="field-row"><div><label for="category">Categoría</label><select name="category" id="category">${option(categories, category)}</select></div><div><label for="new-priority">Prioridad deseada</label><select name="priority" id="new-priority">${option(priorities, "Media")}</select></div></div><label for="description">Descripción</label><textarea name="description" id="description" maxlength="4000" rows="5" required></textarea><p class="subtitle">No incluyas contraseñas ni datos bancarios. Las piezas adjuntas no están habilitadas.</p>${saas.customFields(workspace.settings)}<button type="submit" class="btn primary">Registrar solicitud ↗</button></form>`,
   );
   $("#company").addEventListener(
     "change",
@@ -306,11 +393,10 @@ function newTicket(category) {
     e.preventDefault();
     e.submitter.disabled = true;
     try {
-      const { ticket } = await api(
-        "/tickets",
-        "POST",
-        Object.fromEntries(new FormData(e.target)),
-      );
+      const { ticket } = await api("/tickets", "POST", {
+        ...Object.fromEntries(new FormData(e.target)),
+        custom_fields: saas.readCustom(e.target, workspace.settings),
+      });
       await load();
       view = "tickets";
       shell();
@@ -329,7 +415,16 @@ async function openTicket(ticketId, focusOlivia = false) {
   const isInternal = user.role !== "client",
     active = !["Resuelto", "Cerrado"].includes(t.status);
   showDialog(
-    `<div class="row"><div><div class="eyebrow">SH-${t.id} · ${esc(company(t))}</div><h2 id="dialog-title">${esc(t.title)}</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">${esc(t.site)} · ${esc(t.category)} · Creada ${date(t.created_at)}</p><div class="row"><div>${badge(t.status)} ${badge(t.priority)}</div><span class="subtitle">SLA: ${esc(sla(t))} · ${date(t.due_at)}</span></div><div class="dialog-grid"><div><div class="panel"><h3>Descripción</h3><div class="text-block">${esc(t.description)}</div><p class="subtitle">Prioridad solicitada: ${esc(t.requested_priority)}</p></div><div class="panel chart-panel"><h3>Conversación e historial</h3><div class="timeline">${data.events.map((e) => `<div class="event ${e.internal ? "internal" : ""}"><small>${date(e.created_at)} · ${esc(e.actor)} · ${e.kind === "note" ? "Nota interna · solo equipo" : e.kind === "reply" ? "Respuesta" : e.kind === "resolution" ? "Resolución" : "Historial"}</small><p>${esc(e.body)}</p></div>`).join("")}</div>${active ? `<form id="reply-form"><label for="reply">${isInternal ? "Respuesta para el cliente" : "Responder al equipo"}</label><textarea id="reply" name="body" required maxlength="4000" rows="4"></textarea>${isInternal ? '<label class="check"><input type="checkbox" id="approval" required> Revisé el contenido y autorizo publicarlo en el portal cliente.</label>' : ""}<button class="btn primary">${isInternal ? "Validar y publicar respuesta" : "Enviar respuesta"}</button></form>` : '<p class="subtitle">Este caso está atendido. El equipo puede reabrirlo si requiere seguimiento.</p>'}</div>${isInternal ? `<div class="panel chart-panel"><h3>Trabajo interno</h3><form id="note-form"><label for="note">Nota interna (oculta al cliente)</label><textarea id="note" name="body" maxlength="4000" required></textarea><button class="btn">Guardar nota interna</button></form>${active ? '<form id="resolution-form"><label for="resolution">Resolución verificada</label><textarea id="resolution" name="body" required maxlength="4000" placeholder="Causa, acciones realizadas y verificación con la sede…"></textarea><button class="btn primary">Documentar y resolver</button></form>' : ""}<div class="actions">${t.status === "Resuelto" ? '<button class="btn primary" data-action="close-ticket">Cerrar solicitud</button>' : ""}${!active ? '<button class="btn" data-action="reopen">Reabrir con motivo</button>' : ""}</div></div>` : ""}</div><div>${
+    `<div class="row"><div><div class="eyebrow">SH-${t.id} · ${esc(company(t))}</div><h2 id="dialog-title">${esc(t.title)}</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">${esc(t.site)} · ${esc(t.category)} · Creada ${date(t.created_at)}</p><div class="row"><div>${badge(t.status)} ${badge(t.priority)}</div><span class="subtitle">SLA: ${esc(sla(t))} · ${date(t.due_at)}</span></div><div class="dialog-grid"><div><div class="panel"><h3>Descripción</h3><div class="text-block">${esc(t.description)}</div>${Object.entries(
+      t.custom_fields || {},
+    )
+      .map(
+        ([key, value]) =>
+          `<p><b>${esc(workspace.settings.fields.find((f) => f.key === key)?.label || key)}</b>: ${esc(value)}</p>`,
+      )
+      .join(
+        "",
+      )}${isInternal ? `<form id="workflow-form"><label for="workflow-stage">Etapa</label><select id="workflow-stage">${workspace.settings.workflow.map((w) => `<option ${w.name === t.workflow_stage ? "selected" : ""}>${esc(w.name)}</option>`).join("")}</select><button class="btn">Actualizar etapa</button></form>` : ""}<p class="subtitle">Prioridad solicitada: ${esc(t.requested_priority)}</p></div><div class="panel chart-panel"><h3>Conversación e historial</h3><div class="timeline">${data.events.map((e) => `<div class="event ${e.internal ? "internal" : ""}"><small>${date(e.created_at)} · ${esc(e.actor)} · ${e.kind === "note" ? "Nota interna · solo equipo" : e.kind === "reply" ? "Respuesta" : e.kind === "resolution" ? "Resolución" : "Historial"}</small><p>${esc(e.body)}</p></div>`).join("")}</div>${active ? `<form id="reply-form"><label for="reply">${isInternal ? "Respuesta para el cliente" : "Responder al equipo"}</label><textarea id="reply" name="body" required maxlength="4000" rows="4"></textarea>${isInternal ? '<label class="check"><input type="checkbox" id="approval" required> Revisé el contenido y autorizo publicarlo en el portal cliente.</label>' : ""}<button class="btn primary">${isInternal ? "Validar y publicar respuesta" : "Enviar respuesta"}</button></form>` : '<p class="subtitle">Este caso está atendido. El equipo puede reabrirlo si requiere seguimiento.</p>'}</div>${isInternal ? `<div class="panel chart-panel"><h3>Trabajo interno</h3><form id="note-form"><label for="note">Nota interna (oculta al cliente)</label><textarea id="note" name="body" maxlength="4000" required></textarea><button class="btn">Guardar nota interna</button></form>${active ? '<form id="resolution-form"><label for="resolution">Resolución verificada</label><textarea id="resolution" name="body" required maxlength="4000" placeholder="Causa, acciones realizadas y verificación con la sede…"></textarea><button class="btn primary">Documentar y resolver</button></form>' : ""}<div class="actions">${t.status === "Resuelto" ? '<button class="btn primary" data-action="close-ticket">Cerrar solicitud</button>' : ""}${!active ? '<button class="btn" data-action="reopen">Reabrir con motivo</button>' : ""}</div></div>` : ""}</div><div>${
       isGlobal() && active
         ? `<div class="panel"><h3>Responsable del caso</h3><form id="assign-form"><label for="assigned-agent">Agente</label><select id="assigned-agent" name="agent_id" required><option value="">Seleccionar agente…</option>${users
             .filter((u) => u.role === "agent")
@@ -344,6 +439,18 @@ async function openTicket(ticketId, focusOlivia = false) {
     }${isInternal ? `<div class="panel ai chart-panel"><div class="ai-head"><div class="orb">✦</div><div><b>Olivia IA V3.5</b><div class="muted">ASISTENCIA · REVISIÓN HUMANA</div></div></div><p>Propuestas adaptadas al caso. Revisa todos los datos antes de usarlas.</p><button class="btn primary" data-action="suggest">Preparar con Olivia ↗</button><div id="suggestions"></div></div><div class="panel chart-panel"><h3>Clasificación validada</h3><form id="classification-form"><label for="edit-priority">Prioridad</label><select id="edit-priority" name="priority">${option(priorities, t.priority)}</select><label for="edit-category">Categoría</label><select id="edit-category" name="category">${option(categories, t.category)}</select><label class="check"><input type="checkbox" required> Confirmo esta clasificación.</label><button class="btn">Validar clasificación</button></form></div>` : '<div class="panel ai"><h3>Seguimiento compartido</h3><p>Las respuestas validadas y la resolución de tu equipo aparecen en este historial.</p></div>'}</div></div>`,
   );
   selected = t.id;
+  $("#workflow-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    try {
+      await api(`/tickets/${t.id}/transition`, "POST", {
+        stage: $("#workflow-stage").value,
+      });
+      await load();
+      await openTicket(t.id);
+    } catch (err) {
+      notify(err.message);
+    }
+  });
   for (const [selector, action] of [
     ["#reply-form", "reply"],
     ["#note-form", "note"],
@@ -388,7 +495,7 @@ async function suggest() {
     if (selected !== current) return;
     const s = suggestion;
     $("#suggestions").innerHTML =
-      `<p class="badge amber">${s.mode==='live'?'OLIVIA V3.5':'MODO DEMO'} · REVISIÓN HUMANA</p><h3>Resumen</h3><p>${esc(s.summary)}</p><h3>Clasificación sugerida</h3><p>${esc(s.category)} · ${esc(s.priority)}</p><button class="btn" data-action="copy-classification">Preparar clasificación</button><h3>Borrador de respuesta</h3><p class="text-block">${esc(s.draft)}</p>${$("#reply") ? '<button class="btn" data-action="copy-draft">Copiar al editor para revisar</button>' : ""}<h3>Próxima acción</h3><p>${esc(s.nextAction)}</p><h3>Síntesis de resolución</h3><p>${esc(s.resolution)}</p>${$("#resolution") ? '<button class="btn" data-action="copy-resolution">Preparar resolución para revisar</button>' : ""}`;
+      `<p class="badge amber">${s.mode === "live" ? "OLIVIA V3.5" : "MODO DEMO"} · REVISIÓN HUMANA</p><h3>Resumen</h3><p>${esc(s.summary)}</p><h3>Clasificación sugerida</h3><p>${esc(s.category)} · ${esc(s.priority)}</p><button class="btn" data-action="copy-classification">Preparar clasificación</button><h3>Borrador de respuesta</h3><p class="text-block">${esc(s.draft)}</p>${$("#reply") ? '<button class="btn" data-action="copy-draft">Copiar al editor para revisar</button>' : ""}<h3>Próxima acción</h3><p>${esc(s.nextAction)}</p><h3>Síntesis de resolución</h3><p>${esc(s.resolution)}</p>${$("#resolution") ? '<button class="btn" data-action="copy-resolution">Preparar resolución para revisar</button>' : ""}`;
   } finally {
     if (button) button.disabled = false;
   }
@@ -554,9 +661,31 @@ try {
   try {
     user = (await api("/me")).user;
   } catch {}
-  if (user) {
+  if (
+    [
+      "/verify-email",
+      "/reset-password",
+      "/forgot-password",
+      "/invitation",
+      "/terms",
+      "/privacy",
+      "/pricing",
+    ].includes(location.pathname)
+  ) {
+    await saas.publicPage();
+  } else if (user) {
     await load();
-    view = "overview";
+    const pathViews = {
+      "/settings": "settings",
+      "/subscription": "subscription",
+      "/admin": "platform",
+      "/onboarding": "onboarding",
+    };
+    view =
+      !workspace.onboarding_completed &&
+      ["admin", "platform_admin"].includes(user.role)
+        ? "onboarding"
+        : pathViews[location.pathname] || "overview";
     shell();
   } else if (
     clientPortal &&
@@ -797,7 +926,6 @@ function clientShell() {
       "",
     )}</nav><div class="client-menu-footer">${holdingLogo()}<p>Atención con continuidad.<br>Contexto en cada respuesta.</p></div></aside><main class="body client-content" id="content"></main></div></div>`;
   render();
-
 }
 function clientTicketCards(list) {
   return list.length
@@ -810,7 +938,7 @@ async function renderClientHome(el) {
     const data = await api("/analytics");
     if (!el.isConnected || view !== "overview") return;
     const m = data.metrics;
-    el.innerHTML = `<div class="client-welcome-line"><div><div class="eyebrow">TU SERVICIO, CON CONTINUIDAD</div><h1>Hola, ${esc(user.name.split(" ")[0])}.</h1><p>Estamos contigo en cada solicitud.</p></div><span class="client-demo-pill">${esc(config.environment).toUpperCase()} · datos ficticios</span></div><div class="client-service-hero"><div><span class="eyebrow">CUÉNTANOS QUÉ NECESITAS</span><h2>Una solicitud.<br><em>El siguiente paso, claro.</em></h2><p>Tu equipo tiene el contexto. Tú tienes el seguimiento.</p><button class="btn lime" data-action="new">+ Nueva solicitud</button></div><div class="client-hero-graphic" aria-hidden="true"><div class="client-hero-ring"></div><span>↗</span><i>Todo en un solo lugar</i></div></div><div class="client-metrics">${[
+    el.innerHTML = `<div class="client-welcome-line"><div><div class="eyebrow">TU SERVICIO, CON CONTINUIDAD</div><h1>Hola, ${esc(user.name.split(" ")[0])}.</h1><p>Estamos contigo en cada solicitud.</p></div>${workspace.is_demo ? '<span class="client-demo-pill">ESPACIO ILUSTRATIVO · datos ficticios</span>' : ""}</div><div class="client-service-hero"><div><span class="eyebrow">CUÉNTANOS QUÉ NECESITAS</span><h2>Una solicitud.<br><em>El siguiente paso, claro.</em></h2><p>Tu equipo tiene el contexto. Tú tienes el seguimiento.</p><button class="btn lime" data-action="new">+ Nueva solicitud</button></div><div class="client-hero-graphic" aria-hidden="true"><div class="client-hero-ring"></div><span>↗</span><i>Todo en un solo lugar</i></div></div><div class="client-metrics">${[
       ["En atención", m.active, "Solicitudes activas"],
       ["Atendidas", m.resolved, "Resueltas o cerradas"],
       [
@@ -848,7 +976,6 @@ async function renderClientHome(el) {
     el.querySelectorAll("[data-client-category]").forEach(
       (b) => (b.onclick = () => newTicket(b.dataset.clientCategory)),
     );
-
   } catch (err) {
     if (el.isConnected)
       el.innerHTML = '<p class="empty">No fue posible cargar tu espacio.</p>';
@@ -856,8 +983,19 @@ async function renderClientHome(el) {
   }
 }
 
-function stats(){const active=tickets.filter(t=>!['Resuelto','Cerrado'].includes(t.status));const resolved=tickets.filter(t=>['Resuelto','Cerrado'].includes(t.status));const slaMet=resolved.filter(t=>new Date(t.resolved_at)<=new Date(t.due_at)).length;return `<div class="stats">${[['Solicitudes activas',active.length,'Abiertas y en curso'],['Urgencias',active.filter(t=>t.priority==='Crítica').length,'Prioridad crítica'],['SLA vencidos',active.filter(t=>sla(t)==='Vencido').length,'Requieren seguimiento'],['SLA de casos atendidos',resolved.length?`${Math.round(slaMet/resolved.length*100)}%`:'—',`${resolved.length} casos resueltos o cerrados`]].map(([l,n,s])=>`<div class="stat"><small>${l}</small><strong>${n}</strong><footer>${s}</footer></div>`).join('')}</div>`;}
+function stats() {
+  const m = overviewMetrics || {};
+  const labels = {
+    active: ["Solicitudes activas", "Active requests"],
+    critical: ["Urgencias", "Critical requests"],
+    overdue: ["SLA vencidos", "Overdue SLAs"],
+    sla_percent: ["Cumplimiento SLA", "SLA compliance"],
+    total: ["Total solicitudes", "Total requests"],
+    resolved: ["Casos resueltos", "Resolved requests"],
+  };
+  return `<div class="stats">${(workspace?.settings.dashboard || ["active", "critical", "overdue", "sla_percent"]).map((key) => `<div class="stat"><small>${esc(saas.tr(...labels[key]))}</small><strong>${m[key] === null ? "—" : m[key] + (key === "sla_percent" ? "%" : "")}</strong><footer>${saas.tr("Últimos 30 días · datos de tu espacio", "Last 30 days · workspace data")}</footer></div>`).join("")}</div>`;
+}
 
-function renderStableOverview(el){ el.innerHTML=`<div class="row"><div><div class="eyebrow">SERVICE INTELLIGENCE</div><h1>Hola, ${esc(user.name.split(' ')[0])}.</h1><p class="subtitle">Visibilidad para decidir. Contexto para responder.</p></div>${user.role!=='agent'?'<button class="btn primary" data-action="new">+ Nueva solicitud</button>':''}</div><div class="hero"><div class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> ${user.role==='client'?'TU PORTAL DE ATENCIÓN':'OPERACIÓN CONECTADA'}</div><h2>La atención que avanza.<br>La información que <em>permanece.</em></h2><p>Solicitudes y conversaciones guardadas. Indicadores calculados con los casos autorizados para tu perfil.</p><button class="btn lime" data-view="tickets">Ver solicitudes ↗</button></div><div class="hero-art"><div class="hero-orbit"></div><div class="orb">✦</div><span class="orbit-tag">Olivia IA · V3.5</span></div></div>${stats()}<div class="columns"><div class="panel"><div class="panel-head"><h2>Solicitudes recientes</h2><button class="small-link" data-view="tickets">Ver todas ↗</button></div>${table(tickets.slice(0,6))}</div><div class="secondary-column"><div class="panel ai"><div class="ai-head"><div class="orb">✦</div><div><b>Olivia IA V3.5</b><div class="muted">ASISTENCIA INTEGRADA</div></div></div><div class="insight-label">ASISTENCIA CON CONTEXTO</div><h3>Tu criterio.<br>Una mejor preparación.</h3><p>Resumen, clasificación y borradores por solicitud. Revisión humana antes de publicar.</p>${user.role!=='client'?'<button class="btn primary" data-view="olivia">Explorar Olivia ↗</button>':'<p>Tu equipo de atención mantiene el seguimiento en este portal.</p>'}<span class="ai-footer">Revisión humana antes de publicar.</span></div></div></div>`;
-
+function renderStableOverview(el) {
+  el.innerHTML = `<div class="row"><div><div class="eyebrow">SERVICE INTELLIGENCE</div><h1>Hola, ${esc(user.name.split(" ")[0])}.</h1><p class="subtitle">Visibilidad para decidir. Contexto para responder.</p></div>${user.role !== "agent" ? '<button class="btn primary" data-action="new">+ Nueva solicitud</button>' : ""}</div><div class="hero"><div class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> ${user.role === "client" ? "TU PORTAL DE ATENCIÓN" : "OPERACIÓN CONECTADA"}</div><h2>La atención que avanza.<br>La información que <em>permanece.</em></h2><p>Solicitudes y conversaciones guardadas. Indicadores calculados con los casos autorizados para tu perfil.</p><button class="btn lime" data-view="tickets">Ver solicitudes ↗</button></div><div class="hero-art"><div class="hero-orbit"></div><div class="orb">✦</div><span class="orbit-tag">Olivia IA · V3.5</span></div></div>${stats()}<div class="columns"><div class="panel"><div class="panel-head"><h2>Solicitudes recientes</h2><button class="small-link" data-view="tickets">Ver todas ↗</button></div>${table(tickets.slice(0, 6))}</div><div class="secondary-column"><div class="panel ai"><div class="ai-head"><div class="orb">✦</div><div><b>Olivia IA V3.5</b><div class="muted">ASISTENCIA INTEGRADA</div></div></div><div class="insight-label">ASISTENCIA CON CONTEXTO</div><h3>Tu criterio.<br>Una mejor preparación.</h3><p>Resumen, clasificación y borradores por solicitud. Revisión humana antes de publicar.</p>${user.role !== "client" ? '<button class="btn primary" data-view="olivia">Explorar Olivia ↗</button>' : "<p>Tu equipo de atención mantiene el seguimiento en este portal.</p>"}<span class="ai-footer">Revisión humana antes de publicar.</span></div></div></div>`;
 }

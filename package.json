@@ -1,10 +1,10 @@
 {
-  "name": "service-hub-demo",
+  "name": "service-hub",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": "24.x"
   },
   "scripts": {
     "start": "node --env-file-if-exists=.env server/index.js",
@@ -15,19 +15,31 @@
     "test": "node --env-file-if-exists=.env --test --test-concurrency=1 tests/*.test.js",
     "test:browser": "node --env-file-if-exists=.env scripts/browser-qa.js",
     "test:dashboard": "node --env-file-if-exists=.env scripts/dashboard-qa.js",
-    "test:devices": "node --env-file-if-exists=.env scripts/client-preview-qa.js"
+    "test:devices": "node --env-file-if-exists=.env scripts/client-preview-qa.js",
+    "test:saas": "node --env-file-if-exists=.env scripts/saas-browser-qa.js",
+    "backup": "node --env-file-if-exists=.env scripts/backup.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
     "connect-pg-simple": "^10.0.0",
+    "csv-parse": "^7.0.3",
+    "exceljs": "^4.4.0",
     "express": "^5.1.0",
     "express-rate-limit": "^8.1.0",
     "express-session": "^1.18.2",
     "helmet": "^8.1.0",
-    "pg": "^8.16.3"
+    "nodemailer": "^10.1.1",
+    "pg": "^8.16.3",
+    "stripe": "^23.0.0",
+    "unzipper": "^0.12.5"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.0",
     "supertest": "^7.1.4"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "^11.1.0"
+    }
   }
 }

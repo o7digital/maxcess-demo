@@ -27,7 +27,7 @@ page.on("console", (m) => {
 let ticketId;
 await mkdir(".local/screenshots", { recursive: true });
 try {
-  await page.goto(base);
+  await page.goto(base + "/login");
   const c = credentials.find(
     (c) => c.email === "olivier.steineur@o7digitalgroup.com",
   );

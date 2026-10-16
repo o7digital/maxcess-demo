@@ -1,19 +1,24 @@
 const fail = (status, message) => Object.assign(new Error(message), { status });
 
-export function oliviaStatus() {
+export function oliviaStatus(user) {
+  const ready =
+    !user?.tenant_id ||
+    user.tenant_id === 1 ||
+    process.env.OLIVIA_TENANT_READY === "true";
   return {
     configured: Boolean(
-      process.env.OLIVIA_BASE_URL && process.env.OLIVIA_API_KEY,
+      ready && process.env.OLIVIA_BASE_URL && process.env.OLIVIA_API_KEY,
     ),
     version: "3.5",
-    mode:
-      process.env.OLIVIA_BASE_URL && process.env.OLIVIA_API_KEY
+    mode: !ready
+      ? "unavailable"
+      : process.env.OLIVIA_BASE_URL && process.env.OLIVIA_API_KEY
         ? "live"
         : "demo",
   };
 }
 export async function oliviaChat(message, conversationId, user) {
-  if (!oliviaStatus().configured)
+  if (!oliviaStatus(user).configured)
     throw fail(424, "La conexión Olivia V3.5 está pendiente de configuración.");
   let response;
   try {
@@ -30,11 +35,13 @@ export async function oliviaChat(message, conversationId, user) {
           message,
           conversation_id: conversationId || null,
           scope:
-            user.role === "client"
-              ? `client-${user.company_id}`
-              : user.role === "agent"
-                ? `support-${user.id}`
-                : "global",
+            user.tenant_id && user.tenant_id !== 1
+              ? `tenant-${user.tenant_id}-${user.role === "client" ? `client-${user.company_id}` : `user-${user.id}`}`
+              : user.role === "client"
+                ? `client-${user.company_id}`
+                : user.role === "agent"
+                  ? `support-${user.id}`
+                  : "global",
         }),
       },
     );

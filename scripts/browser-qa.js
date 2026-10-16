@@ -28,7 +28,7 @@ async function profile(role, width = 1440) {
       failures.push(msg.text());
   });
   const c = credentials.find((c) => c.role === role);
-  await page.goto(base);
+  await page.goto(base + "/login");
   await page.locator("#email").fill(c.email);
   await page.locator("#password").fill(c.password);
   await page.getByRole("button", { name: "Entrar a mi espacio" }).click();

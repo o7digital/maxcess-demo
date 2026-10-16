@@ -3,10 +3,20 @@
 import bcrypt from "bcrypt";
 export const hashPassword = (raw) => bcrypt.hash(raw, 10);
 export const verifyPassword = (raw, hash) => bcrypt.compare(raw, hash);
-export const exposeUser = ({ id, email, name, role, company_id }) => ({
+export const exposeUser = ({
   id,
   email,
   name,
   role,
   company_id,
+  tenant_id,
+  is_platform_owner,
+}) => ({
+  id,
+  email,
+  name,
+  role,
+  company_id,
+  tenant_id,
+  is_platform_owner: Boolean(is_platform_owner),
 });

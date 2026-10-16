@@ -1,0 +1,80 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #f4f5ef;
+  color: #1c3431;
+  font:
+    16px -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+main {
+  max-width: 1050px;
+  margin: auto;
+  padding: 65px 8%;
+  min-height: 100vh;
+}
+.brand {
+  font-size: 30px;
+  letter-spacing: -1px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 650;
+  display: block;
+  margin-bottom: 100px;
+}
+.brand span {
+  color: #86a743;
+}
+.brand small {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 2px;
+  margin-top: 8px;
+}
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #7b8978;
+}
+h1 {
+  font-size: clamp(40px, 6vw, 75px);
+  font-weight: 500;
+  letter-spacing: -3px;
+  line-height: 1.06;
+  margin: 28px 0;
+}
+p {
+  line-height: 1.8;
+  color: #7b8678;
+}
+.contact {
+  display: inline-block;
+  padding: 16px 22px;
+  border-radius: 9px;
+  background: #d5f57d;
+  color: #1c3431;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 24px;
+}
+footer {
+  font-size: 10px;
+  color: #8e9987;
+  margin-top: 100px;
+}
+@media (max-width: 600px) {
+  main {
+    padding: 40px 7%;
+  }
+  .brand {
+    margin-bottom: 75px;
+  }
+  h1 {
+    letter-spacing: -2px;
+  }
+}

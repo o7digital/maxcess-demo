@@ -1,0 +1,770 @@
+import { test, after } from "node:test";
+import assert from "node:assert/strict";
+import request from "supertest";
+import Stripe from "stripe";
+import ExcelJS from "exceljs";
+import { randomUUID } from "node:crypto";
+import { createApp } from "../server/app.js";
+import { pool } from "../server/db.js";
+import { defaults } from "../server/workspace.js";
+const previous = {
+  registration: process.env.REGISTRATION_ENABLED,
+  origin: process.env.PUBLIC_APP_URL,
+  webhook: process.env.STRIPE_WEBHOOK_SECRET,
+};
+process.env.REGISTRATION_ENABLED = "true";
+process.env.PUBLIC_APP_URL = "https://servicehub.example.org";
+process.env.STRIPE_WEBHOOK_SECRET = "whsec_unit_test_only";
+let subscription,
+  checkoutBody,
+  subscriptionUpdate,
+  priceId = 0;
+const sdk = new Stripe("sk_test_fixture");
+const fake = {
+  webhooks: sdk.webhooks,
+  products: { create: async () => ({ id: "prod_fixture" }) },
+  prices: {
+    create: async (body) => ({ id: "price_fixture_" + ++priceId, ...body }),
+  },
+  customers: { create: async () => ({ id: "cus_fixture" }) },
+  checkout: {
+    sessions: {
+      create: async (body) => {
+        checkoutBody = body;
+        return { id: "cs_fixture", url: "https://checkout.stripe.com/fixture" };
+      },
+      retrieve: async () => ({ status: "expired" }),
+    },
+  },
+  subscriptions: {
+    retrieve: async () => subscription,
+    update: async (id, body) => {
+      subscriptionUpdate = body;
+      return subscription;
+    },
+  },
+  billingPortal: {
+    sessions: {
+      create: async () => ({ url: "https://billing.stripe.com/fixture" }),
+    },
+  },
+};
+const app = createApp({ getStripe: () => fake }),
+  created = [];
+after(async () => {
+  for (const id of created) {
+    for (const table of [
+      "configuration_proposals",
+      "notification_outbox",
+      "workspace_audit",
+      "billing_invoices",
+      "ai_usage",
+      "ai_messages",
+      "ai_conversations",
+      "reports",
+      "user_audit",
+      "events",
+      "tickets",
+      "invitations",
+      "contacts",
+    ])
+      await pool.query(`DELETE FROM ${table} WHERE tenant_id=$1`, [id]);
+    await pool.query("DELETE FROM users WHERE tenant_id=$1", [id]);
+    await pool.query("DELETE FROM teams WHERE tenant_id=$1", [id]);
+    await pool.query("DELETE FROM companies WHERE tenant_id=$1", [id]);
+    await pool.query("DELETE FROM tenants WHERE id=$1", [id]);
+  }
+  await pool.query("DELETE FROM billing_events WHERE id LIKE 'evt_fixture_%'");
+  await pool.query(
+    "DELETE FROM stripe_price_catalog WHERE stripe_price_id LIKE 'price_fixture_%'",
+  );
+  process.env.REGISTRATION_ENABLED = previous.registration;
+  process.env.PUBLIC_APP_URL = previous.origin;
+  process.env.STRIPE_WEBHOOK_SECRET = previous.webhook;
+  await pool.end();
+});
+async function register(label) {
+  const agent = request.agent(app),
+    b = await agent.get("/api/bootstrap").expect(200);
+  const body = {
+    name: "Owner " + label,
+    company: "Workspace " + label,
+    email: `saas-${randomUUID()}@example.test`,
+    password: "Secure-password-2026!",
+    language: "es",
+    accepted_terms: true,
+  };
+  const result = await agent
+    .post("/api/register")
+    .set("X-CSRF-Token", b.body.csrf)
+    .send(body)
+    .expect(201);
+  created.push(result.body.user.tenant_id);
+  return {
+    agent,
+    user: result.body.user,
+    csrf: result.body.csrf,
+    credentials: body,
+  };
+}
+const send = (u, path, body, method = "post") =>
+  u.agent[method]("/api" + path)
+    .set("X-CSRF-Token", u.csrf)
+    .send(body);
+let a, b, aCompany, bCompany, agentA, ticketA;
+test("Registration creates an empty workspace with exactly seven trial days and no demo data", async () => {
+  a = await register("A");
+  b = await register("B");
+  assert.notEqual(a.user.tenant_id, b.user.tenant_id);
+  assert.equal(a.user.role, "admin");
+  assert.equal(a.user.is_platform_owner, false);
+  const ws = (await a.agent.get("/api/workspace").expect(200)).body.workspace;
+  assert.equal(ws.is_demo, false);
+  assert.equal(ws.seat_limit, 5);
+  assert.equal(ws.onboarding_completed, false);
+  assert.ok(
+    Math.abs(Date.parse(ws.trial_ends_at) - Date.now() - 7 * 86400000) < 10000,
+  );
+  const companies = (await a.agent.get("/api/companies").expect(200)).body
+    .companies;
+  assert.equal(companies.length, 1);
+  aCompany = companies[0];
+  bCompany = (await b.agent.get("/api/companies").expect(200)).body
+    .companies[0];
+  assert.equal(
+    (await a.agent.get("/api/tickets").expect(200)).body.tickets.length,
+    0,
+  );
+  await send(a, "/platform/plans/team-5", {}, "put").expect(403);
+  await send(a, "/users", {
+    name: "Escalation",
+    email: `no-${randomUUID()}@example.test`,
+    password: "Secure-password-2026!",
+    role: "platform_admin",
+  }).expect(403);
+});
+test("Server validates onboarding, settings, forms, foreign rules and membership", async () => {
+  const member = await send(a, "/users", {
+    name: "Agent A",
+    email: `agent-${randomUUID()}@example.test`,
+    password: "Secure-password-2026!",
+    role: "agent",
+  }).expect(201);
+  agentA = member.body.user;
+  await send(
+    a,
+    "/workspace",
+    { name: "A", settings: { ...defaults, timezone: "invalid/timezone" } },
+    "put",
+  ).expect(400);
+  await send(
+    a,
+    "/workspace",
+    {
+      name: "A",
+      settings: {
+        ...defaults,
+        rules: [{ category: "Servicio", agent_id: b.user.id, notify: false }],
+      },
+    },
+    "put",
+  ).expect(400);
+  const settings = {
+    ...defaults,
+    categories: ["Mantenimiento"],
+    fields: [{ key: "asset", label: "Equipo", type: "text", required: true }],
+    sla: { ...defaults.sla, Alta: 3 },
+    rules: [{ category: "Mantenimiento", agent_id: agentA.id, notify: true }],
+    workflow: [
+      ...defaults.workflow,
+      { name: "Esperando material", state: "En curso" },
+    ],
+  };
+  await send(
+    a,
+    "/workspace",
+    { name: "Configured A", settings, onboarding_completed: true },
+    "put",
+  ).expect(200);
+  const saved = (await a.agent.get("/api/workspace")).body.workspace;
+  assert.equal(saved.onboarding_completed, true);
+  assert.equal(saved.settings.categories[0], "Mantenimiento");
+  const team = (await send(a, "/teams", { name: "Field team" }).expect(201))
+    .body.team;
+  await send(a, `/users/${agentA.id}/team`, { team_id: team.id }, "put").expect(
+    200,
+  );
+  await send(b, `/users/${b.user.id}/team`, { team_id: team.id }, "put").expect(
+    400,
+  );
+});
+test("Tickets apply tenant forms, assignments, SLA and workflows; cross-tenant reads and writes fail", async () => {
+  const body = {
+    title: "Pump maintenance",
+    description: "Actual workspace request",
+    site: "Site A",
+    category: "Mantenimiento",
+    priority: "Alta",
+    company_id: aCompany.id,
+  };
+  await send(a, "/tickets", body).expect(400);
+  await send(a, "/tickets", {
+    ...body,
+    custom_fields: { asset: "PUMP-01" },
+    company_id: bCompany.id,
+  }).expect(400);
+  const response = await send(a, "/tickets", {
+    ...body,
+    custom_fields: { asset: "PUMP-01" },
+  }).expect(201);
+  ticketA = response.body.ticket;
+  assert.equal(ticketA.tenant_id, a.user.tenant_id);
+  assert.equal(ticketA.agent_id, agentA.id);
+  assert.equal(ticketA.custom_fields.asset, "PUMP-01");
+  assert.ok(
+    Math.abs(
+      Date.parse(ticketA.due_at) - Date.parse(ticketA.created_at) - 3 * 3600000,
+    ) < 1000,
+  );
+  await b.agent.get("/api/tickets/" + ticketA.id).expect(404);
+  await send(b, `/tickets/${ticketA.id}/actions`, {
+    action: "note",
+    body: "Intrusion",
+  }).expect(404);
+  await send(b, `/tickets/${ticketA.id}/transition`, {
+    stage: "En curso",
+  }).expect(404);
+  await send(a, `/tickets/${ticketA.id}/transition`, {
+    stage: "Esperando material",
+  }).expect(200);
+  const loaded = (await a.agent.get("/api/tickets/" + ticketA.id)).body.ticket;
+  assert.equal(loaded.workflow_stage, "Esperando material");
+  assert.equal(loaded.status, "En curso");
+  await send(a, `/tickets/${ticketA.id}/transition`, {
+    stage: "Cerrado",
+  }).expect(409);
+  assert.equal((await b.agent.get("/api/analytics")).body.metrics.total, 0);
+  assert.ok(
+    !(await b.agent.get("/api/users")).body.users.some(
+      (u) => u.id === agentA.id,
+    ),
+  );
+  await send(b, `/users/${agentA.id}/access`, { active: false }).expect(404);
+});
+test("Ticket lists use bounded pages, non-overlapping cursors and tenant-scoped server search", async () => {
+  await pool.query(
+    "INSERT INTO tickets(tenant_id,title,company_id,site,category,description,priority,requested_priority,created_by,due_at) SELECT $1,'Fixture request '||n,$2,'Main','Mantenimiento','Pagination fixture','Baja','Baja',$3,now()+interval '1 day' FROM generate_series(1,105) n",
+    [a.user.tenant_id, aCompany.id, a.user.id],
+  );
+  const first = (await a.agent.get("/api/tickets").expect(200)).body;
+  assert.equal(first.tickets.length, 100);
+  assert.equal(first.total, 106);
+  assert.ok(first.next_cursor);
+  const second = (
+    await a.agent.get("/api/tickets?before=" + first.next_cursor).expect(200)
+  ).body;
+  assert.equal(second.tickets.length, 6);
+  assert.equal(second.next_cursor, null);
+  assert.equal(
+    new Set([...first.tickets, ...second.tickets].map((t) => t.id)).size,
+    106,
+  );
+  assert.equal((await a.agent.get("/api/tickets?q=Pump")).body.total, 1);
+  assert.equal((await b.agent.get("/api/tickets?q=Fixture")).body.total, 0);
+  await a.agent.get("/api/tickets?limit=201").expect(400);
+  assert.equal((await a.agent.get("/api/tickets?q=Fixture_%25")).body.total, 0);
+});
+test("Database foreign keys reject cross-tenant references even when bypassing API", async () => {
+  await assert.rejects(
+    pool.query(
+      "INSERT INTO contacts(tenant_id,company_id,name,email,function) VALUES($1,$2,$3,$4,$5)",
+      [
+        b.user.tenant_id,
+        aCompany.id,
+        "Wrong",
+        `bad-${randomUUID()}@example.test`,
+        "Contact",
+      ],
+    ),
+    { code: "23503" },
+  );
+});
+test("CSV and XLSX imports validate mappings, isolate data and persist rows transactionally", async () => {
+  const upload = {
+    format: "csv",
+    file: Buffer.from("name,sector,site\nNew customer,Health,Main\n").toString(
+      "base64",
+    ),
+  };
+  const preview = await send(b, "/import/preview", upload).expect(200);
+  assert.equal(preview.body.total, 1);
+  const mapping = { name: "name", sector: "sector", site: "site" };
+  await send(b, "/import/commit", {
+    ...upload,
+    kind: "companies",
+    mapping,
+    confirm: false,
+  }).expect(400);
+  await send(b, "/import/commit", {
+    ...upload,
+    kind: "companies",
+    mapping,
+    confirm: true,
+  }).expect(201);
+  assert.equal((await b.agent.get("/api/companies")).body.companies.length, 2);
+  assert.equal((await a.agent.get("/api/companies")).body.companies.length, 1);
+  const workbook = new ExcelJS.Workbook(),
+    sheet = workbook.addWorksheet("Customers");
+  sheet.addRow(["name", "sector", "site"]);
+  sheet.addRow(["Excel customer", "Retail", "North"]);
+  const excel = {
+    format: "xlsx",
+    file: Buffer.from(await workbook.xlsx.writeBuffer()).toString("base64"),
+  };
+  await send(b, "/import/commit", {
+    ...excel,
+    kind: "companies",
+    mapping,
+    confirm: true,
+  }).expect(201);
+  const tickets = {
+    format: "csv",
+    file: Buffer.from(
+      "title,company,site,category,description,priority\nImported,New customer,Main,Servicio,Imported description,Media\nWrong,Unknown company,Main,Servicio,Bad,Baja",
+    ).toString("base64"),
+  };
+  await send(b, "/import/commit", {
+    ...tickets,
+    kind: "tickets",
+    mapping: Object.fromEntries(
+      ["title", "company", "site", "category", "description", "priority"].map(
+        (k) => [k, k],
+      ),
+    ),
+    confirm: true,
+  }).expect(400);
+  assert.equal((await b.agent.get("/api/tickets")).body.tickets.length, 0);
+  const customUpload = {
+    format: "csv",
+    file: Buffer.from(
+      `title,company,site,category,description,priority,asset\nImported custom field,${aCompany.name},Main,Mantenimiento,Imported with asset,Baja,EQ-CSV\n`,
+    ).toString("base64"),
+  };
+  const ticketMapping = Object.fromEntries(
+    ["title", "company", "site", "category", "description", "priority"].map(
+      (key) => [key, key],
+    ),
+  );
+  await send(a, "/import/commit", {
+    ...customUpload,
+    kind: "tickets",
+    mapping: ticketMapping,
+    confirm: true,
+  }).expect(400);
+  await send(a, "/import/commit", {
+    ...customUpload,
+    kind: "tickets",
+    mapping: { ...ticketMapping, custom_asset: "asset" },
+    confirm: true,
+  }).expect(201);
+  const imported = (
+    await a.agent.get("/api/tickets?q=Imported%20custom%20field").expect(200)
+  ).body;
+  assert.equal(imported.tickets[0].custom_fields.asset, "EQ-CSV");
+});
+test("SLA escalations run once, stay in the workspace and queue the configured notification", async () => {
+  const { runAutomations } = await import("../server/automations.js");
+  await pool.query(
+    "UPDATE tenants SET settings=jsonb_set(settings,'{escalations}',$1) WHERE id=$2",
+    [
+      JSON.stringify([
+        {
+          priority: "Alta",
+          after_hours: 0.25,
+          agent_id: agentA.id,
+          notify: true,
+        },
+      ]),
+      a.user.tenant_id,
+    ],
+  );
+  await pool.query(
+    "UPDATE tickets SET due_at=now()-interval '2 hours' WHERE id=$1",
+    [ticketA.id],
+  );
+  await runAutomations();
+  await runAutomations();
+  const {
+    rows: [t],
+  } = await pool.query("SELECT escalated_at FROM tickets WHERE id=$1", [
+    ticketA.id,
+  ]);
+  assert.ok(t.escalated_at);
+  const {
+    rows: [count],
+  } = await pool.query(
+    "SELECT count(*) FROM workspace_audit WHERE tenant_id=$1 AND action='ticket.escalated'",
+    [a.user.tenant_id],
+  );
+  assert.equal(Number(count.count), 1);
+});
+test("Email verification and recovery links are single use, expire and revoke existing sessions on reset", async () => {
+  const {
+    rows: [message],
+  } = await pool.query(
+    "SELECT body FROM notification_outbox WHERE tenant_id=$1 AND subject='Service Hub · Confirma tu correo' ORDER BY id DESC LIMIT 1",
+    [a.user.tenant_id],
+  );
+  const token = message.body.split("#")[1].split("\n")[0];
+  await send(a, "/account/verify", { token }).expect(200);
+  await send(a, "/account/verify", { token }).expect(400);
+  await send(a, "/account/reset", {
+    token: "wrong",
+    password: "New-password-2026!",
+  }).expect(400);
+  const r = await send(a, "/account/recover", {
+    email: a.credentials.email,
+  }).expect(200);
+  const unknown = await send(a, "/account/recover", {
+    email: `missing-${randomUUID()}@example.test`,
+  }).expect(200);
+  assert.deepEqual(r.body, unknown.body);
+  const {
+    rows: [reset],
+  } = await pool.query(
+    "SELECT body FROM notification_outbox WHERE tenant_id=$1 AND subject='Service Hub · Restablecer contraseña' ORDER BY id DESC LIMIT 1",
+    [a.user.tenant_id],
+  );
+  const resetToken = reset.body.split("#")[1].split("\n")[0];
+  const fresh = request.agent(app),
+    boot = await fresh.get("/api/bootstrap");
+  await fresh
+    .post("/api/account/reset")
+    .set("X-CSRF-Token", boot.body.csrf)
+    .send({ token: resetToken, password: "New-password-2026!" })
+    .expect(200);
+  await a.agent.get("/api/me").expect(401);
+  const login = await fresh
+    .post("/api/login")
+    .set("X-CSRF-Token", boot.body.csrf)
+    .send({ email: a.credentials.email, password: "New-password-2026!" })
+    .expect(200);
+  a.agent = fresh;
+  a.csrf = login.body.csrf;
+});
+test("Olivia configuration proposals are tenant-scoped, quota-limited and require explicit, non-stale approval", async () => {
+  const oldFetch = globalThis.fetch;
+  const saved = {
+    url: process.env.OLIVIA_BASE_URL,
+    key: process.env.OLIVIA_API_KEY,
+    ready: process.env.OLIVIA_TENANT_READY,
+  };
+  process.env.OLIVIA_BASE_URL = "https://olivia.example.test/";
+  process.env.OLIVIA_API_KEY = "fixture-not-a-real-key";
+  process.env.OLIVIA_TENANT_READY = "true";
+  globalThis.fetch = async (url, options) => {
+    assert.equal(new URL(url).pathname, "/chat");
+    const body = JSON.parse(options.body);
+    assert.equal(body.scope, `tenant-${a.user.tenant_id}-user-${a.user.id}`);
+    return new Response(
+      JSON.stringify({
+        answer: JSON.stringify({
+          categories: ["Mantenimiento"],
+          fields: [
+            { key: "asset", label: "Equipo", type: "text", required: true },
+          ],
+        }),
+      }),
+      { headers: { "Content-Type": "application/json" } },
+    );
+  };
+  try {
+    const one = (
+      await send(a, "/workspace/suggestions", {
+        goal: "Mantener los equipos de nuestros clientes",
+      }).expect(200)
+    ).body.proposal;
+    const two = (
+      await send(a, "/workspace/suggestions", {
+        goal: "Proponer un formulario de equipos",
+      }).expect(200)
+    ).body.proposal;
+    await send(a, "/workspace/suggestions/" + one.id + "/apply", {
+      approved: false,
+    }).expect(400);
+    await send(b, "/workspace/suggestions/" + one.id + "/apply", {
+      approved: true,
+    }).expect(404);
+    await send(a, "/workspace/suggestions/" + one.id + "/apply", {
+      approved: true,
+    }).expect(200);
+    await send(a, "/workspace/suggestions/" + one.id + "/apply", {
+      approved: true,
+    }).expect(404);
+    await send(a, "/workspace/suggestions/" + two.id + "/apply", {
+      approved: true,
+    }).expect(409);
+    await pool.query("UPDATE tenants SET ai_limit=0 WHERE id=$1", [
+      a.user.tenant_id,
+    ]);
+    await send(a, "/workspace/suggestions", {
+      goal: "Una nueva propuesta",
+    }).expect(429);
+  } finally {
+    globalThis.fetch = oldFetch;
+    for (const [key, value] of [
+      ["OLIVIA_BASE_URL", saved.url],
+      ["OLIVIA_API_KEY", saved.key],
+      ["OLIVIA_TENANT_READY", saved.ready],
+    ])
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+  }
+});
+test("Concurrent user creation respects seat cap; expired trials retain data read only", async () => {
+  await pool.query("UPDATE tenants SET seat_limit=3 WHERE id=$1", [
+    a.user.tenant_id,
+  ]);
+  const bodies = [1, 2].map((i) => ({
+    name: "Concurrent " + i,
+    email: `concurrent-${randomUUID()}@example.test`,
+    password: "Secure-password-2026!",
+    role: "agent",
+  }));
+  const results = await Promise.all(
+    bodies.map((body) => send(a, "/users", body)),
+  );
+  assert.deepEqual(results.map((r) => r.status).sort(), [201, 409]);
+  await pool.query(
+    "UPDATE tenants SET trial_ends_at=now()-interval '1 minute' WHERE id=$1",
+    [a.user.tenant_id],
+  );
+  await a.agent.get("/api/tickets").expect(200);
+  await send(a, `/tickets/${ticketA.id}/actions`, {
+    action: "note",
+    body: "Blocked write",
+  }).expect(402);
+  await a.agent.get("/api/billing").expect(200);
+  assert.equal(
+    (await a.agent.get("/api/workspace")).body.workspace.access,
+    "read_only",
+  );
+});
+test("Invitation acceptance uses a hashed single-use token and cannot elevate role or tenant", async () => {
+  await send(b, "/invitations", {
+    email: `invited-${randomUUID()}@example.test`,
+    name: "Invited",
+    role: "platform_admin",
+  }).expect(400);
+  const address = `invited-${randomUUID()}@example.test`;
+  await send(b, "/invitations", {
+    email: address,
+    name: "Invited",
+    role: "agent",
+  }).expect(201);
+  const {
+    rows: [message],
+  } = await pool.query(
+    "SELECT body FROM notification_outbox WHERE tenant_id=$1 AND recipient=$2",
+    [b.user.tenant_id, address],
+  );
+  const token = message.body.split("#").at(-1);
+  const fresh = request.agent(app),
+    boot = await fresh.get("/api/bootstrap");
+  const accepted = await fresh
+    .post("/api/invitations/accept")
+    .set("X-CSRF-Token", boot.body.csrf)
+    .send({
+      token,
+      password: "Invitation-password-2026!",
+      role: "platform_admin",
+      tenant_id: a.user.tenant_id,
+    })
+    .expect(201);
+  assert.equal(accepted.body.user.tenant_id, b.user.tenant_id);
+  assert.equal(accepted.body.user.role, "agent");
+  await fresh
+    .post("/api/invitations/accept")
+    .set("X-CSRF-Token", accepted.body.csrf)
+    .send({ token, password: "Invitation-password-2026!" })
+    .expect(400);
+  await fresh.get("/api/platform").expect(403);
+  await fresh.get("/api/users").expect(403);
+});
+test("Checkout explicitly consents to independently recurring annual license and user plan", async () => {
+  await pool.query("UPDATE users SET email_verified_at=now() WHERE id=$1", [
+    b.user.id,
+  ]);
+  const {
+    rows: [old],
+  } = await pool.query("SELECT * FROM billing_plans WHERE id='team-5'");
+  try {
+    await pool.query(
+      "UPDATE billing_plans SET monthly_cents=2500,discounts='{" +
+        '"1":0,"3":5,"6":10,"12":15' +
+        "}' WHERE id='team-5'",
+    );
+    await send(b, "/billing/checkout", {
+      plan_id: "team-5",
+      months: 3,
+      accepted_terms: false,
+    }).expect(400);
+    await send(b, "/billing/checkout", {
+      plan_id: "team-5",
+      months: 3,
+      accepted_terms: true,
+    }).expect(200);
+    assert.equal(checkoutBody.mode, "subscription");
+    assert.equal(checkoutBody.subscription_data.billing_mode.type, "flexible");
+    assert.equal(checkoutBody.line_items.length, 2);
+    assert.equal(
+      checkoutBody.subscription_data.metadata.tenant_id,
+      String(b.user.tenant_id),
+    );
+    assert.ok(
+      Math.abs(
+        checkoutBody.subscription_data.trial_end -
+          Date.parse(
+            (await b.agent.get("/api/workspace")).body.workspace.trial_ends_at,
+          ) /
+            1000,
+      ) < 2,
+    );
+    assert.ok(
+      checkoutBody.custom_text.submit.message.includes("399 USD cada 12 meses"),
+    );
+  } finally {
+    await pool.query(
+      "UPDATE billing_plans SET monthly_cents=$1,discounts=$2 WHERE id=$3",
+      [old.monthly_cents, old.discounts, old.id],
+    );
+  }
+});
+const signed = (event) => {
+  const payload = JSON.stringify(event);
+  const signature = sdk.webhooks.generateTestHeaderString({
+    payload,
+    secret: process.env.STRIPE_WEBHOOK_SECRET,
+  });
+  return request(app)
+    .post("/api/billing/webhook")
+    .set("Content-Type", "application/json")
+    .set("Stripe-Signature", signature)
+    .send(payload);
+};
+test("Signed webhooks sync current Stripe state, reject forged/live events and handle duplicates", async () => {
+  subscription = {
+    id: "sub_fixture",
+    livemode: false,
+    customer: "cus_fixture",
+    metadata: { tenant_id: String(b.user.tenant_id) },
+    status: "active",
+    cancel_at_period_end: false,
+    items: {
+      data: [
+        {
+          quantity: 1,
+          price: {
+            unit_amount: 39900,
+            currency: "usd",
+            recurring: { interval: "year", interval_count: 1 },
+            metadata: { kind: "license" },
+          },
+          current_period_end: 1900000000,
+        },
+        {
+          quantity: 1,
+          price: {
+            unit_amount: 7125,
+            currency: "usd",
+            recurring: { interval: "month", interval_count: 3 },
+            metadata: {
+              kind: "users",
+              plan_id: "team-5",
+              seat_limit: "5",
+              ai_limit: "100",
+            },
+          },
+          current_period_end: 1800000000,
+        },
+      ],
+    },
+  };
+  await request(app)
+    .post("/api/billing/webhook")
+    .set("Content-Type", "application/json")
+    .send("{}")
+    .expect(400);
+  const event = {
+    id: "evt_fixture_" + randomUUID(),
+    type: "customer.subscription.updated",
+    livemode: false,
+    data: { object: { id: subscription.id } },
+  };
+  await signed({ ...event, livemode: true }).expect(400);
+  await signed(event).expect(200);
+  await signed(event).expect(200);
+  const {
+    rows: [count],
+  } = await pool.query("SELECT count(*) FROM billing_events WHERE id=$1", [
+    event.id,
+  ]);
+  assert.equal(Number(count.count), 1);
+  const billing = (await b.agent.get("/api/billing")).body;
+  assert.equal(billing.status, "active");
+  assert.equal(billing.plan_id, "team-5");
+  assert.equal(billing.months, 3);
+  subscription.status = "past_due";
+  await signed({ ...event, id: "evt_fixture_" + randomUUID() }).expect(200);
+  assert.equal(
+    (await b.agent.get("/api/workspace")).body.workspace.access,
+    "full",
+  );
+  await pool.query(
+    "UPDATE tenants SET grace_ends_at=now()-interval '1 minute' WHERE id=$1",
+    [b.user.tenant_id],
+  );
+  assert.equal(
+    (await b.agent.get("/api/workspace")).body.workspace.access,
+    "read_only",
+  );
+});
+test("A signed removal of the mandatory annual license suspends access instead of preserving paid entitlements", async () => {
+  subscription.items.data[0].quantity = 2;
+  await signed({
+    id: "evt_fixture_" + randomUUID(),
+    type: "customer.subscription.updated",
+    livemode: false,
+    data: { object: { id: subscription.id } },
+  }).expect(200);
+  assert.equal(
+    (await b.agent.get("/api/workspace")).body.workspace.status,
+    "suspended",
+  );
+  await b.agent.get("/api/tickets").expect(403);
+  await b.agent.get("/api/billing").expect(200);
+});
+test("Commercial mode disables illustrative identities and a live Stripe key is never accepted", async () => {
+  process.env.COMMERCIAL_MODE = "true";
+  try {
+    const fresh = request.agent(app),
+      boot = await fresh.get("/api/bootstrap").set("X-Client-Portal", "1");
+    await fresh
+      .post("/api/demo/client-login")
+      .set("X-Client-Portal", "1")
+      .set("X-CSRF-Token", boot.body.csrf)
+      .send({})
+      .expect(404);
+  } finally {
+    delete process.env.COMMERCIAL_MODE;
+  }
+  const { stripeClient } = await import("../server/billing.js");
+  const old = process.env.STRIPE_SECRET_KEY;
+  process.env.STRIPE_SECRET_KEY = "sk_live_should_never_be_used";
+  try {
+    assert.throws(stripeClient, { status: 503 });
+  } finally {
+    if (old) process.env.STRIPE_SECRET_KEY = old;
+    else delete process.env.STRIPE_SECRET_KEY;
+  }
+});

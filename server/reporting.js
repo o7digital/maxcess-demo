@@ -12,9 +12,9 @@ function day(v) {
     throw error(400, "Fecha no válida");
   return v;
 }
-export function reportFilters(query = {}) {
+export function reportFilters(query = {}, timezone = "America/Mexico_City") {
   const today = new Date().toLocaleDateString("en-CA", {
-    timeZone: "America/Mexico_City",
+    timeZone: timezone,
   });
   const start = query.start
     ? day(query.start)
@@ -28,7 +28,8 @@ export function reportFilters(query = {}) {
   return { start, end, company_id: company };
 }
 export async function reportData(user, query = {}, db = pool) {
-  const filters = reportFilters(query);
+  const timezone = user.timezone || "America/Mexico_City";
+  const filters = reportFilters(query, timezone);
   if (
     user.role === "client" &&
     filters.company_id &&
@@ -43,10 +44,12 @@ export async function reportData(user, query = {}, db = pool) {
     values.push(filters.company_id);
     where += ` AND t.company_id=$${values.length}`;
   }
+  values.push(timezone);
+  const timezoneIndex = values.length;
   values.push(filters.start);
-  where += ` AND t.created_at >= ($${values.length}::date::timestamp AT TIME ZONE 'America/Mexico_City')`;
+  where += ` AND t.created_at >= ($${values.length}::date::timestamp AT TIME ZONE $${timezoneIndex})`;
   values.push(filters.end);
-  where += ` AND t.created_at < (($${values.length}::date + 1)::timestamp AT TIME ZONE 'America/Mexico_City')`;
+  where += ` AND t.created_at < (($${values.length}::date + 1)::timestamp AT TIME ZONE $${timezoneIndex})`;
   const tickets = (
     await db.query(
       `SELECT t.id,t.company_id,c.name company,t.category,t.priority,t.status,t.created_at,t.due_at,t.resolved_at,t.agent_id FROM tickets t JOIN companies c ON c.id=t.company_id WHERE ${where} ORDER BY t.created_at`,
@@ -90,19 +93,20 @@ export async function reportData(user, query = {}, db = pool) {
     };
   for (const t of tickets) {
     const created = new Date(t.created_at).toLocaleDateString("en-CA", {
-      timeZone: "America/Mexico_City",
+      timeZone: timezone,
     });
     if (dayCounts[created]) dayCounts[created].created++;
     const done =
       t.resolved_at &&
       new Date(t.resolved_at).toLocaleDateString("en-CA", {
-        timeZone: "America/Mexico_City",
+        timeZone: timezone,
       });
     if (dayCounts[done]) dayCounts[done].resolved++;
   }
   return {
     filters,
-    calculation_version: 2,
+    timezone,
+    calculation_version: 3,
     generated_at: new Date().toISOString(),
     scope:
       user.role === "client"
@@ -156,7 +160,7 @@ export async function hfNarrative(snapshot) {
           {
             role: "system",
             content:
-              "Redacta un informe ejecutivo breve en español sobre atención de soporte. Usa solo los indicadores suministrados. Diferencia hechos, riesgos y recomendaciones. No inventes comparaciones, ingresos ni causas. Los datos son ficticios de un entorno de pruebas.",
+              "Redacta un informe ejecutivo breve en español sobre atención de soporte. Usa solo los indicadores suministrados. Diferencia hechos, riesgos y recomendaciones. No inventes comparaciones, ingresos ni causas. No inventes datos ni información de otras empresas.",
           },
           { role: "user", content: JSON.stringify(snapshot) },
         ],
