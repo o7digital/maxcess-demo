@@ -4,6 +4,7 @@ import {
   ACTIVATION_CENTS,
   BILLING_MODEL,
   periodQuote,
+  PERIOD_DISCOUNTS,
   withSeats,
 } from "../public/pricing.js";
 import express from "express";
@@ -638,7 +639,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       throw fail(400, "Tarifa no válida");
     const discounts = {};
     for (const months of [1, 3, 6, 12]) {
-      const d = b.discounts?.[String(months)];
+      const d = months === 12 ? PERIOD_DISCOUNTS[12] : b.discounts?.[String(months)];
       if (!Number.isFinite(d) || d < 0 || d > 80 || (months === 1 && d !== 0))
         throw fail(400, "Descuento no válido");
       discounts[months] = d;

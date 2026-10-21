@@ -162,3 +162,9 @@ Les pages `/terms` et `/privacy` proposent des notices détaillées en anglais, 
 Les notices distinguent les rôles de traitement, données réellement traitées, cookies nécessaires, assistance IA, sous-traitants, transferts, droits UE/France, USA, Canada/Québec et Mexique. Sources officielles liées dans la notice. Elles précisent les limites actuelles : pas de suppression automatisée générale, accords de traitement/transfert et durées à finaliser, capital/RCS et contacts légaux complets d'hébergement à vérifier. Ce texte n'est pas présenté comme une certification mondiale de conformité.
 
 Connexion Stripe retrouvée : compte CLI O7digital, accès de test expiré. Une connexion navigateur est nécessaire pour renouveler l'accès ; les clés de production existantes du CRM ne sont pas réutilisées pour les essais Maxcess.
+
+## Remises révisées — 20 octobre 2026
+
+Sur instruction du propriétaire : paiement trimestriel **−7,5 %**, semestriel **−12,5 %**, annuel **12 mois au prix de 10** (deux mois offerts, soit 16,67 % à l'affichage). Cette offre remplace les pourcentages précédents. L'activation unique HT reste distincte et n'est pas remisée.
+
+Le calcul annuel utilise exactement dix mensualités, sans multiplier le montant par un pourcentage arrondi de 16,67 %. Le récapitulatif vert montre l'économie de deux mensualités, le prix de référence et la mention explicite « 2 mois offerts ». Le catalogue est versionné pour les nouveaux prix Stripe ; aucun contrat Stripe existant n'est modifié automatiquement. Les pages de conditions et l'audit utilisent la nouvelle version `2026-10-20-v2`.

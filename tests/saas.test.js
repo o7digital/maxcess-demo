@@ -962,7 +962,7 @@ test("MXN activation requires verified paid checkout, is idempotent and is never
   const invoiceUsers = createdPrices.get(checkoutBody.line_items[1].price),
     activation = createdPrices.get(checkoutBody.line_items[0].price);
   assert.equal(activation.recurring, undefined);
-  assert.equal(invoiceUsers.unit_amount, 3926160);
+  assert.equal(invoiceUsers.unit_amount, 3990000);
   const stored = (
     await pool.query(
       "SELECT checkout_session_id,checkout_total_cents FROM tenants WHERE id=$1",
@@ -1053,7 +1053,7 @@ test("MXN activation requires verified paid checkout, is idempotent and is never
       [m.user.tenant_id],
     )
   ).rows[0].monthly_recurring_cents;
-  assert.equal(recurring, Math.round(3926160 / 12));
+  assert.equal(recurring, Math.round(3990000 / 12));
   await send(m, "/billing/change-plan", {
     plan_id: "team-15",
     months: 12,

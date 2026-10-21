@@ -25,6 +25,9 @@ Contact O7 to migrate your previous contract.|Contactez O7 pour migrer votre anc
 excl. tax|HT
 Applicable taxes calculated at checkout from your billing details.|Taxes applicables calculées au paiement selon vos informations de facturation.
 2,999 MXN activation excluding tax with the first payment, plus your chosen plan. Not charged again on renewals.|Activation de 2 999 MXN HT au premier règlement, plus le forfait choisi. Aucun nouveau frais d’activation aux renouvellements.
+2 months free|2 mois offerts
+Annual: 12 months of access for the price of 10|Annuel : 12 mois d’accès au prix de 10
+12 months for the price of 10|12 mois au prix de 10
 Sign in|Connexion
 Create workspace|Créer un espace
 Start 7 days free|Essayer gratuitement 7 jours
