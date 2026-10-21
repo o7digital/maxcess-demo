@@ -1,8 +1,12 @@
-export const CURRENCY = "mxn";
-export const ACTIVATION_CENTS = 299900;
+export const CURRENCY = "usd";
+export const ACTIVATION_CENTS = 14900;
 export const ANNUAL_FREE_MONTHS = 2;
 export const PERIOD_DISCOUNTS = {1: 0, 3: 7.5, 6: 12.5, 12: 100 * ANNUAL_FREE_MONTHS / 12};
-export const BILLING_MODEL = "activation_mxn_v1";
+export const BILLING_MODEL = "activation_usd_v1";
+export const ACTIVATION_MODELS = {
+ activation_mxn_v1: {currency:"mxn",activation_cents:299900},
+ activation_usd_v1: {currency:CURRENCY,activation_cents:ACTIVATION_CENTS},
+};
 export function withSeats(plan, seats = plan.seat_limit) {
   if (!plan.unit_cents) return plan;
   if (!Number.isSafeInteger(seats) || seats < plan.min_seats || seats > plan.max_seats)

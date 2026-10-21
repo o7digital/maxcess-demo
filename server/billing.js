@@ -3,6 +3,7 @@ import {
   CURRENCY,
   ACTIVATION_CENTS,
   BILLING_MODEL,
+  ACTIVATION_MODELS,
   periodQuote,
   PERIOD_DISCOUNTS,
   withSeats,
@@ -53,10 +54,10 @@ async function prices(stripe, plan, months, db) {
     );
     return price;
   }
-  const activation = await cached("mxn-activation-2999-tax-v2", async () => {
+  const activation = await cached(`${CURRENCY}-activation-${ACTIVATION_CENTS}-tax-v2`, async () => {
     const product = await stripe.products.create(
       { name: "Service Hub · Activación", metadata: { kind: "activation" } },
-      { idempotencyKey: "servicehub-mxn-activation-product-v1" },
+      { idempotencyKey: "servicehub-usd-activation-product-v1" },
     );
     return stripe.prices.create(
       {
@@ -66,15 +67,15 @@ async function prices(stripe, plan, months, db) {
         tax_behavior: "exclusive",
         metadata: { kind: "activation" },
       },
-      { idempotencyKey: "servicehub-mxn-activation-price-2999-tax-v2" },
+      { idempotencyKey: "servicehub-usd-activation-price-149-tax-v2" },
     );
   });
   const users = await cached(
-    `mxn-users-tax-v2-${plan.id}-v${plan.version}-${plan.seat_limit}-${months}`,
+    `usd-users-tax-v2-${plan.id}-v${plan.version}-${plan.seat_limit}-${months}`,
     async () => {
       const product = await stripe.products.create(
         { name: `Service Hub · ${plan.name}`, metadata: { kind: "users" } },
-        { idempotencyKey: `servicehub-mxn-plan-${plan.id}-v${plan.version}-${plan.seat_limit}` },
+        { idempotencyKey: `servicehub-usd-plan-${plan.id}-v${plan.version}-${plan.seat_limit}` },
       );
       return stripe.prices.create(
         {
@@ -91,7 +92,7 @@ async function prices(stripe, plan, months, db) {
           },
         },
         {
-          idempotencyKey: `servicehub-mxn-price-tax-v2-${plan.id}-v${plan.version}-${plan.seat_limit}-${months}`,
+          idempotencyKey: `servicehub-usd-price-tax-v2-${plan.id}-v${plan.version}-${plan.seat_limit}-${months}`,
         },
       );
     },
@@ -141,18 +142,19 @@ async function syncSubscription(db, stripe, id) {
     users.price.unit_amount < 1 ||
     users.price.recurring?.interval !== "month" ||
     ![1, 3, 6, 12].includes(users.price.recurring.interval_count);
-  const mxn = subscription.metadata?.billing_model === BILLING_MODEL;
-  const mxnInvalid =
+  const activationTerms = ACTIVATION_MODELS[subscription.metadata?.billing_model];
+  const activationModel = Boolean(activationTerms);
+  const activationInvalid =
     items.length !== 1 ||
     !users ||
     users.quantity !== 1 ||
-    users.price.currency !== CURRENCY ||
+    users.price.currency !== activationTerms?.currency ||
     !Number.isSafeInteger(users.price.unit_amount) ||
     users.price.unit_amount < 1 ||
     users.price.recurring?.interval !== "month" ||
     ![1, 3, 6, 12].includes(users.price.recurring.interval_count);
-  const invalid = mxn
-    ? mxnInvalid || t.billing_model !== BILLING_MODEL
+  const invalid = activationModel
+    ? activationInvalid || t.billing_model !== subscription.metadata.billing_model || t.billing_currency !== activationTerms.currency
     : legacyInvalid || t.billing_model !== "legacy_usd_v1";
   if (invalid) {
     await db.query(
@@ -166,7 +168,7 @@ async function syncSubscription(db, stripe, id) {
     return tenantId;
   }
   if (
-    mxn &&
+    activationModel &&
     !t.activation_paid_at &&
     !["canceled", "incomplete_expired"].includes(subscription.status)
   ) {
@@ -200,7 +202,7 @@ async function syncSubscription(db, stripe, id) {
     }[subscription.status] || "suspended";
   const recurring = Math.round(
     (users.price.unit_amount || 0) / users.price.recurring.interval_count +
-      (mxn ? 0 : LEGACY_LICENSE / 12),
+      (activationModel ? 0 : LEGACY_LICENSE / 12),
   );
   const end = Math.min(
     ...items.map((i) => i.current_period_end).filter(Boolean),
@@ -265,15 +267,16 @@ export function installBillingPublic(app, getStripe = stripeClient) {
           const validTaxTotal = o.automatic_tax?.enabled === true
             ? o.automatic_tax.status === "complete" && Number.isSafeInteger(tax) && tax >= 0 && Number.isSafeInteger(o.amount_subtotal) && o.amount_total === o.amount_subtotal + tax && !o.total_details?.amount_discount && !o.total_details?.amount_shipping
             : true;
-          if (o.payment_status === "paid" && o.currency === CURRENCY && validTaxTotal) {
+          const paidTerms=Object.entries(ACTIVATION_MODELS).find(([,terms])=>terms.currency===o.currency);
+          if (o.payment_status === "paid" && paidTerms && validTaxTotal) {
             await db.query(
               "UPDATE tenants SET activation_paid_at=COALESCE(activation_paid_at,now()) WHERE checkout_session_id=$1 AND stripe_customer_id=$2 AND checkout_activation_cents=$3 AND checkout_total_cents=$4 AND billing_model=$5 AND NOT is_demo",
               [
                 o.id,
                 typeof o.customer === "string" ? o.customer : o.customer?.id,
-                ACTIVATION_CENTS,
+                paidTerms[1].activation_cents,
                 o.automatic_tax?.enabled ? o.amount_subtotal : o.amount_total,
-                BILLING_MODEL,
+                paidTerms[0],
               ],
             );
           }
@@ -354,8 +357,10 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       next_billing_at: req.tenant.billing_period_end,
       cancel_at_period_end: req.tenant.cancel_at_period_end,
       currency: req.tenant.billing_currency,
+      offer_currency: CURRENCY,
+      migration_required: req.tenant.billing_model !== BILLING_MODEL,
       billing_model: req.tenant.billing_model,
-      activation_cents: ACTIVATION_CENTS,
+      activation_cents: ACTIVATION_MODELS[req.tenant.billing_model]?.activation_cents ?? 0,
       activation_paid: Boolean(req.tenant.activation_paid_at),
       configured: Boolean(
         process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_") &&
@@ -392,7 +397,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       } = await db.query("SELECT * FROM billing_plans WHERE id=$1 AND active", [
         req.body.plan_id,
       ]);
-      if (!basePlan) throw fail(400, "Plan no disponible");
+      if (!basePlan || basePlan.currency !== CURRENCY) throw fail(400, "Plan no disponible");
       let plan;
       try { plan = withSeats(basePlan, req.body.seats); }
       catch { throw fail(400, "Número de usuarios fuera del rango del plan"); }
@@ -413,10 +418,10 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
         if (old.status === "complete")
           throw fail(409, "El pago está pendiente de confirmación");
       }
-      if (t.billing_model === "legacy_usd_v1")
+      if (t.billing_model !== BILLING_MODEL)
         throw fail(
           409,
-          "Tu contrato anterior se conserva. Contacta con O7 Digital Group para cambiar a MXN.",
+          "Tu contrato anterior se conserva. Contacta con O7 Digital Group para cambiar a USD.",
         );
       if (t.status === "canceled")
         await db.query(
@@ -467,7 +472,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
           cancel_url: origin + "/subscription",
           custom_text: {
             submit: {
-              message: `Activación: ${activationDue / 100} MXN HT una sola vez. Plan: ${q.users_period_cents / 100} MXN HT cada ${q.months} mes(es). Total inicial: ${(activationDue + q.users_period_cents) / 100} MXN HT. Los impuestos aplicables se calculan antes de confirmar el pago. Al confirmar comienza la suscripción de pago y termina la prueba gratuita. Solo el plan se renueva. Cancela antes de renovar.`,
+              message: `Activación: ${activationDue / 100} USD HT una sola vez. Plan: ${q.users_period_cents / 100} USD HT cada ${q.months} mes(es). Total inicial: ${(activationDue + q.users_period_cents) / 100} USD HT. Los impuestos aplicables se calculan antes de confirmar el pago. Al confirmar comienza la suscripción de pago y termina la prueba gratuita. Solo el plan se renueva. Cancela antes de renovar.`,
             },
           },
         },
@@ -517,14 +522,14 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       if (t.billing_model !== BILLING_MODEL)
         throw fail(
           409,
-          "Contacta con O7 Digital Group para migrar tu contrato anterior a MXN.",
+          "Contacta con O7 Digital Group para migrar tu contrato anterior a USD.",
         );
       const {
         rows: [basePlan],
       } = await db.query("SELECT * FROM billing_plans WHERE id=$1 AND active", [
         req.body.plan_id,
       ]);
-      if (!basePlan) throw fail(400, "Plan no disponible");
+      if (!basePlan || basePlan.currency !== CURRENCY) throw fail(400, "Plan no disponible");
       let plan;
       try { plan = withSeats(basePlan, req.body.seats); }
       catch { throw fail(400, "Número de usuarios fuera del rango del plan"); }
@@ -585,17 +590,17 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
     ).rows;
     const plans = (
       await pool.query(
-        "SELECT * FROM billing_plans WHERE currency='mxn' ORDER BY seat_limit",
+        "SELECT * FROM billing_plans WHERE currency='usd' AND unit_cents IS NOT NULL ORDER BY seat_limit",
       )
     ).rows;
     const revenue = (
       await pool.query(
-        "SELECT COALESCE(sum(monthly_recurring_cents) FILTER(WHERE NOT is_demo AND status='active' AND billing_currency='mxn'),0)::bigint mrr_cents FROM tenants",
+        "SELECT COALESCE(sum(monthly_recurring_cents) FILTER(WHERE NOT is_demo AND status='active' AND billing_currency='usd'),0)::bigint mrr_cents FROM tenants",
       )
     ).rows[0];
     const payments = (
       await pool.query(
-        "SELECT COALESCE(sum(amount_paid),0)::bigint paid_cents FROM billing_invoices WHERE status='paid' AND currency='mxn'",
+        "SELECT COALESCE(sum(amount_paid),0)::bigint paid_cents FROM billing_invoices WHERE status='paid' AND currency='usd'",
       )
     ).rows[0];
     res.json({
@@ -645,7 +650,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       discounts[months] = d;
     }
     const r = await pool.query(
-      "UPDATE billing_plans SET name=$1,monthly_cents=CASE WHEN unit_cents IS NOT NULL THEN $2*seat_limit ELSE $2 END,unit_cents=CASE WHEN unit_cents IS NOT NULL THEN $2 ELSE NULL END,discounts=$3,ai_limit=$4,active=$5,version=version+1 WHERE id=$6 AND currency='mxn' RETURNING id",
+      "UPDATE billing_plans SET name=$1,monthly_cents=CASE WHEN unit_cents IS NOT NULL THEN $2*seat_limit ELSE $2 END,unit_cents=CASE WHEN unit_cents IS NOT NULL THEN $2 ELSE NULL END,discounts=$3,ai_limit=$4,active=$5,version=version+1 WHERE id=$6 AND currency='usd' RETURNING id",
       [
         b.name.trim(),
         b.monthly_cents,

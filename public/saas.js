@@ -1,6 +1,6 @@
 import { localizedHtml, translateText, ensureLocale } from "./localization.js";
 import { signupLegal, legalDocument, LEGAL_VERSION } from "./legal.js";
-import { ACTIVATION_CENTS, periodQuote, withSeats, PERIOD_DISCOUNTS } from "./pricing.js";
+import { CURRENCY, ACTIVATION_CENTS, periodQuote, withSeats, PERIOD_DISCOUNTS } from "./pricing.js";
 import { createStaffUI } from "./staff.js";
 import { countries, languages, countryName } from "./international.js";
 const translations = {
@@ -42,7 +42,7 @@ const translations = {
     annual: "Anual",
     license: "Activación única",
     licenseDetail:
-      "2,999 MXN HT de activación en el primer pago, más el plan elegido. No se vuelve a cobrar en las renovaciones.",
+      "149 USD HT de activación en el primer pago, más el plan elegido. No se vuelve a cobrar en las renovaciones.",
     trialStatus: "Tu prueba gratuita",
     readonly:
       "Tu espacio está en modo lectura. Tus datos se conservan. Activa tu suscripción para continuar.",
@@ -90,7 +90,7 @@ const translations = {
     annual: "Annual",
     license: "One-time activation",
     licenseDetail:
-      "2,999 MXN activation excluding tax with the first payment, plus your chosen plan. Not charged again on renewals.",
+      "149 USD activation excluding tax with the first payment, plus your chosen plan. Not charged again on renewals.",
     trialStatus: "Your free trial",
     readonly:
       "Your workspace is read only. Your data is retained. Activate your subscription to continue.",
@@ -152,7 +152,7 @@ export function createSaas({
       if (button?.isConnected) button.disabled = false;
     }
   };
-  const money = (c, currency = "mxn") =>
+  const money = (c, currency = CURRENCY) =>
     new Intl.NumberFormat(lang, {
       style: "currency",
       currency: currency.toUpperCase(),
@@ -918,7 +918,7 @@ export function createSaas({
               status.setAttribute("role", "alert");
               return;
             }
-            if (b.billing_model === "legacy_usd_v1") { status.textContent = tr("Contacta con O7 para migrar tu contrato anterior.", "Contact O7 to migrate your previous contract."); status.setAttribute("role", "alert"); return; }
+            if (b.migration_required) { status.textContent = tr("Contacta con O7 para migrar tu contrato anterior.", "Contact O7 to migrate your previous contract."); status.setAttribute("role", "alert"); return; }
             if (![...el.querySelectorAll("[data-seats]")].find(input => input.dataset.seats === button.dataset.plan)?.reportValidity()) return;
             if (!el.querySelector("#billing-consent").checked)
               throw new Error(t("billingConsent"));
@@ -960,7 +960,7 @@ export function createSaas({
   }
   async function platform(el) {
     const data = await api("/platform");
-    el.innerHTML = localizedHtml`<div class="eyebrow">O7 DIGITAL GROUP</div><h1>${t("admin")}</h1><div class="stats"><div class="stat"><small>${tr("Ingreso recurrente mensual contratado", "Contracted monthly recurring revenue")}</small><strong>${money(data.revenue.mrr_cents)}</strong><footer>${tr("Solo suscripciones recurrentes en MXN; excluye activaciones", "MXN subscriptions only; excludes activation fees")}</footer></div><div class="stat"><small>${tr("Pagos confirmados por Stripe", "Payments confirmed by Stripe")}</small><strong>${money(data.revenue.received_cents)}</strong><footer>MXN</footer></div></div><div class="service-status">${Object.entries(
+    el.innerHTML = localizedHtml`<div class="eyebrow">O7 DIGITAL GROUP</div><h1>${t("admin")}</h1><div class="stats"><div class="stat"><small>${tr("Ingreso recurrente mensual contratado", "Contracted monthly recurring revenue")}</small><strong>${money(data.revenue.mrr_cents)}</strong><footer>${tr("Solo suscripciones recurrentes en USD; excluye activaciones", "USD subscriptions only; excludes activation fees")}</footer></div><div class="stat"><small>${tr("Pagos confirmados por Stripe", "Payments confirmed by Stripe")}</small><strong>${money(data.revenue.received_cents)}</strong><footer>USD</footer></div></div><div class="service-status">${Object.entries(
       data.services,
     )
       .map(
@@ -969,7 +969,7 @@ export function createSaas({
       )
       .join(
         "",
-      )}</div><section class="panel"><h2>${tr("Organizaciones suscritas", "Subscriber companies")}</h2><div class="table-wrap"><table><thead><tr>${["Empresa", "Estado", "Usuarios", "Prueba", "Plan", "Acceso"].map((x) => localizedHtml`<th>${x}</th>`).join("")}</tr></thead><tbody>${data.tenants.map((w) => localizedHtml`<tr><td>${e(w.name)}${w.is_demo ? localizedHtml("<small>Espacio ilustrativo privado</small>") : ""}</td><td>${e(w.status)}</td><td>${w.users} / ${w.seat_limit}</td><td>${new Date(w.trial_ends_at).toLocaleDateString(lang)}</td><td>${e(w.billing_plan_id || "—")}</td><td>${!w.is_demo ? localizedHtml`<button class="btn" data-tenant="${w.id}" data-status="${w.status === "suspended" ? "trialing" : "suspended"}">${w.status === "suspended" ? tr("Reactivar", "Reactivate") : tr("Suspender", "Suspend")}</button>` : ""}</td></tr>`).join("")}</tbody></table></div></section><h2>${tr("Catálogo de precios", "Pricing catalog")}</h2><p class="subtitle">${tr("MXN. Los cambios se aplican a nuevas suscripciones o cambios de plan explícitos.", "MXN. Changes apply to new subscriptions or explicit plan changes.")}</p><div class="settings-grid">${data.plans.map((p) => localizedHtml`<form class="panel plan-form" data-plan-edit="${e(p.id)}"><h3>${e(p.name)} · ${p.seat_limit} ${tr("usuarios", "users")}</h3><label>${tr("Nombre", "Name")}<input name="name" value="${e(p.name)}" required></label><label>${tr("Precio mensual en MXN por usuario (planes por rango)", "Monthly MXN price per user (volume tiers)")}<input name="price" type="number" min="1" step="0.01" value="${(p.unit_cents || p.monthly_cents) ? (p.unit_cents || p.monthly_cents) / 100 : ""}" required></label>${[3, 6].map((m) => localizedHtml`<label>${tr("Descuento", "Discount")} ${m} ${tr("meses", "months")} (%)<input name="discount-${m}" type="number" min="0" max="80" step="0.1" value="${p.discounts[m] || 0}"></label>`).join("")}<p>${tr("Anual: 12 meses de acceso por el precio de 10", "Annual: 12 months of access for the price of 10")}</p><label>IA / ${tr("mes", "month")}<input name="ai_limit" type="number" min="0" value="${p.ai_limit}"></label><label class="check"><input name="active" type="checkbox" ${p.active ? "checked" : ""}>${tr("Disponible", "Available")}</label><button class="btn primary">${t("save")}</button></form>`).join("")}</div>`;
+      )}</div><section class="panel"><h2>${tr("Organizaciones suscritas", "Subscriber companies")}</h2><div class="table-wrap"><table><thead><tr>${["Empresa", "Estado", "Usuarios", "Prueba", "Plan", "Acceso"].map((x) => localizedHtml`<th>${x}</th>`).join("")}</tr></thead><tbody>${data.tenants.map((w) => localizedHtml`<tr><td>${e(w.name)}${w.is_demo ? localizedHtml("<small>Espacio ilustrativo privado</small>") : ""}</td><td>${e(w.status)}</td><td>${w.users} / ${w.seat_limit}</td><td>${new Date(w.trial_ends_at).toLocaleDateString(lang)}</td><td>${e(w.billing_plan_id || "—")}</td><td>${!w.is_demo ? localizedHtml`<button class="btn" data-tenant="${w.id}" data-status="${w.status === "suspended" ? "trialing" : "suspended"}">${w.status === "suspended" ? tr("Reactivar", "Reactivate") : tr("Suspender", "Suspend")}</button>` : ""}</td></tr>`).join("")}</tbody></table></div></section><h2>${tr("Catálogo de precios", "Pricing catalog")}</h2><p class="subtitle">${tr("USD. Los cambios se aplican a nuevas suscripciones o cambios de plan explícitos.", "USD. Changes apply to new subscriptions or explicit plan changes.")}</p><div class="settings-grid">${data.plans.map((p) => localizedHtml`<form class="panel plan-form" data-plan-edit="${e(p.id)}"><h3>${e(p.name)} · ${p.seat_limit} ${tr("usuarios", "users")}</h3><label>${tr("Nombre", "Name")}<input name="name" value="${e(p.name)}" required></label><label>${tr("Precio mensual en USD por usuario (planes por rango)", "Monthly USD price per user (volume tiers)")}<input name="price" type="number" min="1" step="0.01" value="${(p.unit_cents || p.monthly_cents) ? (p.unit_cents || p.monthly_cents) / 100 : ""}" required></label>${[3, 6].map((m) => localizedHtml`<label>${tr("Descuento", "Discount")} ${m} ${tr("meses", "months")} (%)<input name="discount-${m}" type="number" min="0" max="80" step="0.1" value="${p.discounts[m] || 0}"></label>`).join("")}<p>${tr("Anual: 12 meses de acceso por el precio de 10", "Annual: 12 months of access for the price of 10")}</p><label>IA / ${tr("mes", "month")}<input name="ai_limit" type="number" min="0" value="${p.ai_limit}"></label><label class="check"><input name="active" type="checkbox" ${p.active ? "checked" : ""}>${tr("Disponible", "Available")}</label><button class="btn primary">${t("save")}</button></form>`).join("")}</div>`;
     el.insertAdjacentHTML(
       "beforeend",
       localizedHtml`<h2>${tr("Modelos de configuración", "Configuration templates")}</h2><div class="settings-grid">${data.templates.map((template) => localizedHtml`<form class="panel" data-template-edit="${e(template.id)}"><label>${tr("Nombre", "Name")}<input name="name" value="${e(template.name)}" required></label><label>${tr("Servicios (uno por línea)", "Services (one per line)")}<textarea name="categories" rows="4" required>${e((template.settings.categories || []).join("\n"))}</textarea></label><label>${tr("Departamentos", "Departments")}<textarea name="departments" rows="2">${e((template.settings.departments || []).join("\n"))}</textarea></label><label class="check"><input name="active" type="checkbox" ${template.active ? "checked" : ""}>${tr("Disponible", "Available")}</label><button class="btn primary">${t("save")}</button></form>`).join("")}</div>`,

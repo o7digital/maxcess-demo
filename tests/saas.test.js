@@ -883,7 +883,7 @@ test("Invitation acceptance uses a hashed single-use token and cannot elevate ro
   await fresh.get("/api/platform").expect(403);
   await fresh.get("/api/users").expect(403);
 });
-test("Checkout consents to a one-time MXN activation and a recurring user plan", async () => {
+test("Checkout consents to a one-time USD activation and a recurring user plan", async () => {
   await pool.query("UPDATE users SET email_verified_at=now() WHERE id=$1", [
     b.user.id,
   ]);
@@ -918,15 +918,15 @@ test("Checkout consents to a one-time MXN activation and a recurring user plan",
     assert.equal(checkoutBody.subscription_data.trial_end, undefined);
     assert.ok(
       checkoutBody.custom_text.submit.message.includes(
-        "Activación: 2999 MXN HT una sola vez",
+        "Activación: 149 USD HT una sola vez",
       ),
     );
     const activation = createdPrices.get(checkoutBody.line_items[0].price),
       users = createdPrices.get(checkoutBody.line_items[1].price);
-    assert.equal(activation.currency, "mxn");
-    assert.equal(activation.unit_amount, 299900);
+    assert.equal(activation.currency, "usd");
+    assert.equal(activation.unit_amount, 14900);
     assert.equal(activation.recurring, undefined);
-    assert.equal(users.currency, "mxn");
+    assert.equal(users.currency, "usd");
     assert.equal(users.unit_amount, 9975);
     assert.equal(users.metadata.seat_limit, "7");
     assert.equal(users.recurring.interval_count, 3);
@@ -954,8 +954,8 @@ const signed = (event) => {
     .set("Stripe-Signature", signature)
     .send(payload);
 };
-test("MXN activation requires verified paid checkout, is idempotent and is never charged on resubscription", async () => {
-  const m = await register("MXN");
+test("USD activation requires verified paid checkout, is idempotent and is never charged on resubscription", async () => {
+  const m = await register("USD");
   await pool.query("UPDATE users SET email_verified_at=now() WHERE id=$1", [
     m.user.id,
   ]);
@@ -968,7 +968,7 @@ test("MXN activation requires verified paid checkout, is idempotent and is never
   const invoiceUsers = createdPrices.get(checkoutBody.line_items[1].price),
     activation = createdPrices.get(checkoutBody.line_items[0].price);
   assert.equal(activation.recurring, undefined);
-  assert.equal(invoiceUsers.unit_amount, 3990000);
+  assert.equal(invoiceUsers.unit_amount, 240000);
   const stored = (
     await pool.query(
       "SELECT checkout_session_id,checkout_total_cents FROM tenants WHERE id=$1",
@@ -976,11 +976,11 @@ test("MXN activation requires verified paid checkout, is idempotent and is never
     )
   ).rows[0];
   subscription = {
-    id: "sub_fixture_mxn",
+    id: "sub_fixture_usd",
     customer: "cus_fixture_" + m.user.tenant_id,
     metadata: {
       tenant_id: String(m.user.tenant_id),
-      billing_model: "activation_mxn_v1",
+      billing_model: "activation_usd_v1",
     },
     status: "active",
     livemode: false,
@@ -988,7 +988,7 @@ test("MXN activation requires verified paid checkout, is idempotent and is never
     items: {
       data: [
         {
-          id: "si_fixture_mxn",
+          id: "si_fixture_usd",
           quantity: 1,
           price: invoiceUsers,
           current_period_end: 1900000000,
@@ -1015,7 +1015,7 @@ test("MXN activation requires verified paid checkout, is idempotent and is never
         mode: "subscription",
         subscription: subscription.id,
         customer: subscription.customer,
-        currency: "mxn",
+        currency: "usd",
         amount_total: stored.checkout_total_cents,
         payment_status: "unpaid",
       },
@@ -1059,7 +1059,7 @@ test("MXN activation requires verified paid checkout, is idempotent and is never
       [m.user.tenant_id],
     )
   ).rows[0].monthly_recurring_cents;
-  assert.equal(recurring, Math.round(3990000 / 12));
+  assert.equal(recurring, Math.round(240000 / 12));
   await send(m, "/billing/change-plan", {
     plan_id: "team-15",
     months: 12,
@@ -1086,7 +1086,7 @@ test("MXN activation requires verified paid checkout, is idempotent and is never
     "users",
   );
   assert.ok(
-    checkoutBody.custom_text.submit.message.includes("Activación: 0 MXN"),
+    checkoutBody.custom_text.submit.message.includes("Activación: 0 USD"),
   );
   // Late events from the retired subscription cannot capture the new checkout.
   await signed({
@@ -1222,4 +1222,14 @@ test("Commercial mode disables illustrative identities and a live Stripe key is 
     if (old) process.env.STRIPE_SECRET_KEY = old;
     else delete process.env.STRIPE_SECRET_KEY;
   }
+});
+
+test('USD default preserves existing MXN subscription amounts, currency and activation validation',async()=>{
+ const old=await register('Existing MXN');
+ await pool.query("UPDATE tenants SET billing_currency='mxn',billing_model='activation_mxn_v1',stripe_customer_id=$2,stripe_subscription_id=$3,checkout_session_id=$4,checkout_activation_cents=299900,checkout_total_cents=499400 WHERE id=$1",[old.user.tenant_id,'cus_old_'+old.user.tenant_id,'sub_old_'+old.user.tenant_id,'cs_old_'+old.user.tenant_id]);
+ subscription={id:'sub_old_'+old.user.tenant_id,customer:'cus_old_'+old.user.tenant_id,metadata:{tenant_id:String(old.user.tenant_id),billing_model:'activation_mxn_v1'},status:'active',livemode:false,cancel_at_period_end:false,items:{data:[{quantity:1,current_period_end:1900000000,price:{currency:'mxn',unit_amount:199500,recurring:{interval:'month',interval_count:1},metadata:{kind:'users',plan_id:'team-5',seat_limit:'5',ai_limit:'100'}}}]}};
+ await signed({id:'evt_old_'+randomUUID(),type:'checkout.session.completed',livemode:false,data:{object:{id:'cs_old_'+old.user.tenant_id,mode:'subscription',subscription:subscription.id,customer:subscription.customer,currency:'mxn',amount_total:499400,payment_status:'paid'}}}).expect(200);
+ const bill=(await old.agent.get('/api/billing')).body;
+ assert.equal(bill.currency,'mxn');assert.equal(bill.offer_currency,'usd');assert.equal(bill.activation_paid,true);assert.equal(bill.status,'active');assert.equal(bill.migration_required,true);assert.equal(bill.activation_cents,299900);
+ const {rows:[stored]}=await pool.query('SELECT monthly_recurring_cents FROM tenants WHERE id=$1',[old.user.tenant_id]);assert.equal(stored.monthly_recurring_cents,199500);
 });

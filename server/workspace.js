@@ -324,7 +324,7 @@ export function installPublicWorkspaceRoutes(app, limit) {
       trial_days: 12,
       plans: (
         await pool.query(
-          "SELECT * FROM billing_plans WHERE active AND currency='mxn' ORDER BY seat_limit",
+          "SELECT * FROM billing_plans WHERE active AND currency='usd' ORDER BY seat_limit",
         )
       ).rows,
     }),
