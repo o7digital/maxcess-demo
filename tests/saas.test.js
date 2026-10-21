@@ -137,7 +137,7 @@ const send = (u, path, body, method = "post") =>
     .set("X-CSRF-Token", u.csrf)
     .send(body);
 let a, b, aCompany, bCompany, agentA, ticketA;
-test("Registration creates an empty workspace with exactly seven trial days and no demo data", async () => {
+test("Registration creates an empty workspace with exactly twelve calendar trial days and no demo data", async () => {
   a = await register("A");
   b = await register("B");
   assert.notEqual(a.user.tenant_id, b.user.tenant_id);
@@ -151,8 +151,13 @@ test("Registration creates an empty workspace with exactly seven trial days and 
   assert.equal(ws.is_demo, false);
   assert.equal(ws.seat_limit, 5);
   assert.equal(ws.onboarding_completed, false);
+  const trial = (await pool.query("SELECT created_at,trial_ends_at FROM tenants WHERE id=$1",[a.user.tenant_id])).rows[0];
+  assert.equal(trial.trial_ends_at-trial.created_at,12*86400000);
+  assert.equal((await a.agent.get("/api/plans")).body.trial_days,12);
+  const welcome = (await pool.query("SELECT body FROM notification_outbox WHERE tenant_id=$1 AND dedupe_key=$2",[a.user.tenant_id,`welcome:${a.user.tenant_id}`])).rows[0];
+  assert.ok(welcome.body.includes("12 días naturales"));
   assert.ok(
-    Math.abs(Date.parse(ws.trial_ends_at) - Date.now() - 7 * 86400000) < 10000,
+    Math.abs(Date.parse(ws.trial_ends_at) - Date.now() - 12 * 86400000) < 10000,
   );
   const companies = (await a.agent.get("/api/companies").expect(200)).body
     .companies;

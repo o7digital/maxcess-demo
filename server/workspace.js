@@ -316,7 +316,7 @@ export function installPublicWorkspaceRoutes(app, limit) {
     res.json({
       activation_cents: ACTIVATION_CENTS,
       currency: CURRENCY,
-      trial_days: 7,
+      trial_days: 12,
       plans: (
         await pool.query(
           "SELECT * FROM billing_plans WHERE active AND currency='mxn' ORDER BY seat_limit",
@@ -391,7 +391,7 @@ export function installPublicWorkspaceRoutes(app, limit) {
         `welcome:${tenant.id}`,
         mail,
         "Bienvenido a Service Hub",
-        `Tu espacio ${business} está listo. Tu prueba de 7 días termina el ${tenant.trial_ends_at.toISOString()}. No se realizará ningún cargo sin tu suscripción explícita.`,
+        `Tu espacio ${business} está listo. Tu prueba de 12 días naturales termina el ${tenant.trial_ends_at.toISOString()}. No se realizará ningún cargo sin tu suscripción explícita.`,
       );
       await issueToken(db, user, "verify");
       return { tenant, user };

@@ -30,7 +30,7 @@ Annual: 12 months of access for the price of 10|Annuel : 12 mois d’accès au p
 12 months for the price of 10|12 mois au prix de 10
 Sign in|Connexion
 Create workspace|Créer un espace
-Start 7 days free|Essayer gratuitement 7 jours
+Start 12 days free|Essayer gratuitement 12 jours
 Plans and pricing|Offres et tarifs
 YOUR SERVICE. YOUR RULES.|VOTRE SERVICE. VOS RÈGLES.
 Great service starts with a connected team.|Un excellent service commence par une équipe connectée.
@@ -41,8 +41,8 @@ Work email|Adresse professionnelle
 Password|Mot de passe
 At least 12 characters|Au moins 12 caractères
 I accept the terms and privacy policy.|J’accepte les conditions et la politique de confidentialité.
-Create workspace · 7 days free|Créer mon espace · 7 jours gratuits
-No card required. No automatic charges during your trial.|Sans carte bancaire. Aucun prélèvement automatique pendant l’essai.
+Create workspace · 12 days free|Créer mon espace · 12 jours gratuits
+12 calendar days, including weekends and public holidays. No card or automatic charges during your trial.|12 jours calendaires, week-ends et jours fériés inclus. Sans carte bancaire ni prélèvement automatique pendant l’essai.
 Welcome back.|Bienvenue.
 Sign in to your Service Hub workspace.|Connectez-vous à votre espace Service Hub.
 Enter my workspace ↗|Accéder à mon espace ↗
@@ -305,7 +305,7 @@ Password updated.|Mot de passe mis à jour.
 If the account exists, you will receive an email link.|Si ce compte existe, vous recevrez un lien par courriel.
 Terms of service|Conditions d’utilisation
 Your workspace and trial|Votre espace et votre essai
-Your free trial lasts 7 days from registration. No card required. At expiry, your workspace becomes read only and your data is retained.|Votre essai gratuit dure 7 jours à compter de l’inscription, sans carte bancaire. À son expiration, votre espace passe en lecture seule et vos données sont conservées.
+Your free trial lasts 12 days from registration. No card required. At expiry, your workspace becomes read only and your data is retained.|Votre essai gratuit dure 12 jours à compter de l’inscription, sans carte bancaire. À son expiration, votre espace passe en lecture seule et vos données sont conservées.
 Subscriptions and renewals|Abonnements et renouvellements
 You can cancel before renewal from Subscription. Cancellation stops future renewals and does not immediately erase your data. Plan changes may result in prorated adjustments that require confirmation.|Vous pouvez résilier avant le renouvellement depuis Abonnement. La résiliation arrête les renouvellements futurs sans effacer immédiatement vos données. Un changement d’offre peut entraîner un ajustement au prorata soumis à confirmation.
 Responsible use and AI assistance|Utilisation responsable et assistance IA
