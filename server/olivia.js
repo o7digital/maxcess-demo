@@ -37,7 +37,7 @@ export async function oliviaChat(message, conversationId, user) {
           Authorization: `Bearer ${process.env.OLIVIA_API_KEY}`,
         },
         body: JSON.stringify({
-          message,
+          message: `[Respond in ${{es:"español",en:"English",fr:"français",de:"Deutsch",it:"italiano",pt:"português",ja:"日本語",ru:"русский",da:"dansk"}[user.language] || "español"}.]\n${message}`,
           conversation_id: conversationId || null,
           scope:
             user.tenant_id && user.tenant_id !== 1

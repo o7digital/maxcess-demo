@@ -1,3 +1,5 @@
+import { localizedEmail } from "./localization.js";
+import { languages } from "../public/international.js";
 import { LEGAL_VERSION } from "../public/legal.js";
 import { ACTIVATION_CENTS, CURRENCY } from "../public/pricing.js";
 import { resolveStaff, seedRoles } from "./roles.js";
@@ -64,7 +66,7 @@ export function validateSettings(input) {
     if (!Object.hasOwn(defaults, key))
       throw fail(400, `Configuración desconocida: ${key}`);
   const s = { ...defaults, ...input };
-  if (!["es", "en", "fr"].includes(s.language))
+  if (!Object.hasOwn(languages, s.language))
     throw fail(400, "Idioma no válido");
   try {
     new Intl.DateTimeFormat("en", { timeZone: s.timezone });
@@ -282,6 +284,7 @@ export const publicOrigin = () => {
   return url.replace(/\/$/, "");
 };
 export async function queueEmail(db, tenant, key, recipient, subject, body) {
+  ({subject, body} = await localizedEmail(db, tenant, recipient, key, subject, body));
   await db.query(
     "INSERT INTO notification_outbox(tenant_id,dedupe_key,recipient,subject,body) VALUES($1,$2,$3,$4,$5) ON CONFLICT(dedupe_key) DO NOTHING",
     [tenant, key, recipient, subject, body],
@@ -344,7 +347,7 @@ export function installPublicWorkspaceRoutes(app, limit) {
       name = str(b.name, "Nombre", 100),
       business = str(b.company, "Empresa");
     const hash = await hashPassword(password(b.password));
-    if (b.accepted_terms !== true || !["es", "en", "fr"].includes(b.language))
+    if (b.accepted_terms !== true || !Object.hasOwn(languages, b.language))
       throw fail(400, "Acepta las condiciones y selecciona el idioma");
     const result = await transaction(async (db) => {
       if (
@@ -381,6 +384,7 @@ export function installPublicWorkspaceRoutes(app, limit) {
             terms_version: LEGAL_VERSION,
             privacy_version: LEGAL_VERSION,
             notice_language: "en",
+            interface_language: b.language,
             accepted_at: new Date().toISOString(),
           },
         ],

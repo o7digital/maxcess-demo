@@ -34,6 +34,10 @@ test("Hugging Face reports use the chosen language and aggregate data with anony
     assert.ok(!JSON.stringify(sent).includes("Private customer name"));
     assert.equal(sent.max_tokens, 800);
     assert.equal(JSON.parse(sent.messages[1].content).metrics.total, 5);
+    for (const [language,name] of Object.entries({en:"English",es:"español",fr:"français",de:"Deutsch",it:"italiano",pt:"português",ja:"日本語",ru:"русский",da:"dansk"})) {
+      await hfNarrative({metrics:{total:0},companies:[]},language);
+      assert.ok(sent.messages[0].content.includes(name));
+    }
     globalThis.fetch = async () =>
       new Response("invalid-json", { status: 200 });
     await assert.rejects(hfNarrative({ companies: [] }, "en"), { status: 502 });

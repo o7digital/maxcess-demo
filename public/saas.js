@@ -1,7 +1,7 @@
+import { localizedHtml, translateText, ensureLocale } from "./localization.js";
 import { signupLegal, legalDocument, LEGAL_VERSION } from "./legal.js";
 import { ACTIVATION_CENTS, periodQuote, withSeats, PERIOD_DISCOUNTS } from "./pricing.js";
 import { createStaffUI } from "./staff.js";
-import { inFrench } from "./french.js";
 import { countries, languages, countryName } from "./international.js";
 const translations = {
   es: {
@@ -101,9 +101,6 @@ const translations = {
     loading: "Preparing your workspace…",
   },
 };
-translations.fr = Object.fromEntries(
-  Object.entries(translations.en).map(([key, value]) => [key, inFrench(value)]),
-);
 export function createSaas({
   api,
   esc: e,
@@ -116,28 +113,21 @@ export function createSaas({
   reload,
 }) {
   let lang = localStorage.getItem("servicehub-language") || "es";
-  if (!translations[lang]) lang = "es";
-  const t = (k) => translations[lang][k] || k;
-  const tr = (es, en) =>
-    lang === "fr"
-      ? Array.isArray(en)
-        ? en.map(inFrench)
-        : inFrench(en)
-      : lang === "en"
-        ? en
-        : es;
+  if (!Object.hasOwn(languages, lang)) lang = "es";
+  const t = (key) => lang === "es" ? translations.es[key] || key : translateText(translations.en[key] || key, lang);
+  const tr = (es, en) => lang === "es" ? es : translateText(en, lang);
   const language = () =>
-    `<select id="language" aria-label="Language">${Object.entries(languages)
-      .filter(([code]) => translations[code])
+    localizedHtml`<select id="language" aria-label="Language">${Object.entries(languages)
       .map(
         ([code, label]) =>
-          `<option value="${code}" ${lang === code ? "selected" : ""}>${label}</option>`,
+          localizedHtml`<option value="${code}" ${lang === code ? "selected" : ""}>${label}</option>`,
       )
       .join("")}</select>`;
   const bindLanguage = (render) => {
     const node = document.querySelector("#language");
     if (node)
-      node.onchange = (event) => {
+      node.onchange = async (event) => {
+        await ensureLocale(event.target.value);
         lang = event.target.value;
         localStorage.setItem("servicehub-language", lang);
         document.documentElement.lang = lang;
@@ -145,11 +135,11 @@ export function createSaas({
       };
   };
   const header = () =>
-    `<header class="commercial-header"><a class="commercial-brand" href="/">Service Hub<span>↗</span><small>O7 Digital Group</small></a><nav><a href="/pricing">${t("pricing")}</a><a href="/login">${t("login")}</a>${language()}<a class="btn primary" href="/signup">${t("trial")} ↗</a></nav></header>`;
+    localizedHtml`<header class="commercial-header"><a class="commercial-brand" href="/">Service Hub<span>↗</span><small>O7 Digital Group</small></a><nav><a href="/pricing">${t("pricing")}</a><a href="/login">${t("login")}</a>${language()}<a class="btn primary" href="/signup">${t("trial")} ↗</a></nav></header>`;
   const footer = () =>
-    `<footer class="commercial-footer"><span>© ${new Date().getFullYear()} O7 Digital Group · Service Hub</span><a href="/terms">${tr("Condiciones", "Terms")}</a><a href="/privacy">${tr("Privacidad", "Privacy")}</a><a href="https://www.o7digitalgroup.com/" target="_blank" rel="noopener noreferrer">O7 Digital Group ↗</a></footer>`;
+    localizedHtml`<footer class="commercial-footer"><span>© ${new Date().getFullYear()} O7 Digital Group · Service Hub</span><a href="/terms">${tr("Condiciones", "Terms")}</a><a href="/privacy">${tr("Privacidad", "Privacy")}</a><a href="https://www.o7digitalgroup.com/" target="_blank" rel="noopener noreferrer">O7 Digital Group ↗</a></footer>`;
   const input = (key, label, type = "text", value = "", required = true) =>
-    `<label for="${key}">${label}</label><input id="${key}" name="${key}" type="${type}" value="${e(value)}" ${required ? "required" : ""} ${type === "password" ? 'minlength="12" autocomplete="new-password"' : 'maxlength="160"'}>`;
+    localizedHtml`<label for="${key}">${label}</label><input id="${key}" name="${key}" type="${type}" value="${e(value)}" ${required ? "required" : ""} ${type === "password" ? 'minlength="12" autocomplete="new-password"' : 'maxlength="160"'}>`;
   const safe = (fn) => async (event) => {
     event?.preventDefault();
     const button = event?.submitter || event?.currentTarget;
@@ -173,7 +163,7 @@ export function createSaas({
   const selectedSeats = new Map();
   const chosenPlan = p => withSeats(p, selectedSeats.get(p.id) ?? p.seat_limit);
   function seatPicker(p) {
-    return p.unit_cents ? `<p class="unit-price"><b>${money(p.unit_cents)} ${tr("HT", "excl. tax")}</b> / ${tr("usuario / mes", "user / month")}</p><label for="seats-${e(p.id)}">${tr("Número de usuarios", "Number of users")}</label><input id="seats-${e(p.id)}" data-seats="${e(p.id)}" type="number" min="${p.min_seats}" max="${p.max_seats}" step="1" value="${p.seat_limit}">` : "";
+    return p.unit_cents ? localizedHtml`<p class="unit-price"><b>${money(p.unit_cents)} ${tr("HT", "excl. tax")}</b> / ${tr("usuario / mes", "user / month")}</p><label for="seats-${e(p.id)}">${tr("Número de usuarios", "Number of users")}</label><input id="seats-${e(p.id)}" data-seats="${e(p.id)}" type="number" min="${p.min_seats}" max="${p.max_seats}" step="1" value="${p.seat_limit}">` : "";
   }
   function bindSeats(target, plans, getMonths, activationDue = ACTIVATION_CENTS) {
     target.querySelectorAll("[data-seats]").forEach(input => {
@@ -182,7 +172,7 @@ export function createSaas({
         selectedSeats.set(input.dataset.seats, Number(input.value));
         const p = chosenPlan(plans.find(p => p.id === input.dataset.seats));
         const card = input.closest("article");
-        card.querySelector("h3").innerHTML = `${p.seat_limit} <small>${tr("usuarios", "users")}</small>`;
+        card.querySelector("h3").innerHTML = localizedHtml`${p.seat_limit} <small>${tr("usuarios", "users")}</small>`;
         card.querySelector("[data-price-breakdown]").innerHTML = priceBreakdown(p, getMonths(), activationDue);
         card.querySelector("[data-ai-limit]").textContent = p.ai_limit;
       };
@@ -190,7 +180,7 @@ export function createSaas({
   }
   function priceBreakdown(plan, months, activationDue = ACTIVATION_CENTS) {
     const q = periodQuote(plan, months);
-    return `<div class="plan-price">${money(q.users_period_cents)} <small>${tr("HT", "excl. tax")}</small></div><p>${tr("cada", "every")} ${months} ${tr("mes(es), por adelantado", "month(s), in advance")}</p>${months > 1 ? `<p>${money(q.monthly_equivalent_cents)} / ${tr("mes equivalente", "month equivalent")}</p><div class="pricing-saving saving-period-${months}" role="status"><strong>${tr("Ahorras", "You save")} ${money(q.savings_cents)} · ${new Intl.NumberFormat(lang, {maximumFractionDigits: 2}).format(q.discount)}%</strong>${q.free_months ? `<span class="annual-free-months"><b>${tr("2 meses gratis", "2 months free")}</b> · ${tr("12 meses al precio de 10", "12 months for the price of 10")}</span>` : ""}<span>${tr("frente al pago mensual durante el mismo periodo", "compared with monthly payments over the same period")}</span><span>${tr("Precio sin descuento", "Price before discount")}: <s>${money(plan.monthly_cents * months)}</s></span></div>` : `<p class="pricing-saving saving-period-1">${tr("Pago mensual · sin descuento por periodo", "Monthly payment · no period discount")}</p>`}<p>${activationDue ? "+ " + money(activationDue) + " · " + tr("activación única", "one-time activation") : tr("Activación ya pagada", "Activation already paid")}</p><small>${tr("Total inicial", "Initial total")}: ${money(q.users_period_cents + activationDue)} ${tr("HT", "excl. tax")}</small><p class="tax-notice">${tr("Impuestos aplicables calculados en el pago según tus datos de facturación.", "Applicable taxes calculated at checkout from your billing details.")}</p>`;
+    return localizedHtml`<div class="plan-price">${money(q.users_period_cents)} <small>${tr("HT", "excl. tax")}</small></div><p>${tr("cada", "every")} ${months} ${tr("mes(es), por adelantado", "month(s), in advance")}</p>${months > 1 ? localizedHtml`<p>${money(q.monthly_equivalent_cents)} / ${tr("mes equivalente", "month equivalent")}</p><div class="pricing-saving saving-period-${months}" role="status"><strong>${tr("Ahorras", "You save")} ${money(q.savings_cents)} · ${new Intl.NumberFormat(lang, {maximumFractionDigits: 2}).format(q.discount)}%</strong>${q.free_months ? localizedHtml`<span class="annual-free-months"><b>${tr("2 meses gratis", "2 months free")}</b> · ${tr("12 meses al precio de 10", "12 months for the price of 10")}</span>` : ""}<span>${tr("frente al pago mensual durante el mismo periodo", "compared with monthly payments over the same period")}</span><span>${tr("Precio sin descuento", "Price before discount")}: <s>${money(plan.monthly_cents * months)}</s></span></div>` : localizedHtml`<p class="pricing-saving saving-period-1">${tr("Pago mensual · sin descuento por periodo", "Monthly payment · no period discount")}</p>`}<p>${activationDue ? "+ " + money(activationDue) + " · " + tr("activación única", "one-time activation") : tr("Activación ya pagada", "Activation already paid")}</p><small>${tr("Total inicial", "Initial total")}: ${money(q.users_period_cents + activationDue)} ${tr("HT", "excl. tax")}</small><p class="tax-notice">${tr("Impuestos aplicables calculados en el pago según tus datos de facturación.", "Applicable taxes calculated at checkout from your billing details.")}</p>`;
   }
   const periodOptions = () => [
     [1, t("monthly")],
@@ -208,7 +198,7 @@ export function createSaas({
         invitation = path === "/invitation";
       app.innerHTML =
         header() +
-        `<div class="auth-layout"><section class="auth-copy"><span class="eyebrow">${t("tag")}</span><h1>${signup ? t("configure") : invitation ? tr("Tu equipo te espera.", "Your team is waiting.") : t("welcome")}</h1><p>${signup ? tr("Cinco minutos para dar forma a tu operación. Un solo espacio para trabajar mejor.", "Five minutes to shape your operation. One workspace to work better.") : t("signin")}</p><div class="auth-feature">◫ ${tr("Solicitudes, equipos e indicadores. Conectados.", "Requests, teams and insights. Connected.")}</div><div class="auth-feature">✦ ${tr("Olivia prepara. Tu equipo decide.", "Olivia prepares. Your team decides.")}</div><span class="auth-note">${t("nocard")}</span></section><section class="panel auth-panel"><div class="eyebrow">SERVICE HUB</div><h2>${signup ? t("signup") : invitation ? tr("Aceptar invitación", "Accept invitation") : t("login")}</h2><form id="auth-form">${signup ? signupLegal() : ""}${signup ? input("name", t("name")) + input("company", t("company")) : ""}${!invitation ? input("email", t("email"), "email") : ""}${input("password", t("password"), "password")}${signup ? `<small>${t("passwordHint")}</small><label class="check"><input name="accepted_terms" type="checkbox" required><span>I accept the <a href="/terms" target="_blank" rel="noopener">Service Terms</a> and acknowledge the <a href="/privacy" target="_blank" rel="noopener">Privacy and Cookie Notice</a> (English, ${LEGAL_VERSION}).</span></label>` : ""}<p id="login-error" role="alert"></p><button class="btn primary">${signup ? t("create") : invitation ? tr("Unirme al equipo ↗", "Join workspace ↗") : t("enter")}</button></form><p class="subtitle">${signup ? `<a href="/login">${t("login")} ↗</a>` : `<a href="/signup">${t("trial")} ↗</a> · <a href="/forgot-password">${tr("Recuperar contraseña", "Forgot password")}</a>`}</p></section></div>` +
+        localizedHtml`<div class="auth-layout"><section class="auth-copy"><span class="eyebrow">${t("tag")}</span><h1>${signup ? t("configure") : invitation ? tr("Tu equipo te espera.", "Your team is waiting.") : t("welcome")}</h1><p>${signup ? tr("Cinco minutos para dar forma a tu operación. Un solo espacio para trabajar mejor.", "Five minutes to shape your operation. One workspace to work better.") : t("signin")}</p><div class="auth-feature">◫ ${tr("Solicitudes, equipos e indicadores. Conectados.", "Requests, teams and insights. Connected.")}</div><div class="auth-feature">✦ ${tr("Olivia prepara. Tu equipo decide.", "Olivia prepares. Your team decides.")}</div><span class="auth-note">${t("nocard")}</span></section><section class="panel auth-panel"><div class="eyebrow">SERVICE HUB</div><h2>${signup ? t("signup") : invitation ? tr("Aceptar invitación", "Accept invitation") : t("login")}</h2><form id="auth-form">${signup ? signupLegal() : ""}${signup ? input("name", t("name")) + input("company", t("company")) : ""}${!invitation ? input("email", t("email"), "email") : ""}${input("password", t("password"), "password")}${signup ? localizedHtml`<small>${t("passwordHint")}</small><label class="check"><input name="accepted_terms" type="checkbox" required><span>I accept the <a href="/terms" target="_blank" rel="noopener">Service Terms</a> and acknowledge the <a href="/privacy" target="_blank" rel="noopener">Privacy and Cookie Notice</a> (English, ${LEGAL_VERSION}).</span></label>` : ""}<p id="login-error" role="alert"></p><button class="btn primary">${signup ? t("create") : invitation ? tr("Unirme al equipo ↗", "Join workspace ↗") : t("enter")}</button></form><p class="subtitle">${signup ? localizedHtml`<a href="/login">${t("login")} ↗</a>` : localizedHtml`<a href="/signup">${t("trial")} ↗</a> · <a href="/forgot-password">${tr("Recuperar contraseña", "Forgot password")}</a>`}</p></section></div>` +
         footer();
       const passwordInput = document.querySelector("#password");
       if (!signup && !invitation) {
@@ -247,14 +237,14 @@ export function createSaas({
       if (!verify && !reset && getConfig().recoveryAvailable === false) {
         app.innerHTML =
           header() +
-          `<section class="panel legal"><h1>${tr("Recuperar acceso", "Recover access")}</h1><p role="status">${tr("La recuperación por correo no está disponible temporalmente. Contacta con O7 Digital Group para recuperar tu acceso.", "Email recovery is temporarily unavailable. Contact O7 Digital Group to restore your access.")}</p><div class="actions"><a class="btn primary" href="https://www.o7digitalgroup.com/">${tr("Contactar a O7 Digital Group", "Contact O7 Digital Group")} ↗</a><a class="btn" href="/login">${t("login")} ↗</a></div></section>` +
+          localizedHtml`<section class="panel legal"><h1>${tr("Recuperar acceso", "Recover access")}</h1><p role="status">${tr("La recuperación por correo no está disponible temporalmente. Contacta con O7 Digital Group para recuperar tu acceso.", "Email recovery is temporarily unavailable. Contact O7 Digital Group to restore your access.")}</p><div class="actions"><a class="btn primary" href="https://www.o7digitalgroup.com/">${tr("Contactar a O7 Digital Group", "Contact O7 Digital Group")} ↗</a><a class="btn" href="/login">${t("login")} ↗</a></div></section>` +
           footer();
         bindLanguage(publicPage);
         return;
       }
       app.innerHTML =
         header() +
-        `<section class="panel legal"><h1>${verify ? tr("Confirma tu correo", "Confirm your email") : reset ? tr("Nueva contraseña", "New password") : tr("Recuperar acceso", "Recover access")}</h1><form id="account-form">${verify ? "" : reset ? input("password", t("password"), "password") : input("email", t("email"), "email")}<p id="account-result" role="status"></p><button class="btn primary">${verify ? tr("Confirmar correo", "Confirm email") : reset ? t("save") : tr("Enviar enlace", "Send link")} ↗</button></form></section>` +
+        localizedHtml`<section class="panel legal"><h1>${verify ? tr("Confirma tu correo", "Confirm your email") : reset ? tr("Nueva contraseña", "New password") : tr("Recuperar acceso", "Recover access")}</h1><form id="account-form">${verify ? "" : reset ? input("password", t("password"), "password") : input("email", t("email"), "email")}<p id="account-result" role="status"></p><button class="btn primary">${verify ? tr("Confirmar correo", "Confirm email") : reset ? t("save") : tr("Enviar enlace", "Send link")} ↗</button></form></section>` +
         footer();
       document.querySelector("#account-form").onsubmit = safe(async (event) => {
         const body = Object.fromEntries(new FormData(event.target));
@@ -270,7 +260,7 @@ export function createSaas({
         );
         history.replaceState({}, "", path);
         document.querySelector("#account-form").innerHTML =
-          `<p>${verify ? tr("Correo confirmado.", "Email confirmed.") : reset ? tr("Contraseña actualizada.", "Password updated.") : tr("Si la cuenta existe, recibirás un enlace por correo.", "If the account exists, you will receive an email link.")}</p><a class="btn primary" href="/login">${t("login")} ↗</a>`;
+          localizedHtml`<p>${verify ? tr("Correo confirmado.", "Email confirmed.") : reset ? tr("Contraseña actualizada.", "Password updated.") : tr("Si la cuenta existe, recibirás un enlace por correo.", "If the account exists, you will receive an email link.")}</p><a class="btn primary" href="/login">${t("login")} ↗</a>`;
       });
     } else if (["/terms", "/privacy"].includes(path)) {
       app.innerHTML = header() + legalDocument(path) + footer();
@@ -278,7 +268,7 @@ export function createSaas({
     } else {
       app.innerHTML =
         header() +
-        `<section class="commercial-hero"><div class="commercial-hero-copy"><div class="eyebrow"><span class="live-dot"></span> ${t("tag")}</div><h1>${t("headline")}</h1><p>${t("intro")}</p><div class="actions"><a class="btn lime" href="/signup">${t("trial")} ↗</a><a class="btn" href="/login">${t("login")}</a></div><small>${t("nocard")}</small></div><div class="product-map"><div class="product-map-header"><span class="mini-logo">S</span><div><b>Service Hub</b><small>${tr("Tu centro de operaciones", "Your operations center")}</small></div><span class="map-dot"></span></div><div class="map-ticket"><span class="eyebrow">01 · ${tr("CAPTURA", "CAPTURE")}</span><h3>${tr("Cada solicitud, con contexto.", "Every request, with context.")}</h3><p>${tr("Formularios propios · Clientes · Contactos", "Custom forms · Customers · Contacts")}</p></div><div class="map-connector">↓</div><div class="map-ticket"><span class="eyebrow">02 · ${tr("COORDINA", "COORDINATE")}</span><h3>${tr("El equipo correcto. El paso claro.", "The right team. A clear next step.")}</h3><p>Workflows · SLA · Olivia IA</p></div><div class="map-connector">↓</div><div class="map-ticket map-ticket-last"><span class="eyebrow">03 · ${tr("MEJORA", "IMPROVE")}</span><h3>${tr("Decisiones con perspectiva.", "Decisions with perspective.")}</h3><p>Dashboards · ${tr("Informes · Seguimiento", "Reports · Follow-up")}</p></div></div></section><section class="commercial-values">${[
+        localizedHtml`<section class="commercial-hero"><div class="commercial-hero-copy"><div class="eyebrow"><span class="live-dot"></span> ${t("tag")}</div><h1>${t("headline")}</h1><p>${t("intro")}</p><div class="actions"><a class="btn lime" href="/signup">${t("trial")} ↗</a><a class="btn" href="/login">${t("login")}</a></div><small>${t("nocard")}</small></div><div class="product-map"><div class="product-map-header"><span class="mini-logo">S</span><div><b>Service Hub</b><small>${tr("Tu centro de operaciones", "Your operations center")}</small></div><span class="map-dot"></span></div><div class="map-ticket"><span class="eyebrow">01 · ${tr("CAPTURA", "CAPTURE")}</span><h3>${tr("Cada solicitud, con contexto.", "Every request, with context.")}</h3><p>${tr("Formularios propios · Clientes · Contactos", "Custom forms · Customers · Contacts")}</p></div><div class="map-connector">↓</div><div class="map-ticket"><span class="eyebrow">02 · ${tr("COORDINA", "COORDINATE")}</span><h3>${tr("El equipo correcto. El paso claro.", "The right team. A clear next step.")}</h3><p>Workflows · SLA · Olivia IA</p></div><div class="map-connector">↓</div><div class="map-ticket map-ticket-last"><span class="eyebrow">03 · ${tr("MEJORA", "IMPROVE")}</span><h3>${tr("Decisiones con perspectiva.", "Decisions with perspective.")}</h3><p>Dashboards · ${tr("Informes · Seguimiento", "Reports · Follow-up")}</p></div></div></section><section class="commercial-values">${[
           [
             tr("A tu manera.", "Your way."),
             tr(
@@ -303,14 +293,14 @@ export function createSaas({
         ]
           .map(
             ([a, b]) =>
-              `<article><span>↗</span><h3>${a}</h3><p>${b}</p></article>`,
+              localizedHtml`<article><span>↗</span><h3>${a}</h3><p>${b}</p></article>`,
           )
           .join(
             "",
           )}</section><section class="commercial-pricing" id="pricing"><div class="row"><div><span class="eyebrow">${tr("CRECE CON TU EQUIPO", "GROW WITH YOUR TEAM")}</span><h2>${t("pricing")}</h2></div><div class="license-note"><b>${t("license")}</b><p>${t("licenseDetail")}</p></div></div><div class="billing-periods" id="public-periods">${periodOptions()
           .map(
             ([months, label]) =>
-              `<button class="btn period-option period-${months} ${months === 1 ? "primary" : ""}" data-public-months="${months}">${label}${months > 1 ? (months === 12 ? " · " + tr("2 meses gratis", "2 months free") : " · −" + PERIOD_DISCOUNTS[months] + "%") : ""}</button>`,
+              localizedHtml`<button class="btn period-option period-${months} ${months === 1 ? "primary" : ""}" data-public-months="${months}">${label}${months > 1 ? (months === 12 ? " · " + tr("2 meses gratis", "2 months free") : " · −" + PERIOD_DISCOUNTS[months] + "%") : ""}</button>`,
           )
           .join(
             "",
@@ -326,7 +316,7 @@ export function createSaas({
             .map(
               (base) => {
                 const p = chosenPlan(base);
-                return `<article class="panel plan-card" data-public-plan="${e(p.id)}"><span class="eyebrow">${p.unit_cents ? `${p.min_seats}${p.max_seats === 10000 ? "+" : "–" + p.max_seats} ${tr("usuarios", "users")}` : e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, period)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><a class="btn ${p.seat_limit === 5 ? "primary" : ""}" href="/signup">${t("trial")} ↗</a></article>`;
+                return localizedHtml`<article class="panel plan-card" data-public-plan="${e(p.id)}"><span class="eyebrow">${p.unit_cents ? `${p.min_seats}${p.max_seats === 10000 ? "+" : "–" + p.max_seats} ${tr("usuarios", "users")}` : e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, period)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><a class="btn ${p.seat_limit === 5 ? "primary" : ""}" href="/signup">${t("trial")} ↗</a></article>`;
               },
             )
             .join("");
@@ -352,7 +342,7 @@ export function createSaas({
     bindLanguage(publicPage);
   }
   function logoPicker(url) {
-    return `<div class="logo-picker"><label for="logo-file">${tr("Logo de tu empresa", "Company logo")}</label><img id="logo-preview" class="logo-preview" ${url ? `src="${e(url)}"` : "hidden"} alt="${tr("Tu logo", "Your logo")}"><input id="logo-file" type="file" accept="image/png,image/jpeg,image/webp"><small>PNG, JPG, WebP · ${tr("máximo 1 MB", "up to 1 MB")}</small><p id="logo-status" role="status"></p><button type="button" class="btn" id="remove-logo" ${url ? "" : "hidden"}>${tr("Quitar logo", "Remove logo")}</button></div>`;
+    return localizedHtml`<div class="logo-picker"><label for="logo-file">${tr("Logo de tu empresa", "Company logo")}</label><img id="logo-preview" class="logo-preview" ${url ? `src="${e(url)}"` : "hidden"} alt="${tr("Tu logo", "Your logo")}"><input id="logo-file" type="file" accept="image/png,image/jpeg,image/webp"><small>PNG, JPG, WebP · ${tr("máximo 1 MB", "up to 1 MB")}</small><p id="logo-status" role="status"></p><button type="button" class="btn" id="remove-logo" ${url ? "" : "hidden"}>${tr("Quitar logo", "Remove logo")}</button></div>`;
   }
   function bindLogoPicker(el, settings) {
     const fileInput = el.querySelector("#logo-file");
@@ -469,29 +459,28 @@ export function createSaas({
       ["Company", "Template", "Team", "Service", "Ready"],
     );
     async function draw() {
-      el.innerHTML = `<div class="onboarding-heading"><div class="eyebrow">${tr("BIENVENIDO A SERVICE HUB", "WELCOME TO SERVICE HUB")}</div><h1>${t("configure")}</h1><p class="subtitle">${t("onboarding")}</p></div><div class="wizard-steps">${steps.map((label, i) => `<span class="${i === step ? "current" : i < step ? "done" : ""}"><b>${i < step ? "✓" : i + 1}</b>${label}</span>`).join("")}</div><div class="panel wizard-panel"><form id="wizard"><div id="wizard-content"></div><div class="wizard-actions">${step ? `<button type="button" class="btn" id="wizard-back">${t("back")}</button>` : ""}<button class="btn primary">${step === 4 ? t("finish") : t("next")}</button></div></form></div>`;
+      el.innerHTML = localizedHtml`<div class="onboarding-heading"><div class="eyebrow">${tr("BIENVENIDO A SERVICE HUB", "WELCOME TO SERVICE HUB")}</div><h1>${t("configure")}</h1><p class="subtitle">${t("onboarding")}</p></div><div class="wizard-steps">${steps.map((label, i) => localizedHtml`<span class="${i === step ? "current" : i < step ? "done" : ""}"><b>${i < step ? "✓" : i + 1}</b>${label}</span>`).join("")}</div><div class="panel wizard-panel"><form id="wizard"><div id="wizard-content"></div><div class="wizard-actions">${step ? localizedHtml`<button type="button" class="btn" id="wizard-back">${t("back")}</button>` : ""}<button class="btn primary">${step === 4 ? t("finish") : t("next")}</button></div></form></div>`;
       const content = el.querySelector("#wizard-content");
       if (step === 0)
-        content.innerHTML = `<h2>${tr("Un espacio con tu identidad.", "A workspace with your identity.")}</h2>${input("business", t("company"), "text", current.name)}${input("sector", tr("Sector de actividad", "Industry"), "text", current.settings.sector, false)}${logoPicker(current.settings.logo)}<div class="field-row"><div><label for="workspace-language">${tr("Idioma", "Language")}</label><select id="workspace-language">${Object.entries(
+        content.innerHTML = localizedHtml`<h2>${tr("Un espacio con tu identidad.", "A workspace with your identity.")}</h2>${input("business", t("company"), "text", current.name)}${input("sector", tr("Sector de actividad", "Industry"), "text", current.settings.sector, false)}${logoPicker(current.settings.logo)}<div class="field-row"><div><label for="workspace-language">${tr("Idioma", "Language")}</label><select id="workspace-language">${Object.entries(
           languages,
         )
-          .filter(([code]) => translations[code])
-          .map(
+              .map(
             ([code, label]) =>
-              `<option value="${code}" ${current.settings.language === code ? "selected" : ""}>${label}</option>`,
+              localizedHtml`<option value="${code}" ${current.settings.language === code ? "selected" : ""}>${label}</option>`,
           )
           .join(
             "",
           )}</select></div><div>${input("timezone", tr("Zona horaria", "Time zone"), "text", current.settings.timezone)}</div></div>`;
       if (step === 1)
-        content.innerHTML = `<h2>${tr("Empieza con una buena base.", "Start with a good foundation.")}</h2><p class="subtitle">${tr("Podrás cambiar todos los ajustes después.", "You can change every setting later.")}</p><div class="template-grid">${templates.map((template, i) => `<label class="template-option"><input type="radio" name="template" value="${e(template.id)}" ${i === 0 ? "checked" : ""}><b>${e(template.name)}</b><small>${e((template.settings.categories || []).join(" · "))}</small></label>`).join("")}</div>`;
+        content.innerHTML = localizedHtml`<h2>${tr("Empieza con una buena base.", "Start with a good foundation.")}</h2><p class="subtitle">${tr("Podrás cambiar todos los ajustes después.", "You can change every setting later.")}</p><div class="template-grid">${templates.map((template, i) => localizedHtml`<label class="template-option"><input type="radio" name="template" value="${e(template.id)}" ${i === 0 ? "checked" : ""}><b>${e(template.name)}</b><small>${e((template.settings.categories || []).join(" · "))}</small></label>`).join("")}</div>`;
       if (step === 2) {
-        content.innerHTML = `<h2>${tr("Trabajar bien empieza juntos.", "Good work starts together.")}</h2><p>${tr("Crea tu primer equipo. Podrás invitar colaboradores desde Configuración. Tu prueba incluye hasta 5 usuarios.", "Create your first team. Invite collaborators from Settings. Your trial includes up to 5 users.")}</p>${input("team", tr("Nombre del equipo (opcional)", "Team name (optional)"), "text", "", false)}<div class="notice">${e(getUser().name)} · ${tr("Administrador del espacio", "Workspace administrator")}</div>`;
+        content.innerHTML = localizedHtml`<h2>${tr("Trabajar bien empieza juntos.", "Good work starts together.")}</h2><p>${tr("Crea tu primer equipo. Podrás invitar colaboradores desde Configuración. Tu prueba incluye hasta 5 usuarios.", "Create your first team. Invite collaborators from Settings. Your trial includes up to 5 users.")}</p>${input("team", tr("Nombre del equipo (opcional)", "Team name (optional)"), "text", "", false)}<div class="notice">${e(getUser().name)} · ${tr("Administrador del espacio", "Workspace administrator")}</div>`;
       }
       if (step === 3)
-        content.innerHTML = `<h2>${tr("Tu primer servicio, listo.", "Your first service, ready.")}</h2><label for="categories">${tr("Servicios y categorías (una por línea)", "Services and categories (one per line)")}</label><textarea id="categories" rows="5" required>${e(current.settings.categories.join("\n"))}</textarea><label for="sites">${tr("Sedes (una por línea)", "Sites (one per line)")}</label><textarea id="sites" rows="2">${e(current.settings.sites.join("\n"))}</textarea><p class="subtitle">${tr("Se inicia con cuatro etapas: abierto, en curso, resuelto y cerrado. Personaliza etapas, formularios y SLA en Configuración.", "Start with four stages: open, in progress, resolved and closed. Customize stages, forms and SLAs in Settings.")}</p>`;
+        content.innerHTML = localizedHtml`<h2>${tr("Tu primer servicio, listo.", "Your first service, ready.")}</h2><label for="categories">${tr("Servicios y categorías (una por línea)", "Services and categories (one per line)")}</label><textarea id="categories" rows="5" required>${e(current.settings.categories.join("\n"))}</textarea><label for="sites">${tr("Sedes (una por línea)", "Sites (one per line)")}</label><textarea id="sites" rows="2">${e(current.settings.sites.join("\n"))}</textarea><p class="subtitle">${tr("Se inicia con cuatro etapas: abierto, en curso, resuelto y cerrado. Personaliza etapas, formularios y SLA en Configuración.", "Start with four stages: open, in progress, resolved and closed. Customize stages, forms and SLAs in Settings.")}</p>`;
       if (step === 4)
-        content.innerHTML = `<div class="wizard-ready"><div class="ready-icon">↗</div><h2>${tr("Todo empieza aquí.", "It all starts here.")}</h2><p>${e(current.name)} · ${current.settings.categories.length} ${tr("servicios configurados", "services configured")}</p><p>${tr("Crea tu primera solicitud, invita a tu equipo o importa tus clientes. Tu espacio ya está conectado.", "Create your first request, invite your team or import your customers. Your workspace is connected.")}</p><div class="notice">${t("nocard")}</div></div>`;
+        content.innerHTML = localizedHtml`<div class="wizard-ready"><div class="ready-icon">↗</div><h2>${tr("Todo empieza aquí.", "It all starts here.")}</h2><p>${e(current.name)} · ${current.settings.categories.length} ${tr("servicios configurados", "services configured")}</p><p>${tr("Crea tu primera solicitud, invita a tu equipo o importa tus clientes. Tu espacio ya está conectado.", "Create your first request, invite your team or import your customers. Your workspace is connected.")}</p><div class="notice">${t("nocard")}</div></div>`;
       if (step === 0) bindLogoPicker(el, current.settings);
       el.querySelector("#wizard-back")?.addEventListener("click", () => {
         step--;
@@ -570,27 +559,26 @@ export function createSaas({
         api("/companies"),
         api("/integrations"),
       ]);
-    el.innerHTML = `<div class="row"><div><div class="eyebrow">${tr("A TU MANERA", "YOUR WAY")}</div><h1>${t("settings")}</h1><p class="subtitle">${tr("Tus cambios se aplican a las solicitudes reales.", "Your changes apply to real requests.")}</p></div></div><section class="panel config-assistant"><div class="eyebrow">OLIVIA IA · ${w.ai_used} / ${w.ai_limit}</div><h2>${tr("Dale forma a tu servicio con Olivia.", "Shape your service with Olivia.")}</h2><p>${tr("Describe tu operación. Revisa los servicios y campos sugeridos antes de aplicar cualquier cambio.", "Describe your operation. Review suggested services and fields before applying any changes.")}</p><label for="configuration-goal">${tr("¿Cómo trabaja tu equipo?", "How does your team work?")}</label><textarea id="configuration-goal" maxlength="1000" rows="2" ${integrations.olivia.configured ? "" : "disabled"}></textarea><button type="button" class="btn" id="suggest-configuration" ${integrations.olivia.configured ? "" : "disabled"}>${tr("Preparar propuesta con Olivia", "Prepare proposal with Olivia")} ✦</button>${!integrations.olivia.configured ? `<p class="subtitle">${tr("La asistencia IA todavía no está disponible para este espacio. Puedes configurar todo manualmente.", "AI assistance is not yet available for this workspace. You can configure everything manually.")}</p>` : ""}<div id="configuration-proposal"></div></section><form id="workspace-settings"><div class="settings-grid"><section class="panel"><h2>${tr("Identidad y organización", "Identity and organization")}</h2>${input("business", t("company"), "text", w.name)}${input("sector", tr("Sector", "Industry"), "text", w.settings.sector, false)}${logoPicker(w.settings.logo)}${input("timezone", tr("Zona horaria", "Time zone"), "text", w.settings.timezone)}<label>${tr("Idioma del espacio", "Workspace language")}<select id="workspace-language">${Object.entries(
+    el.innerHTML = localizedHtml`<div class="row"><div><div class="eyebrow">${tr("A TU MANERA", "YOUR WAY")}</div><h1>${t("settings")}</h1><p class="subtitle">${tr("Tus cambios se aplican a las solicitudes reales.", "Your changes apply to real requests.")}</p></div></div><section class="panel config-assistant"><div class="eyebrow">OLIVIA IA · ${w.ai_used} / ${w.ai_limit}</div><h2>${tr("Dale forma a tu servicio con Olivia.", "Shape your service with Olivia.")}</h2><p>${tr("Describe tu operación. Revisa los servicios y campos sugeridos antes de aplicar cualquier cambio.", "Describe your operation. Review suggested services and fields before applying any changes.")}</p><label for="configuration-goal">${tr("¿Cómo trabaja tu equipo?", "How does your team work?")}</label><textarea id="configuration-goal" maxlength="1000" rows="2" ${integrations.olivia.configured ? "" : "disabled"}></textarea><button type="button" class="btn" id="suggest-configuration" ${integrations.olivia.configured ? "" : "disabled"}>${tr("Preparar propuesta con Olivia", "Prepare proposal with Olivia")} ✦</button>${!integrations.olivia.configured ? localizedHtml`<p class="subtitle">${tr("La asistencia IA todavía no está disponible para este espacio. Puedes configurar todo manualmente.", "AI assistance is not yet available for this workspace. You can configure everything manually.")}</p>` : ""}<div id="configuration-proposal"></div></section><form id="workspace-settings"><div class="settings-grid"><section class="panel"><h2>${tr("Identidad y organización", "Identity and organization")}</h2>${input("business", t("company"), "text", w.name)}${input("sector", tr("Sector", "Industry"), "text", w.settings.sector, false)}${logoPicker(w.settings.logo)}${input("timezone", tr("Zona horaria", "Time zone"), "text", w.settings.timezone)}<label>${tr("Idioma del espacio", "Workspace language")}<select id="workspace-language">${Object.entries(
       languages,
     )
-      .filter(([code]) => translations[code])
       .map(
         ([code, label]) =>
-          `<option value="${code}" ${w.settings.language === code ? "selected" : ""}>${label}</option>`,
+          localizedHtml`<option value="${code}" ${w.settings.language === code ? "selected" : ""}>${label}</option>`,
       )
       .join(
         "",
-      )}</select></label>${["categories", "departments", "sites"].map((key, i) => `<label for="config-${key}">${tr(["Servicios / categorías", "Departamentos", "Sedes"][i], ["Services / categories", "Departments", "Sites"][i])}</label><textarea id="config-${key}" rows="3">${e(w.settings[key].join("\n"))}</textarea>`).join("")}</section><section class="panel"><h2>SLA · ${tr("Horas de atención", "Service hours")}</h2>${Object.entries(
+      )}</select></label>${["categories", "departments", "sites"].map((key, i) => localizedHtml`<label for="config-${key}">${tr(["Servicios / categorías", "Departamentos", "Sedes"][i], ["Services / categories", "Departments", "Sites"][i])}</label><textarea id="config-${key}" rows="3">${e(w.settings[key].join("\n"))}</textarea>`).join("")}</section><section class="panel"><h2>SLA · ${tr("Horas de atención", "Service hours")}</h2>${Object.entries(
       w.settings.sla,
     )
       .map(([p, h]) => input("sla-" + p, p, "number", h))
       .join(
         "",
-      )}<h3>${tr("Tu dashboard", "Your dashboard")}</h3>${["active", "critical", "overdue", "sla_percent", "total", "resolved"].map((key, i) => `<label class="check"><input type="checkbox" data-metric="${key}" ${w.settings.dashboard.includes(key) ? "checked" : ""}>${tr(["Activas", "Críticas", "Vencidas", "Cumplimiento SLA", "Total", "Resueltas"][i], ["Active", "Critical", "Overdue", "SLA compliance", "Total", "Resolved"][i])}</label>`).join("")}<p class="notice">${tr("Los SLA se calculan en horas corridas. Los cambios se aplican a nuevas solicitudes y reclasificaciones.", "SLAs use elapsed hours. Changes apply to new requests and reclassifications.")}</p></section><section class="panel"><h2>${tr("Constructor de formularios", "Form builder")}</h2><p>${tr("Añade campos a todas las solicitudes de tu espacio.", "Add fields to every request in your workspace.")}</p><div id="fields-builder"></div><button type="button" class="btn" id="add-field">+ ${tr("Añadir campo", "Add field")}</button></section><section class="panel"><h2>${tr("Etapas de trabajo", "Workflow stages")}</h2><p>${tr("Define nombres, orden y el estado operativo de cada etapa.", "Define the name, order and operational state of each stage.")}</p><div id="workflow-builder"></div><button type="button" class="btn" id="add-stage">+ ${tr("Añadir etapa", "Add stage")}</button></section><section class="panel"><h2>${tr("Reglas de asignación", "Assignment rules")}</h2><p>${tr("La primera regla que coincide asigna al técnico y puede enviar una notificación.", "The first matching rule assigns the technician and can send a notification.")}</p><div id="rules-builder"></div><button type="button" class="btn" id="add-rule">+ ${tr("Añadir regla", "Add rule")}</button></section><section class="panel"><h2>${tr("Escalaciones de SLA", "SLA escalations")}</h2><p>${tr("Cuando un SLA lleva el tiempo indicado vencido, asigna al técnico seleccionado. La regla requiere tu aprobación al guardar.", "When an SLA is overdue for the specified time, assign the selected technician. Saving the configuration approves the rule.")}</p><div id="escalations-builder"></div><button type="button" class="btn" id="add-escalation">+ ${tr("Añadir escalación", "Add escalation")}</button></section><section class="panel"><h2>${tr("Equipos y colaboradores", "Teams and collaborators")}</h2><div id="teams-list">${data.teams.map((team) => `<p>${e(team.name)}</p>`).join("") || tr("Sin equipos todavía", "No teams yet")}</div><button type="button" class="btn" id="new-team">+ ${tr("Crear equipo", "Create team")}</button><button type="button" class="btn" id="invite">+ ${tr("Invitar colaborador", "Invite teammate")}</button><div id="invitations-list"></div><h3>${tr("Roles y equipos", "Roles and teams")}</h3><div id="membership-list"><button type="button" class="btn" data-view="team">${tr("Gestionar roles y colaboradores", "Manage roles and collaborators")} ↗</button>${users
+      )}<h3>${tr("Tu dashboard", "Your dashboard")}</h3>${["active", "critical", "overdue", "sla_percent", "total", "resolved"].map((key, i) => localizedHtml`<label class="check"><input type="checkbox" data-metric="${key}" ${w.settings.dashboard.includes(key) ? "checked" : ""}>${tr(["Activas", "Críticas", "Vencidas", "Cumplimiento SLA", "Total", "Resueltas"][i], ["Active", "Critical", "Overdue", "SLA compliance", "Total", "Resolved"][i])}</label>`).join("")}<p class="notice">${tr("Los SLA se calculan en horas corridas. Los cambios se aplican a nuevas solicitudes y reclasificaciones.", "SLAs use elapsed hours. Changes apply to new requests and reclassifications.")}</p></section><section class="panel"><h2>${tr("Constructor de formularios", "Form builder")}</h2><p>${tr("Añade campos a todas las solicitudes de tu espacio.", "Add fields to every request in your workspace.")}</p><div id="fields-builder"></div><button type="button" class="btn" id="add-field">+ ${tr("Añadir campo", "Add field")}</button></section><section class="panel"><h2>${tr("Etapas de trabajo", "Workflow stages")}</h2><p>${tr("Define nombres, orden y el estado operativo de cada etapa.", "Define the name, order and operational state of each stage.")}</p><div id="workflow-builder"></div><button type="button" class="btn" id="add-stage">+ ${tr("Añadir etapa", "Add stage")}</button></section><section class="panel"><h2>${tr("Reglas de asignación", "Assignment rules")}</h2><p>${tr("La primera regla que coincide asigna al técnico y puede enviar una notificación.", "The first matching rule assigns the technician and can send a notification.")}</p><div id="rules-builder"></div><button type="button" class="btn" id="add-rule">+ ${tr("Añadir regla", "Add rule")}</button></section><section class="panel"><h2>${tr("Escalaciones de SLA", "SLA escalations")}</h2><p>${tr("Cuando un SLA lleva el tiempo indicado vencido, asigna al técnico seleccionado. La regla requiere tu aprobación al guardar.", "When an SLA is overdue for the specified time, assign the selected technician. Saving the configuration approves the rule.")}</p><div id="escalations-builder"></div><button type="button" class="btn" id="add-escalation">+ ${tr("Añadir escalación", "Add escalation")}</button></section><section class="panel"><h2>${tr("Equipos y colaboradores", "Teams and collaborators")}</h2><div id="teams-list">${data.teams.map((team) => localizedHtml`<p>${e(team.name)}</p>`).join("") || tr("Sin equipos todavía", "No teams yet")}</div><button type="button" class="btn" id="new-team">+ ${tr("Crear equipo", "Create team")}</button><button type="button" class="btn" id="invite">+ ${tr("Invitar colaborador", "Invite teammate")}</button><div id="invitations-list"></div><h3>${tr("Roles y equipos", "Roles and teams")}</h3><div id="membership-list"><button type="button" class="btn" data-view="team">${tr("Gestionar roles y colaboradores", "Manage roles and collaborators")} ↗</button>${users
       .filter((u) => u.id !== getUser().id && u.role !== "platform_admin")
       .map(
         (u) =>
-          `<div class="builder-row" data-member="${u.id}"><b data-user-content>${e(u.name)}</b><small data-user-content>${e(u.role_name || u.role)}</small><select data-member-team aria-label="Team"><option value="">—</option>${data.teams.map((team) => `<option value="${team.id}" ${team.id === u.team_id ? "selected" : ""}>${e(team.name)}</option>`).join("")}</select><button type="button" class="btn" data-save-member="${u.id}">${t("save")}</button></div>`,
+          localizedHtml`<div class="builder-row" data-member="${u.id}"><b data-user-content>${e(u.name)}</b><small data-user-content>${e(u.role_name || u.role)}</small><select data-member-team aria-label="Team"><option value="">—</option>${data.teams.map((team) => localizedHtml`<option value="${team.id}" ${team.id === u.team_id ? "selected" : ""}>${e(team.name)}</option>`).join("")}</select><button type="button" class="btn" data-save-member="${u.id}">${t("save")}</button></div>`,
       )
       .join(
         "",
@@ -600,7 +588,7 @@ export function createSaas({
         goal: el.querySelector("#configuration-goal").value,
       });
       const panel = el.querySelector("#configuration-proposal");
-      panel.innerHTML = `<h3>${tr("Revisa antes de aplicar", "Review before applying")}</h3><p>${proposal.categories.map(e).join(" · ")}</p><ul>${proposal.fields.map((f) => `<li>${e(f.label)} · ${e(f.type)}${f.required ? " *" : ""}</li>`).join("")}</ul><label class="check"><input type="checkbox" id="approve-configuration">${tr("Revisé los campos y autorizo reemplazar los servicios y el formulario de mi espacio.", "I reviewed the fields and approve replacing my workspace services and form.")}</label><button type="button" class="btn primary" id="apply-configuration">${tr("Aplicar propuesta revisada", "Apply reviewed proposal")} ↗</button>`;
+      panel.innerHTML = localizedHtml`<h3>${tr("Revisa antes de aplicar", "Review before applying")}</h3><p>${proposal.categories.map(e).join(" · ")}</p><ul>${proposal.fields.map((f) => localizedHtml`<li>${e(f.label)} · ${e(f.type)}${f.required ? " *" : ""}</li>`).join("")}</ul><label class="check"><input type="checkbox" id="approve-configuration">${tr("Revisé los campos y autorizo reemplazar los servicios y el formulario de mi espacio.", "I reviewed the fields and approve replacing my workspace services and form.")}</label><button type="button" class="btn primary" id="apply-configuration">${tr("Aplicar propuesta revisada", "Apply reviewed proposal")} ↗</button>`;
       panel.querySelector("#apply-configuration").onclick = safe(async () => {
         await api("/workspace/suggestions/" + proposal.id + "/apply", "POST", {
           approved: panel.querySelector("#approve-configuration").checked,
@@ -614,7 +602,7 @@ export function createSaas({
       el.querySelector("#fields-builder").innerHTML = fields
         .map(
           (f, i) =>
-            `<div class="builder-row" data-field="${i}"><input data-property="label" aria-label="Label" value="${e(f.label)}" placeholder="${tr("Nombre del campo", "Field label")}"><input data-property="key" aria-label="Key" value="${e(f.key)}" placeholder="field_key"><select data-property="type" aria-label="Type">${["text", "number", "date", "select", "checkbox"].map((type) => `<option ${f.type === type ? "selected" : ""}>${type}</option>`).join("")}</select><input data-property="options" aria-label="Options" placeholder="${tr("Opciones separadas por coma", "Comma-separated options")}" value="${e((f.options || []).join(","))}"><label class="check"><input data-property="required" type="checkbox" ${f.required ? "checked" : ""}>${tr("Obligatorio", "Required")}</label><button type="button" class="btn" data-remove-field="${i}" aria-label="Remove">×</button></div>`,
+            localizedHtml`<div class="builder-row" data-field="${i}"><input data-property="label" aria-label="Label" value="${e(f.label)}" placeholder="${tr("Nombre del campo", "Field label")}"><input data-property="key" aria-label="Key" value="${e(f.key)}" placeholder="field_key"><select data-property="type" aria-label="Type">${["text", "number", "date", "select", "checkbox"].map((type) => localizedHtml`<option ${f.type === type ? "selected" : ""}>${type}</option>`).join("")}</select><input data-property="options" aria-label="Options" placeholder="${tr("Opciones separadas por coma", "Comma-separated options")}" value="${e((f.options || []).join(","))}"><label class="check"><input data-property="required" type="checkbox" ${f.required ? "checked" : ""}>${tr("Obligatorio", "Required")}</label><button type="button" class="btn" data-remove-field="${i}" aria-label="Remove">×</button></div>`,
         )
         .join("");
     }
@@ -641,7 +629,7 @@ export function createSaas({
       el.querySelector("#workflow-builder").innerHTML = workflow
         .map(
           (w, i) =>
-            `<div class="builder-row stage-row" data-stage="${i}"><span>${i + 1}</span><input aria-label="Stage name" value="${e(w.name)}"><select aria-label="Stage state">${["Abierto", "En curso", "Resuelto", "Cerrado"].map((s) => `<option ${w.state === s ? "selected" : ""}>${s}</option>`).join("")}</select><button class="btn" type="button" data-up-stage="${i}" aria-label="Move up">↑</button><button class="btn" type="button" data-remove-stage="${i}" aria-label="Remove">×</button></div>`,
+            localizedHtml`<div class="builder-row stage-row" data-stage="${i}"><span>${i + 1}</span><input aria-label="Stage name" value="${e(w.name)}"><select aria-label="Stage state">${["Abierto", "En curso", "Resuelto", "Cerrado"].map((s) => localizedHtml`<option ${w.state === s ? "selected" : ""}>${s}</option>`).join("")}</select><button class="btn" type="button" data-up-stage="${i}" aria-label="Move up">↑</button><button class="btn" type="button" data-remove-stage="${i}" aria-label="Remove">×</button></div>`,
         )
         .join("");
     }
@@ -655,11 +643,11 @@ export function createSaas({
       el.querySelector("#rules-builder").innerHTML = rules
         .map(
           (r, i) =>
-            `<div class="builder-row" data-rule="${i}"><select aria-label="Category">${w.settings.categories.map((c) => `<option ${r.category === c ? "selected" : ""}>${e(c)}</option>`).join("")}</select><select aria-label="Agent"><option value="">${tr("Técnico", "Technician")}</option>${users
+            localizedHtml`<div class="builder-row" data-rule="${i}"><select aria-label="Category">${w.settings.categories.map((c) => localizedHtml`<option ${r.category === c ? "selected" : ""}>${e(c)}</option>`).join("")}</select><select aria-label="Agent"><option value="">${tr("Técnico", "Technician")}</option>${users
               .filter((u) => u.role === "agent" && u.active)
               .map(
                 (u) =>
-                  `<option value="${u.id}" ${r.agent_id === u.id ? "selected" : ""}>${e(u.name)}</option>`,
+                  localizedHtml`<option value="${u.id}" ${r.agent_id === u.id ? "selected" : ""}>${e(u.name)}</option>`,
               )
               .join(
                 "",
@@ -678,11 +666,11 @@ export function createSaas({
       el.querySelector("#escalations-builder").innerHTML = escalations
         .map(
           (r, i) =>
-            `<div class="builder-row" data-escalation="${i}"><label>${tr("Prioridad", "Priority")}<select data-esc="priority">${["Baja", "Media", "Alta", "Crítica"].map((p) => `<option ${p === r.priority ? "selected" : ""}>${e(p)}</option>`).join("")}</select></label><label>${tr("Horas después del SLA", "Hours after SLA")}<input data-esc="hours" type="number" step="0.25" min="0.25" value="${r.after_hours}"></label><select data-esc="agent" aria-label="Agent"><option value="">—</option>${users
+            localizedHtml`<div class="builder-row" data-escalation="${i}"><label>${tr("Prioridad", "Priority")}<select data-esc="priority">${["Baja", "Media", "Alta", "Crítica"].map((p) => localizedHtml`<option ${p === r.priority ? "selected" : ""}>${e(p)}</option>`).join("")}</select></label><label>${tr("Horas después del SLA", "Hours after SLA")}<input data-esc="hours" type="number" step="0.25" min="0.25" value="${r.after_hours}"></label><select data-esc="agent" aria-label="Agent"><option value="">—</option>${users
               .filter((u) => u.role === "agent" && u.active)
               .map(
                 (u) =>
-                  `<option value="${u.id}" ${u.id === r.agent_id ? "selected" : ""}>${e(u.name)}</option>`,
+                  localizedHtml`<option value="${u.id}" ${u.id === r.agent_id ? "selected" : ""}>${e(u.name)}</option>`,
               )
               .join(
                 "",
@@ -820,7 +808,7 @@ export function createSaas({
       .filter((i) => !i.accepted_at)
       .map(
         (i) =>
-          `<p>${e(i.email)} · ${e(i.role)} <button type="button" class="btn" data-cancel-invite="${i.id}">×</button></p>`,
+          localizedHtml`<p>${e(i.email)} · ${e(i.role)} <button type="button" class="btn" data-cancel-invite="${i.id}">×</button></p>`,
       )
       .join("");
     el.querySelectorAll("[data-cancel-invite]").forEach(
@@ -850,7 +838,7 @@ export function createSaas({
     ]);
     const section = document.createElement("section");
     section.className = "panel invite-panel";
-    section.innerHTML = `<h2>${tr("Invita a tu equipo", "Invite your team")}</h2><form id="invite-form">${input("invite-name", t("name"))}${input("invite-email", t("email"), "email")}<label>${tr("Rol", "Role")}<select id="invite-role">${catalog.roles.map((r) => `<option value="custom:${r.id}" data-profile="${r.base_role}" ${r.base_role === "agent" ? "selected" : ""}>${e(r.name)}</option>`).join("")}<option value="legacy:client" data-profile="client">${tr("Cliente", "Customer")}</option></select></label><label>${tr("Departamento", "Department")}<select id="invite-department"><option value="">—</option>${catalog.departments.map((d) => `<option value="${d.id}">${e(d.name)}</option>`).join("")}</select></label>${input("invite-specialty", tr("Especialidad / función (libre)", "Specialty / function (free text)"), "text", "", false)}<label>${tr("Cliente", "Customer")}<select id="invite-company"><option value="">—</option>${companies.map((c) => `<option value="${c.id}">${e(c.name)}</option>`).join("")}</select></label><label>${tr("Equipo", "Team")}<select id="invite-team"><option value="">—</option>${teams.map((c) => `<option value="${c.id}">${e(c.name)}</option>`).join("")}</select></label><p class="notice">${tr("La invitación se enviará por correo cuando el servicio de correo esté configurado. Caduca en 72 horas.", "The invitation will be emailed when the email service is configured. Expires in 72 hours.")}</p><button class="btn primary">${tr("Enviar invitación", "Send invitation")} ↗</button><button type="button" class="btn" id="cancel-invite">${tr("Cancelar", "Cancel")}</button></form>`;
+    section.innerHTML = localizedHtml`<h2>${tr("Invita a tu equipo", "Invite your team")}</h2><form id="invite-form">${input("invite-name", t("name"))}${input("invite-email", t("email"), "email")}<label>${tr("Rol", "Role")}<select id="invite-role">${catalog.roles.map((r) => localizedHtml`<option value="custom:${r.id}" data-profile="${r.base_role}" ${r.base_role === "agent" ? "selected" : ""}>${e(r.name)}</option>`).join("")}<option value="legacy:client" data-profile="client">${tr("Cliente", "Customer")}</option></select></label><label>${tr("Departamento", "Department")}<select id="invite-department"><option value="">—</option>${catalog.departments.map((d) => localizedHtml`<option value="${d.id}">${e(d.name)}</option>`).join("")}</select></label>${input("invite-specialty", tr("Especialidad / función (libre)", "Specialty / function (free text)"), "text", "", false)}<label>${tr("Cliente", "Customer")}<select id="invite-company"><option value="">—</option>${companies.map((c) => localizedHtml`<option value="${c.id}">${e(c.name)}</option>`).join("")}</select></label><label>${tr("Equipo", "Team")}<select id="invite-team"><option value="">—</option>${teams.map((c) => localizedHtml`<option value="${c.id}">${e(c.name)}</option>`).join("")}</select></label><p class="notice">${tr("La invitación se enviará por correo cuando el servicio de correo esté configurado. Caduca en 72 horas.", "The invitation will be emailed when the email service is configured. Expires in 72 hours.")}</p><button class="btn primary">${tr("Enviar invitación", "Send invitation")} ↗</button><button type="button" class="btn" id="cancel-invite">${tr("Cancelar", "Cancel")}</button></form>`;
     el.prepend(section);
     section.scrollIntoView();
     const updateInviteRole = () => {
@@ -891,7 +879,7 @@ export function createSaas({
   async function billing(el) {
     const [b, { plans }] = await Promise.all([api("/billing"), api("/plans")]);
     let months = 1;
-    el.innerHTML = `<div class="eyebrow">${tr("CRECE SIN PERDER EL RITMO", "GROW WITHOUT MISSING A BEAT")}</div><h1>${t("billing")}</h1><div class="subscription-summary panel"><div><span class="eyebrow">${e({ trialing: tr("Prueba gratuita", "Free trial"), active: tr("Suscripción activa", "Active subscription"), past_due: tr("Pago pendiente", "Payment pending"), suspended: tr("Suspendido", "Suspended"), canceled: tr("Cancelado", "Canceled") }[b.status] || b.status)}</span><h2>${b.status === "trialing" ? t("trialStatus") : tr("Tu espacio Service Hub", "Your Service Hub workspace")}</h2><p>${tr("Fin de prueba", "Trial ends")}: ${new Date(b.trial_ends_at).toLocaleString(lang)} · ${b.seat_limit} ${tr("usuarios", "users")}</p>${b.next_billing_at ? `<p>${tr("Próxima facturación", "Next billing")}: ${new Date(b.next_billing_at).toLocaleDateString(lang)}</p>` : ""}${b.cancel_at_period_end ? `<p>${tr("Cancelación al final del periodo", "Cancellation at period end")}</p>` : ""}</div>${b.plan_id ? `<button class="btn" id="billing-portal">${t("manage")} ↗</button>` : ""}</div><div class="license-note"><b>${t("license")}</b><p>${t("licenseDetail")}</p></div><div class="billing-periods">${[
+    el.innerHTML = localizedHtml`<div class="eyebrow">${tr("CRECE SIN PERDER EL RITMO", "GROW WITHOUT MISSING A BEAT")}</div><h1>${t("billing")}</h1><div class="subscription-summary panel"><div><span class="eyebrow">${e({ trialing: tr("Prueba gratuita", "Free trial"), active: tr("Suscripción activa", "Active subscription"), past_due: tr("Pago pendiente", "Payment pending"), suspended: tr("Suspendido", "Suspended"), canceled: tr("Cancelado", "Canceled") }[b.status] || b.status)}</span><h2>${b.status === "trialing" ? t("trialStatus") : tr("Tu espacio Service Hub", "Your Service Hub workspace")}</h2><p>${tr("Fin de prueba", "Trial ends")}: ${new Date(b.trial_ends_at).toLocaleString(lang)} · ${b.seat_limit} ${tr("usuarios", "users")}</p>${b.next_billing_at ? localizedHtml`<p>${tr("Próxima facturación", "Next billing")}: ${new Date(b.next_billing_at).toLocaleDateString(lang)}</p>` : ""}${b.cancel_at_period_end ? localizedHtml`<p>${tr("Cancelación al final del periodo", "Cancellation at period end")}</p>` : ""}</div>${b.plan_id ? localizedHtml`<button class="btn" id="billing-portal">${t("manage")} ↗</button>` : ""}</div><div class="license-note"><b>${t("license")}</b><p>${t("licenseDetail")}</p></div><div class="billing-periods">${[
       [1, "monthly"],
       [3, "quarterly"],
       [6, "semester"],
@@ -899,17 +887,17 @@ export function createSaas({
     ]
       .map(
         ([m, key]) =>
-          `<button class="btn period-option period-${m} ${m === 1 ? "primary" : ""}" data-months="${m}">${t(key)}${m > 1 ? (m === 12 ? " · " + tr("2 meses gratis", "2 months free") : " · −" + PERIOD_DISCOUNTS[m] + "%") : ""}</button>`,
+          localizedHtml`<button class="btn period-option period-${m} ${m === 1 ? "primary" : ""}" data-months="${m}">${t(key)}${m > 1 ? (m === 12 ? " · " + tr("2 meses gratis", "2 months free") : " · −" + PERIOD_DISCOUNTS[m] + "%") : ""}</button>`,
       )
       .join(
         "",
-      )}</div><div id="billing-plans" class="plan-grid"></div><p class="notice">${tr("Solo el plan de usuarios se renueva. La activación se cobra una sola vez. Al confirmar comienza tu suscripción de pago y termina la prueba gratuita. Los cambios de plan pueden generar ajustes prorrateados.", "Only the user plan renews. Activation is charged once. Confirming starts your paid subscription and ends your free trial. Plan changes may result in prorated adjustments.")}</p><label class="check"><input id="billing-consent" type="checkbox">${t("billingConsent")}</label>${!b.configured ? `<p class="notice">${tr("La facturación está en preparación. Contacta con O7 Digital Group.", "Billing is being prepared. Contact O7 Digital Group.")}</p>` : ""}<section class="panel"><h2>${tr("Historial de facturas", "Invoice history")}</h2>${b.invoices.length ? b.invoices.map((i) => `<p>${e(i.status)} · ${money(i.amount_paid, i.currency)} ${i.hosted_url ? `<a href="${e(i.hosted_url)}" target="_blank" rel="noopener noreferrer">${tr("Ver factura", "View invoice")} ↗</a>` : ""}</p>`).join("") : `<p class="subtitle">${tr("Aún no hay facturas.", "No invoices yet.")}</p>`}</section>`;
+      )}</div><div id="billing-plans" class="plan-grid"></div><p class="notice">${tr("Solo el plan de usuarios se renueva. La activación se cobra una sola vez. Al confirmar comienza tu suscripción de pago y termina la prueba gratuita. Los cambios de plan pueden generar ajustes prorrateados.", "Only the user plan renews. Activation is charged once. Confirming starts your paid subscription and ends your free trial. Plan changes may result in prorated adjustments.")}</p><label class="check"><input id="billing-consent" type="checkbox">${t("billingConsent")}</label>${!b.configured ? localizedHtml`<p class="notice">${tr("La facturación está en preparación. Contacta con O7 Digital Group.", "Billing is being prepared. Contact O7 Digital Group.")}</p>` : ""}<section class="panel"><h2>${tr("Historial de facturas", "Invoice history")}</h2>${b.invoices.length ? b.invoices.map((i) => localizedHtml`<p>${e(i.status)} · ${money(i.amount_paid, i.currency)} ${i.hosted_url ? localizedHtml`<a href="${e(i.hosted_url)}" target="_blank" rel="noopener noreferrer">${tr("Ver factura", "View invoice")} ↗</a>` : ""}</p>`).join("") : localizedHtml`<p class="subtitle">${tr("Aún no hay facturas.", "No invoices yet.")}</p>`}</section>`;
     function draw() {
       el.querySelector("#billing-plans").innerHTML = plans
         .map((base) => {
           const p = chosenPlan(base);
           const activationDue = b.activation_paid ? 0 : ACTIVATION_CENTS;
-          return `<article class="panel plan-card" data-billing-plan="${e(p.id)}"><span class="eyebrow">${p.unit_cents ? `${p.min_seats}${p.max_seats === 10000 ? "+" : "–" + p.max_seats} ${tr("usuarios", "users")}` : e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, months, activationDue)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><p class="plan-payment-status">${!b.configured ? tr("Pago en línea aún no disponible: Stripe está pendiente de conexión. Puedes comparar los planes.", "Online payment is not available yet: Stripe connection is pending. You can compare plans.") : tr("Continuar al pago seguro con Stripe", "Continue to secure payment with Stripe")}</p><button class="btn primary" data-plan="${e(p.id)}" >${b.plan_id && b.status !== "canceled" ? tr("Cambiar plan", "Change plan") : t("choose")} ↗</button></article>`;
+          return localizedHtml`<article class="panel plan-card" data-billing-plan="${e(p.id)}"><span class="eyebrow">${p.unit_cents ? `${p.min_seats}${p.max_seats === 10000 ? "+" : "–" + p.max_seats} ${tr("usuarios", "users")}` : e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, months, activationDue)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><p class="plan-payment-status">${!b.configured ? tr("Pago en línea aún no disponible: Stripe está pendiente de conexión. Puedes comparar los planes.", "Online payment is not available yet: Stripe connection is pending. You can compare plans.") : tr("Continuar al pago seguro con Stripe", "Continue to secure payment with Stripe")}</p><button class="btn primary" data-plan="${e(p.id)}" >${b.plan_id && b.status !== "canceled" ? tr("Cambiar plan", "Change plan") : t("choose")} ↗</button></article>`;
         })
         .join("");
       bindSeats(el.querySelector("#billing-plans"), plans, () => months, b.activation_paid ? 0 : ACTIVATION_CENTS);
@@ -964,19 +952,19 @@ export function createSaas({
   }
   async function platform(el) {
     const data = await api("/platform");
-    el.innerHTML = `<div class="eyebrow">O7 DIGITAL GROUP</div><h1>${t("admin")}</h1><div class="stats"><div class="stat"><small>${tr("Ingreso recurrente mensual contratado", "Contracted monthly recurring revenue")}</small><strong>${money(data.revenue.mrr_cents)}</strong><footer>${tr("Solo suscripciones recurrentes en MXN; excluye activaciones", "MXN subscriptions only; excludes activation fees")}</footer></div><div class="stat"><small>${tr("Pagos confirmados por Stripe", "Payments confirmed by Stripe")}</small><strong>${money(data.revenue.received_cents)}</strong><footer>MXN</footer></div></div><div class="service-status">${Object.entries(
+    el.innerHTML = localizedHtml`<div class="eyebrow">O7 DIGITAL GROUP</div><h1>${t("admin")}</h1><div class="stats"><div class="stat"><small>${tr("Ingreso recurrente mensual contratado", "Contracted monthly recurring revenue")}</small><strong>${money(data.revenue.mrr_cents)}</strong><footer>${tr("Solo suscripciones recurrentes en MXN; excluye activaciones", "MXN subscriptions only; excludes activation fees")}</footer></div><div class="stat"><small>${tr("Pagos confirmados por Stripe", "Payments confirmed by Stripe")}</small><strong>${money(data.revenue.received_cents)}</strong><footer>MXN</footer></div></div><div class="service-status">${Object.entries(
       data.services,
     )
       .map(
         ([k, v]) =>
-          `<span class="badge ${v ? "green" : "amber"}">${e(k)} · ${v ? "OK" : tr("Por configurar", "Setup required")}</span>`,
+          localizedHtml`<span class="badge ${v ? "green" : "amber"}">${e(k)} · ${v ? "OK" : tr("Por configurar", "Setup required")}</span>`,
       )
       .join(
         "",
-      )}</div><section class="panel"><h2>${tr("Organizaciones suscritas", "Subscriber companies")}</h2><div class="table-wrap"><table><thead><tr>${["Empresa", "Estado", "Usuarios", "Prueba", "Plan", "Acceso"].map((x) => `<th>${x}</th>`).join("")}</tr></thead><tbody>${data.tenants.map((w) => `<tr><td>${e(w.name)}${w.is_demo ? "<small>Espacio ilustrativo privado</small>" : ""}</td><td>${e(w.status)}</td><td>${w.users} / ${w.seat_limit}</td><td>${new Date(w.trial_ends_at).toLocaleDateString(lang)}</td><td>${e(w.billing_plan_id || "—")}</td><td>${!w.is_demo ? `<button class="btn" data-tenant="${w.id}" data-status="${w.status === "suspended" ? "trialing" : "suspended"}">${w.status === "suspended" ? tr("Reactivar", "Reactivate") : tr("Suspender", "Suspend")}</button>` : ""}</td></tr>`).join("")}</tbody></table></div></section><h2>${tr("Catálogo de precios", "Pricing catalog")}</h2><p class="subtitle">${tr("MXN. Los cambios se aplican a nuevas suscripciones o cambios de plan explícitos.", "MXN. Changes apply to new subscriptions or explicit plan changes.")}</p><div class="settings-grid">${data.plans.map((p) => `<form class="panel plan-form" data-plan-edit="${e(p.id)}"><h3>${e(p.name)} · ${p.seat_limit} ${tr("usuarios", "users")}</h3><label>${tr("Nombre", "Name")}<input name="name" value="${e(p.name)}" required></label><label>${tr("Precio mensual en MXN por usuario (planes por rango)", "Monthly MXN price per user (volume tiers)")}<input name="price" type="number" min="1" step="0.01" value="${(p.unit_cents || p.monthly_cents) ? (p.unit_cents || p.monthly_cents) / 100 : ""}" required></label>${[3, 6].map((m) => `<label>${tr("Descuento", "Discount")} ${m} ${tr("meses", "months")} (%)<input name="discount-${m}" type="number" min="0" max="80" step="0.1" value="${p.discounts[m] || 0}"></label>`).join("")}<p>${tr("Anual: 12 meses de acceso por el precio de 10", "Annual: 12 months of access for the price of 10")}</p><label>IA / ${tr("mes", "month")}<input name="ai_limit" type="number" min="0" value="${p.ai_limit}"></label><label class="check"><input name="active" type="checkbox" ${p.active ? "checked" : ""}>${tr("Disponible", "Available")}</label><button class="btn primary">${t("save")}</button></form>`).join("")}</div>`;
+      )}</div><section class="panel"><h2>${tr("Organizaciones suscritas", "Subscriber companies")}</h2><div class="table-wrap"><table><thead><tr>${["Empresa", "Estado", "Usuarios", "Prueba", "Plan", "Acceso"].map((x) => localizedHtml`<th>${x}</th>`).join("")}</tr></thead><tbody>${data.tenants.map((w) => localizedHtml`<tr><td>${e(w.name)}${w.is_demo ? localizedHtml("<small>Espacio ilustrativo privado</small>") : ""}</td><td>${e(w.status)}</td><td>${w.users} / ${w.seat_limit}</td><td>${new Date(w.trial_ends_at).toLocaleDateString(lang)}</td><td>${e(w.billing_plan_id || "—")}</td><td>${!w.is_demo ? localizedHtml`<button class="btn" data-tenant="${w.id}" data-status="${w.status === "suspended" ? "trialing" : "suspended"}">${w.status === "suspended" ? tr("Reactivar", "Reactivate") : tr("Suspender", "Suspend")}</button>` : ""}</td></tr>`).join("")}</tbody></table></div></section><h2>${tr("Catálogo de precios", "Pricing catalog")}</h2><p class="subtitle">${tr("MXN. Los cambios se aplican a nuevas suscripciones o cambios de plan explícitos.", "MXN. Changes apply to new subscriptions or explicit plan changes.")}</p><div class="settings-grid">${data.plans.map((p) => localizedHtml`<form class="panel plan-form" data-plan-edit="${e(p.id)}"><h3>${e(p.name)} · ${p.seat_limit} ${tr("usuarios", "users")}</h3><label>${tr("Nombre", "Name")}<input name="name" value="${e(p.name)}" required></label><label>${tr("Precio mensual en MXN por usuario (planes por rango)", "Monthly MXN price per user (volume tiers)")}<input name="price" type="number" min="1" step="0.01" value="${(p.unit_cents || p.monthly_cents) ? (p.unit_cents || p.monthly_cents) / 100 : ""}" required></label>${[3, 6].map((m) => localizedHtml`<label>${tr("Descuento", "Discount")} ${m} ${tr("meses", "months")} (%)<input name="discount-${m}" type="number" min="0" max="80" step="0.1" value="${p.discounts[m] || 0}"></label>`).join("")}<p>${tr("Anual: 12 meses de acceso por el precio de 10", "Annual: 12 months of access for the price of 10")}</p><label>IA / ${tr("mes", "month")}<input name="ai_limit" type="number" min="0" value="${p.ai_limit}"></label><label class="check"><input name="active" type="checkbox" ${p.active ? "checked" : ""}>${tr("Disponible", "Available")}</label><button class="btn primary">${t("save")}</button></form>`).join("")}</div>`;
     el.insertAdjacentHTML(
       "beforeend",
-      `<h2>${tr("Modelos de configuración", "Configuration templates")}</h2><div class="settings-grid">${data.templates.map((template) => `<form class="panel" data-template-edit="${e(template.id)}"><label>${tr("Nombre", "Name")}<input name="name" value="${e(template.name)}" required></label><label>${tr("Servicios (uno por línea)", "Services (one per line)")}<textarea name="categories" rows="4" required>${e((template.settings.categories || []).join("\n"))}</textarea></label><label>${tr("Departamentos", "Departments")}<textarea name="departments" rows="2">${e((template.settings.departments || []).join("\n"))}</textarea></label><label class="check"><input name="active" type="checkbox" ${template.active ? "checked" : ""}>${tr("Disponible", "Available")}</label><button class="btn primary">${t("save")}</button></form>`).join("")}</div>`,
+      localizedHtml`<h2>${tr("Modelos de configuración", "Configuration templates")}</h2><div class="settings-grid">${data.templates.map((template) => localizedHtml`<form class="panel" data-template-edit="${e(template.id)}"><label>${tr("Nombre", "Name")}<input name="name" value="${e(template.name)}" required></label><label>${tr("Servicios (uno por línea)", "Services (one per line)")}<textarea name="categories" rows="4" required>${e((template.settings.categories || []).join("\n"))}</textarea></label><label>${tr("Departamentos", "Departments")}<textarea name="departments" rows="2">${e((template.settings.departments || []).join("\n"))}</textarea></label><label class="check"><input name="active" type="checkbox" ${template.active ? "checked" : ""}>${tr("Disponible", "Available")}</label><button class="btn primary">${t("save")}</button></form>`).join("")}</div>`,
     );
     el.querySelectorAll("[data-template-edit]").forEach(
       (form) =>
@@ -1043,7 +1031,7 @@ export function createSaas({
   }
   async function importer(el) {
     let upload, preview;
-    el.innerHTML = `<div class="eyebrow">${tr("EMPIEZA CON TUS DATOS", "START WITH YOUR DATA")}</div><h1>${t("import")}</h1><div class="panel"><p>${tr("Importa primero tus clientes y después tus solicitudes. Puedes conservar tu software actual durante la transición.", "Import customers first, then requests. Keep your existing software during the transition.")}</p><form id="import-upload"><label>${tr("Tipo de datos", "Data type")}<select id="import-kind"><option value="companies">${tr("Clientes", "Customers")}</option><option value="tickets">${tr("Solicitudes", "Requests")}</option></select></label><label>${tr("Archivo CSV / Excel", "CSV / Excel file")}<input id="import-file" type="file" accept=".csv,.xlsx" required></label><p class="subtitle">500 ${tr("filas", "rows")} · 1 MB · ${tr("Primera fila: encabezados", "First row: headers")}</p><button class="btn primary">${tr("Analizar archivo", "Analyze file")} ↗</button></form></div><div id="import-mapping"></div>`;
+    el.innerHTML = localizedHtml`<div class="eyebrow">${tr("EMPIEZA CON TUS DATOS", "START WITH YOUR DATA")}</div><h1>${t("import")}</h1><div class="panel"><p>${tr("Importa primero tus clientes y después tus solicitudes. Puedes conservar tu software actual durante la transición.", "Import customers first, then requests. Keep your existing software during the transition.")}</p><form id="import-upload"><label>${tr("Tipo de datos", "Data type")}<select id="import-kind"><option value="companies">${tr("Clientes", "Customers")}</option><option value="tickets">${tr("Solicitudes", "Requests")}</option></select></label><label>${tr("Archivo CSV / Excel", "CSV / Excel file")}<input id="import-file" type="file" accept=".csv,.xlsx" required></label><p class="subtitle">500 ${tr("filas", "rows")} · 1 MB · ${tr("Primera fila: encabezados", "First row: headers")}</p><button class="btn primary">${tr("Analizar archivo", "Analyze file")} ↗</button></form></div><div id="import-mapping"></div>`;
     el.querySelector("#import-upload").onsubmit = safe(async () => {
       const file = el.querySelector("#import-file").files[0];
       if (file.size > 1000000) throw new Error("Maximum 1 MB");
@@ -1064,7 +1052,7 @@ export function createSaas({
         ).map((key) => ({ key, label: key, required: true }));
       const required = mappingFields.map((f) => f.key);
       el.querySelector("#import-mapping").innerHTML =
-        `<form id="mapping-form" class="panel"><h2>${tr("Relaciona las columnas", "Map your columns")}</h2><p>${preview.total} ${tr("filas detectadas", "rows detected")}</p><div class="settings-grid">${required.map((field) => `<label>${e(mappingFields.find((f) => f.key === field).label)}<select name="${field}" ${mappingFields.find((f) => f.key === field).required ? "required" : ""}><option value="">—</option>${preview.columns.map((c) => `<option ${c.toLowerCase() === field ? "selected" : ""}>${e(c)}</option>`).join("")}</select></label>`).join("")}</div><div class="table-wrap"><table><thead><tr>${preview.columns.map((c) => `<th>${e(c)}</th>`).join("")}</tr></thead><tbody>${preview.rows.map((row) => `<tr>${preview.columns.map((c) => `<td>${e(row[c])}</td>`).join("")}</tr>`).join("")}</tbody></table></div><label class="check"><input type="checkbox" required>${tr("Confirmo la importación en mi espacio.", "I approve importing this data into my workspace.")}</label><button class="btn primary">${tr("Importar y guardar", "Import and save")} ↗</button></form>`;
+        localizedHtml`<form id="mapping-form" class="panel"><h2>${tr("Relaciona las columnas", "Map your columns")}</h2><p>${preview.total} ${tr("filas detectadas", "rows detected")}</p><div class="settings-grid">${required.map((field) => localizedHtml`<label>${e(mappingFields.find((f) => f.key === field).label)}<select name="${field}" ${mappingFields.find((f) => f.key === field).required ? "required" : ""}><option value="">—</option>${preview.columns.map((c) => localizedHtml`<option ${c.toLowerCase() === field ? "selected" : ""}>${e(c)}</option>`).join("")}</select></label>`).join("")}</div><div class="table-wrap"><table><thead><tr>${preview.columns.map((c) => localizedHtml`<th>${e(c)}</th>`).join("")}</tr></thead><tbody>${preview.rows.map((row) => localizedHtml`<tr>${preview.columns.map((c) => localizedHtml`<td>${e(row[c])}</td>`).join("")}</tr>`).join("")}</tbody></table></div><label class="check"><input type="checkbox" required>${tr("Confirmo la importación en mi espacio.", "I approve importing this data into my workspace.")}</label><button class="btn primary">${tr("Importar y guardar", "Import and save")} ↗</button></form>`;
       el.querySelector("#mapping-form").onsubmit = safe(async (event) => {
         const result = await api("/import/commit", "POST", {
           ...upload,
@@ -1081,7 +1069,7 @@ export function createSaas({
   async function companyForm(el) {
     const section = document.createElement("section");
     section.className = "panel";
-    section.innerHTML = `<h2>${tr("Nuevo cliente", "New customer")}</h2><form id="company-form">${input("customer-name", tr("Nombre del cliente", "Customer name"))}${input("customer-sector", tr("Sector", "Industry"))}${input("customer-site", tr("Site", "Site"))}${input("contact-name", tr("Contacto (opcional)", "Contact (optional)"), "text", "", false)}${input("contact-email", tr("Correo del contacto (opcional)", "Contact email (optional)"), "email", "", false)}<button class="btn primary">${t("save")}</button><button class="btn" type="button" id="cancel-company">${tr("Cancelar", "Cancel")}</button></form>`;
+    section.innerHTML = localizedHtml`<h2>${tr("Nuevo cliente", "New customer")}</h2><form id="company-form">${input("customer-name", tr("Nombre del cliente", "Customer name"))}${input("customer-sector", tr("Sector", "Industry"))}${input("customer-site", tr("Site", "Site"))}${input("contact-name", tr("Contacto (opcional)", "Contact (optional)"), "text", "", false)}${input("contact-email", tr("Correo del contacto (opcional)", "Contact email (optional)"), "email", "", false)}<button class="btn primary">${t("save")}</button><button class="btn" type="button" id="cancel-company">${tr("Cancelar", "Cancel")}</button></form>`;
     el.prepend(section);
     section.querySelector("#cancel-company").onclick = () => section.remove();
     section.querySelector("form").onsubmit = safe(async () => {
@@ -1101,12 +1089,12 @@ export function createSaas({
     const section = document.createElement("section");
     section.className = "panel";
     section.id = "branch-panel";
-    section.innerHTML = `<h2>${e(company.name)} · ${tr(branch.id ? "Editar filial" : "Nueva filial", branch.id ? "Edit branch" : "New branch")}</h2><form id="branch-form">${input("branch-name", tr("Nombre de la filial", "Branch name"), "text", branch.name || "")}<label>${tr("País", "Country")}<select id="branch-country" required><option value="">—</option>${countries
+    section.innerHTML = localizedHtml`<h2>${e(company.name)} · ${tr(branch.id ? translateText("Editar filial") : translateText("Nueva filial"), branch.id ? translateText("Edit branch") : translateText("New branch"))}</h2><form id="branch-form">${input("branch-name", tr("Nombre de la filial", "Branch name"), "text", branch.name || "")}<label>${tr("País", "Country")}<select id="branch-country" required><option value="">—</option>${countries
       .map((code) => ({ code, label: countryName(code, lang) }))
       .sort((a, b) => a.label.localeCompare(b.label, lang))
       .map(
         (c) =>
-          `<option value="${c.code}" ${branch.country_code === c.code ? "selected" : ""}>${e(c.label)}</option>`,
+          localizedHtml`<option value="${c.code}" ${branch.country_code === c.code ? "selected" : ""}>${e(c.label)}</option>`,
       )
       .join(
         "",
@@ -1115,11 +1103,11 @@ export function createSaas({
     )
       .map(
         ([code, label]) =>
-          `<option value="${code}" ${(branch.language || lang) === code ? "selected" : ""}>${label}</option>`,
+          localizedHtml`<option value="${code}" ${(branch.language || lang) === code ? "selected" : ""}>${label}</option>`,
       )
       .join(
         "",
-      )}</select></label><label>${tr("Zona horaria", "Time zone")}<select id="branch-timezone">${[...new Set([branch.timezone || getWorkspace().settings.timezone, ...Intl.supportedValuesOf("timeZone")])].map((zone) => `<option value="${e(zone)}" ${(branch.timezone || getWorkspace().settings.timezone) === zone ? "selected" : ""}>${e(zone)}</option>`).join("")}</select></label><p class="subtitle">${tr("La filial pertenece a este cliente. Sus solicitudes conservarán esta relación.", "This branch belongs to this customer. Requests retain this relationship.")}</p><button class="btn primary">${t("save")}</button><button class="btn" type="button" id="cancel-branch">${tr("Cancelar", "Cancel")}</button></form>`;
+      )}</select></label><label>${tr("Zona horaria", "Time zone")}<select id="branch-timezone">${[...new Set([branch.timezone || getWorkspace().settings.timezone, ...Intl.supportedValuesOf("timeZone")])].map((zone) => localizedHtml`<option value="${e(zone)}" ${(branch.timezone || getWorkspace().settings.timezone) === zone ? "selected" : ""}>${e(zone)}</option>`).join("")}</select></label><p class="subtitle">${tr("La filial pertenece a este cliente. Sus solicitudes conservarán esta relación.", "This branch belongs to this customer. Requests retain this relationship.")}</p><button class="btn primary">${t("save")}</button><button class="btn" type="button" id="cancel-branch">${tr("Cancelar", "Cancel")}</button></form>`;
     el.prepend(section);
     section.scrollIntoView({ behavior: "smooth", block: "start" });
     section.querySelector("#cancel-branch").onclick = () => section.remove();
@@ -1151,6 +1139,7 @@ export function createSaas({
       node.onchange = safe(async (event) => {
         const value = event.target.value;
         await api("/preferences", "PUT", { language: value });
+        await ensureLocale(value);
         getUser().language = value;
         lang = value;
         document.documentElement.lang = lang;
@@ -1162,7 +1151,7 @@ export function createSaas({
     return settings.fields
       .map(
         (f) =>
-          `<label for="custom-${e(f.key)}">${e(f.label)}${f.required ? " *" : ""}</label>${f.type === "select" ? `<select id="custom-${e(f.key)}" data-custom="${e(f.key)}" ${f.required ? "required" : ""}><option value="">—</option>${f.options.map((v) => `<option>${e(v)}</option>`).join("")}</select>` : `<input id="custom-${e(f.key)}" data-custom="${e(f.key)}" type="${f.type === "checkbox" ? "checkbox" : f.type}" ${f.required ? "required" : ""} maxlength="2000">`}`,
+          localizedHtml`<label for="custom-${e(f.key)}">${e(f.label)}${f.required ? " *" : ""}</label>${f.type === "select" ? localizedHtml`<select id="custom-${e(f.key)}" data-custom="${e(f.key)}" ${f.required ? "required" : ""}><option value="">—</option>${f.options.map((v) => localizedHtml`<option>${e(v)}</option>`).join("")}</select>` : `<input id="custom-${e(f.key)}" data-custom="${e(f.key)}" type="${f.type === "checkbox" ? "checkbox" : f.type}" ${f.required ? "required" : ""} maxlength="2000">`}`,
       )
       .join("");
   }
@@ -1197,8 +1186,9 @@ export function createSaas({
     bindUserLanguage,
     customFields,
     readCustom,
-    setLanguage: (value) => {
-      if (translations[value]) {
+    setLanguage: async (value) => {
+      if (Object.hasOwn(languages, value)) {
+        await ensureLocale(value);
         lang = value;
         localStorage.setItem("servicehub-language", lang);
         document.documentElement.lang = lang;

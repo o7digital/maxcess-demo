@@ -1,0 +1,21 @@
+// Canonical application email messages. Dynamic values are inserted after translation.
+export const mailMessages = {
+  verifySubject: 'Confirm your email',
+  resetSubject: 'Reset your password',
+  accountBody: 'Open this link within one hour: __MX_SLOT_0__\nIf you did not request this action, you can ignore this message.',
+  welcomeSubject: 'Welcome to Service Hub',
+  welcomeBody: 'Your workspace __MX_SLOT_0__ is ready. Your 12-calendar-day trial ends on __MX_SLOT_1__. No payment will be taken without your explicit subscription.',
+  inviteSubject: 'Invitation to __MX_SLOT_0__',
+  inviteBody: 'You are invited to join __MX_SLOT_0__. Create your password within 72 hours: __MX_SLOT_1__',
+  trialReminderSubject: 'Your trial ends soon',
+  trialExpiredSubject: 'Your trial has ended',
+  trialReminderBody: '__MX_SLOT_0__: your trial ends on __MX_SLOT_1__. Your data is retained. Choose your subscription: __MX_SLOT_2__',
+  trialExpiredBody: '__MX_SLOT_0__: your trial has ended. Your data is retained. Choose your subscription: __MX_SLOT_1__',
+  assignedSubject: 'Request assigned: __MX_SLOT_0__',
+  assignedBody: 'Request __MX_SLOT_0__ (__MX_SLOT_1__) has been assigned to you. Sign in to your workspace to follow up.',
+  escalationSubject: 'Request escalated: __MX_SLOT_0__',
+  escalationBody: 'Request __MX_SLOT_0__ (__MX_SLOT_1__) exceeded its SLA and was escalated to your team.',
+  paidSubject: 'Payment confirmed',
+  paymentSubject: 'Review your payment',
+  invoiceBody: 'Review your subscription and invoices in Service Hub. __MX_SLOT_0__',
+};

@@ -7,7 +7,12 @@ export const languages = {
   es: "Español",
   en: "English",
   fr: "Français",
+  de: "Deutsch",
+  it: "Italiano",
   pt: "Português",
+  ja: "日本語",
+  ru: "Русский",
+  da: "Dansk",
 };
 export function countryName(code, language = "es") {
   try {

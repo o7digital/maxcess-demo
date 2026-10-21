@@ -1,5 +1,6 @@
+import { localizedHtml, translateText, ensureLocale } from "./localization.js";
 export function attachmentInput(tr) {
-  return `<label for="ticket-files">${tr('Archivos adjuntos','Attachments')}</label><input id="ticket-files" type="file" multiple accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,.txt,.png,.jpg,.jpeg" aria-describedby="attachment-help"><p id="attachment-help" class="subtitle">${tr('PDF, Excel, Word, CSV, TXT, PNG y JPG · Hasta 5 archivos y 2 MB en total por envío. Visibles para el cliente y el equipo del caso.','PDF, Excel, Word, CSV, TXT, PNG and JPG · Up to 5 files and 2 MB total per upload. Visible to the customer and the team handling this request.')}</p>`;
+  return localizedHtml`<label for="ticket-files">${tr('Archivos adjuntos','Attachments')}</label><input id="ticket-files" type="file" multiple accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,.txt,.png,.jpg,.jpeg" aria-describedby="attachment-help"><p id="attachment-help" class="subtitle">${tr('PDF, Excel, Word, CSV, TXT, PNG y JPG · Hasta 5 archivos y 2 MB en total por envío. Visibles para el cliente y el equipo del caso.','PDF, Excel, Word, CSV, TXT, PNG and JPG · Up to 5 files and 2 MB total per upload. Visible to the customer and the team handling this request.')}</p>`;
 }
 export async function readAttachments(input, tr) {
   const files = [...input.files];

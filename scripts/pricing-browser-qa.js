@@ -51,7 +51,8 @@ try {
  assert.equal(await page.locator('input[name=accepted_terms]').isChecked(),false);
  for(const path of ['/terms','/privacy']) {
   await page.goto(base+path);await page.locator('.detailed-legal').waitFor();
-  assert.equal(await page.locator('.detailed-legal').getAttribute('lang'),'en');
+  assert.equal(await page.locator('.detailed-legal').getAttribute('lang'),await page.locator('html').getAttribute('lang'));
+  assert.equal(await page.locator('.detailed-legal details[lang=en]').count(),1);
   assert.ok((await page.locator('.detailed-legal').innerText()).length>5000);
  }
  console.log('Pricing browser QA passed: all volume boundaries, four periods, exact discounts, ES/EN/FR, subscription quantities and mobile layout.');

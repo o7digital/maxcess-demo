@@ -1,4 +1,4 @@
-import { inFrench } from "./french.js";
+import { translateText } from "./localization.js";
 // Translate the retained operational screens while keeping canonical API values.
 const english = {
   Resumen: "Overview",
@@ -189,7 +189,7 @@ export function installLegacyTranslations(root) {
   const translate = () => {
     queued = false;
     if (
-      !["en", "fr"].includes(document.documentElement.lang) ||
+      document.documentElement.lang === "es" ||
       root.classList.contains("commercial")
     )
       return;
@@ -198,20 +198,14 @@ export function installLegacyTranslations(root) {
     while ((node = walker.nextNode())) {
       if (
         node.parentElement.closest(
-          "script,style,textarea,[data-user-content],.ticket-title,.client-banner,.client-company,.profile,.workspace-label,input",
+          'script,style,textarea,[data-user-content],.ticket-title,.client-banner,.client-company,.profile,.workspace-label,input,td,.text-block,.timeline,.chat-bubble,.branch-context,.department-context,.report-narrative,[for^="custom-"]',
         )
       )
         continue;
       const original = node.nodeValue,
         trim = original.trim();
-      let value = english[trim];
-      if (!value && /^Hola, .+\.$/.test(trim))
-        value = trim.replace(/^Hola, /, "Hello, ");
-      if (!value) continue;
-      if (document.documentElement.lang === "fr")
-        value = /^Hello, /.test(value)
-          ? value.replace(/^Hello, /, "Bonjour, ")
-          : inFrench(value);
+      let value = translateText(english[trim] || trim);
+      if (value === trim) continue;
       const option = node.parentElement.closest("option");
       if (option && !option.hasAttribute("value"))
         option.value = option.textContent;

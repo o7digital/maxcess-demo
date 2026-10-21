@@ -143,7 +143,7 @@ export async function hfNarrative(snapshot, language = "es") {
   const token = process.env.HF_TOKEN || process.env.HUGGING_FACE_TOKEN,
     model = process.env.HF_REPORT_MODEL;
   const outputLanguage =
-    { es: "español", en: "English", fr: "français" }[language] || "español";
+    { es: "español", en: "English", fr: "français", de: "Deutsch", it: "italiano", pt: "português", ja: "日本語", ru: "русский", da: "dansk" }[language] || "español";
   const aggregate = {
     ...snapshot,
     companies: (snapshot.companies || []).map((company, index) => ({

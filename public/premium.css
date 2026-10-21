@@ -110,3 +110,10 @@
   #mx-demo .hero,
   #mx-demo .client-ticket-card { box-shadow: none; background: #fff; }
 }
+/* Keep longer translated labels readable without changing canonical form values. */
+#mx-demo nav button { white-space: normal; overflow-wrap: anywhere; }
+#mx-demo .nav-icon { flex-shrink: 0; }
+#mx-demo .pricing-saving strong { overflow-wrap: anywhere; }
+html[lang="ja"] #mx-demo { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; }
+#mx-demo .detailed-legal details { margin-top: 28px; padding: 18px; border: 1px solid var(--line); border-radius: 12px; }
+#mx-demo .detailed-legal summary { cursor: pointer; font-weight: 600; }

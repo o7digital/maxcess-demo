@@ -1,3 +1,4 @@
+import { localizedHtml, translateText, ensureLocale } from "./localization.js";
 import { attachmentInput, readAttachments, downloadAttachment } from "./attachments.js";
 import { installLegacyTranslations } from "./i18n.js";
 import { createSaas } from "./saas.js";
@@ -62,22 +63,24 @@ const roleLabel = (r) =>
 const isGlobal = () =>
   ["platform_admin", "admin", "manager"].includes(user?.role);
 const holdingLogo = () =>
-  `<a class="o7-brand" href="https://www.o7digitalgroup.com/" target="_blank" rel="noopener noreferrer" aria-label="O7 Digital Group Holding"><span class="o7-mark"><b>O</b><i>7</i></span><span class="o7-copy"><strong>O7 DIGITAL GROUP</strong><small>HOLDING ↗</small></span></a>`;
+  localizedHtml`<a class="o7-brand" href="https://www.o7digitalgroup.com/" target="_blank" rel="noopener noreferrer" aria-label="O7 Digital Group Holding"><span class="o7-mark"><b>O</b><i>7</i></span><span class="o7-copy"><strong>O7 DIGITAL GROUP</strong><small>HOLDING ↗</small></span></a>`;
 const date = (v, timezone) =>
   new Date(v).toLocaleString(document.documentElement.lang || "es", {
     dateStyle: "short",
     timeStyle: "short",
     timeZone: timezone || workspace?.settings.timezone || "America/Mexico_City",
   });
+const systemLabels = new Set(["Abierto","En curso","Resuelto","Cerrado","Baja","Media","Alta","Crítica","Vencido","Atendido","Conectividad","Equipos","Facturación","Accesos","Servicio","Todos los estados","Todas las prioridades","Todos los clientes","Todas las empresas","Todos los agentes"]);
+const displayLabel = value => systemLabels.has(value) ? translateText(value) : value;
 const option = (values, current) =>
   values
     .map(
       (v) =>
-        `<option value="${esc(v)}" ${v === current ? "selected" : ""}>${esc(v)}</option>`,
+        localizedHtml`<option value="${esc(v)}" ${v === current ? "selected" : ""}>${esc(displayLabel(v))}</option>`,
     )
     .join("");
 const badge = (label) =>
-  `<span class="badge ${["Crítica", "Vencido"].includes(label) ? "red" : label === "Alta" ? "amber" : ["Resuelto", "Cerrado"].includes(label) ? "green" : ""}">${esc(label)}</span>`;
+  localizedHtml`<span class="badge ${["Crítica", "Vencido"].includes(label) ? "red" : label === "Alta" ? "amber" : ["Resuelto", "Cerrado"].includes(label) ? "green" : ""}">${esc(translateText(label))}</span>`;
 const sla = (t) =>
   ["Resuelto", "Cerrado"].includes(t.status)
     ? "Atendido"
@@ -88,7 +91,7 @@ const company = (t) =>
   companies.find((c) => c.id === t.company_id)?.name || t.company;
 function notify(message) {
   const el = $("#mx-toast");
-  el.textContent = message;
+  el.textContent = translateText(message);
   el.hidden = false;
   clearTimeout(notify.timer);
   notify.timer = setTimeout(() => (el.hidden = true), 5000);
@@ -112,11 +115,12 @@ async function api(path, method = "GET", body) {
       await bootstrap();
       welcome();
     }
-    throw new Error(data.error || "Operación no disponible");
+    throw new Error(translateText(data.error || "Operación no disponible"));
   }
   return data;
 }
-installLegacyTranslations(app);
+await ensureLocale(localStorage.getItem("servicehub-language") || "es");
+installLegacyTranslations(document.querySelector("#mx-demo"));
 const saas = createSaas({
   api,
   esc,
@@ -179,7 +183,7 @@ async function load() {
   overviewMetrics = metrics.metrics;
   categories = workspace.settings.categories;
   config.clientDemo = config.clientDemo && workspace.is_demo;
-  saas.setLanguage(
+  await saas.setLanguage(
     user.language ||
       localStorage.getItem("servicehub-language") ||
       workspace.settings.language,
@@ -192,9 +196,9 @@ function shell() {
     clientShell();
     return;
   }
-  app.innerHTML = `<div class="shell"><aside><div class="brand">${workspace?.settings.logo ? `<img class="workspace-logo" src="${esc(workspace.settings.logo)}" alt="">` : ""}${esc(config.brand)}<b>↗</b></div><div class="brand-sub">${esc(config.subtitle)}</div><div class="workspace"><span class="mini-logo">S</span><div><strong>Centro de servicio</strong>${esc(user.role_name || roleLabel(user.role))}</div></div><div class="side-label">MI ESPACIO</div><nav aria-label="Navegación principal">${[
+  app.innerHTML = localizedHtml`<div class="shell"><aside><div class="brand">${workspace?.settings.logo ? `<img class="workspace-logo" src="${esc(workspace.settings.logo)}" alt="">` : ""}${esc(config.brand)}<b>↗</b></div><div class="brand-sub">${esc(config.subtitle)}</div><div class="workspace"><span class="mini-logo">S</span><div><strong>Centro de servicio</strong>${esc(user.role_name || roleLabel(user.role))}</div></div><div class="side-label">MI ESPACIO</div><nav aria-label="Navegación principal">${[
     ["overview", "◫", "Resumen"],
-    ["tickets", "▤", user.role === "agent" ? "Mi fila" : "Solicitudes"],
+    ["tickets", "▤", user.role === "agent" ? translateText("Mi fila") : translateText("Solicitudes")],
     ...(isGlobal()
       ? [
           ["clients", "▦", "Clientes"],
@@ -215,23 +219,23 @@ function shell() {
   ]
     .map(
       ([v, i, l]) =>
-        `<button data-view="${v}" class="${view === v ? "active" : ""}"><span class="nav-icon">${i}</span>${l}${v === "tickets" ? `<span class="nav-count">${tickets.length}</span>` : ""}</button>`,
+        localizedHtml`<button data-view="${v}" class="${view === v ? "active" : ""}"><span class="nav-icon">${i}</span>${l}${v === "tickets" ? localizedHtml`<span class="nav-count">${tickets.length}</span>` : ""}</button>`,
     )
     .join(
       "",
-    )}</nav><div class="side-bottom">${holdingLogo()}<div class="side-ai"><b>Inteligencia en cada caso.</b><p>Seguimiento claro.<br>Respuestas con contexto.</p>${user.role !== "client" ? '<button data-view="olivia">Conoce a Olivia ↗</button>' : ""}</div><div class="profile"><span class="avatar">${esc(
+    )}</nav><div class="side-bottom">${holdingLogo()}<div class="side-ai"><b>Inteligencia en cada caso.</b><p>Seguimiento claro.<br>Respuestas con contexto.</p>${user.role !== "client" ? localizedHtml('<button data-view="olivia">Conoce a Olivia ↗</button>') : ""}</div><div class="profile"><span class="avatar">${esc(
     user.name
       .split(" ")
       .map((s) => s[0])
       .slice(0, 2)
       .join(""),
-  )}</span><div>${esc(user.name)}<small>${esc(user.role_name || roleLabel(user.role))}</small></div></div></div></aside><section><header class="top"><div class="breadcrumb">Centro de servicio / <b>${esc(user.role_name || roleLabel(user.role))}</b></div><div class="top-right">${workspace?.is_demo ? '<span class="demo-tag">ESPACIO ILUSTRATIVO · DATOS FICTICIOS</span>' : `<span class="workspace-label">${esc(workspace?.name)}</span>`}${saas.languagePicker()}<button class="btn" data-action="refresh">Actualizar</button><button class="btn" data-action="logout">Cerrar sesión</button></div></header><main class="body" id="content"></main></section></div>`;
+  )}</span><div>${esc(user.name)}<small>${esc(user.role_name || roleLabel(user.role))}</small></div></div></div></aside><section><header class="top"><div class="breadcrumb">Centro de servicio / <b>${esc(user.role_name || roleLabel(user.role))}</b></div><div class="top-right">${workspace?.is_demo ? localizedHtml('<span class="demo-tag">ESPACIO ILUSTRATIVO · DATOS FICTICIOS</span>') : localizedHtml`<span class="workspace-label">${esc(workspace?.name)}</span>`}${saas.languagePicker()}<button class="btn" data-action="refresh">Actualizar</button><button class="btn" data-action="logout">Cerrar sesión</button></div></header><main class="body" id="content"></main></section></div>`;
   if (workspace && workspace.access !== "full")
     document
       .querySelector("#content")
       .insertAdjacentHTML(
         "beforebegin",
-        `<div class="subscription-banner">${esc(saas.t("readonly"))} <button class="btn" data-view="subscription">${esc(saas.t("billing"))} ↗</button></div>`,
+        localizedHtml`<div class="subscription-banner">${esc(saas.t("readonly"))} <button class="btn" data-view="subscription">${esc(saas.t("billing"))} ↗</button></div>`,
       );
   saas.bindUserLanguage();
   render();
@@ -239,8 +243,8 @@ function shell() {
 function table(list) {
   if (user.role === "client") return clientTicketCards(list);
   return list.length
-    ? `<div class="table-wrap"><table><thead><tr><th>SOLICITUD</th><th>CLIENTE / SEDE</th><th>AGENTE</th><th>PRIORIDAD</th><th>ESTADO / SLA</th></tr></thead><tbody>${list.map((t) => `<tr><td><span class="ticket-id">SH-${t.id}</span><button class="ticket-title" data-ticket="${t.id}">${esc(t.title)}</button><small>${esc(t.category)}</small></td><td>${esc(company(t))}<small>${esc(t.site)}</small></td><td>${esc(t.agent || "Sin asignar")}</td><td>${badge(t.priority)}</td><td>${badge(t.status)}<small class="${sla(t) === "Vencido" ? "sla-over" : ""}">${esc(sla(t))}</small></td></tr>`).join("")}</tbody></table></div>`
-    : '<div class="empty">No hay solicitudes con estos filtros.</div>';
+    ? localizedHtml`<div class="table-wrap"><table><thead><tr><th>SOLICITUD</th><th>CLIENTE / SEDE</th><th>AGENTE</th><th>PRIORIDAD</th><th>ESTADO / SLA</th></tr></thead><tbody>${list.map((t) => localizedHtml`<tr><td><span class="ticket-id">SH-${t.id}</span><button class="ticket-title" data-ticket="${t.id}">${esc(t.title)}</button><small>${esc(displayLabel(t.category))}</small></td><td>${esc(company(t))}<small>${esc(t.site)}</small></td><td>${esc(t.agent || "Sin asignar")}</td><td>${badge(t.priority)}</td><td>${badge(t.status)}<small class="${sla(t) === "Vencido" ? "sla-over" : ""}">${esc(sla(t))}</small></td></tr>`).join("")}</tbody></table></div>`
+    : localizedHtml('<div class="empty">No hay solicitudes con estos filtros.</div>');
 }
 function render() {
   const el = $("#content");
@@ -253,9 +257,9 @@ function render() {
     import: saas.importer,
   };
   if (routes[view]) {
-    el.innerHTML = '<p class="empty">' + esc(saas.t("loading")) + "</p>";
+    el.innerHTML = localizedHtml('<p class="empty">') + esc(saas.t("loading")) + localizedHtml("</p>");
     routes[view](el).catch((err) => {
-      el.innerHTML = '<p class="empty">' + esc(err.message) + "</p>";
+      el.innerHTML = localizedHtml('<p class="empty">') + esc(err.message) + localizedHtml("</p>");
     });
     return;
   }
@@ -274,11 +278,11 @@ function render() {
     renderDashboard(el, true);
     return;
   } else if (view === "tickets") {
-    el.innerHTML = `<div class="row"><div><div class="eyebrow">${user.role === "client" ? "PORTAL CLIENTE" : "CENTRO DE SERVICIO"}</div><h1>${user.role === "agent" ? "Mi fila de atención" : "Solicitudes"}</h1><p class="subtitle">${user.role === "client" ? "Consulta y responde a los casos de tu empresa." : "Cada caso, su responsable y su siguiente paso."}</p></div><div class="actions">${user.role !== "agent" ? '<button class="btn primary" data-action="new">+ Nueva solicitud</button>' : ""}<button class="btn" data-action="export">Exportar vista CSV</button></div></div><div class="toolbar"><input id="search" aria-label="Buscar solicitudes" placeholder="Buscar asunto, cliente o número…"><select id="status" aria-label="Filtrar por estado">${option(["Todos los estados", ...statuses])}</select><select id="priority" aria-label="Filtrar por prioridad">${option(["Todas las prioridades", ...priorities])}</select>${
+    el.innerHTML = localizedHtml`<div class="row"><div><div class="eyebrow">${user.role === "client" ? translateText("PORTAL CLIENTE") : translateText("CENTRO DE SERVICIO")}</div><h1>${user.role === "agent" ? translateText("Mi fila de atención") : translateText("Solicitudes")}</h1><p class="subtitle">${user.role === "client" ? translateText("Consulta y responde a los casos de tu empresa.") : translateText("Cada caso, su responsable y su siguiente paso.")}</p></div><div class="actions">${user.role !== "agent" ? localizedHtml('<button class="btn primary" data-action="new">+ Nueva solicitud</button>') : ""}<button class="btn" data-action="export">Exportar vista CSV</button></div></div><div class="toolbar"><input id="search" aria-label="Buscar solicitudes" placeholder="Buscar asunto, cliente o número…"><select id="status" aria-label="Filtrar por estado">${option(["Todos los estados", ...statuses])}</select><select id="priority" aria-label="Filtrar por prioridad">${option(["Todas las prioridades", ...priorities])}</select>${
       isGlobal()
-        ? `<select id="company-filter" aria-label="Filtrar por cliente"><option value="">Todos los clientes</option>${companies.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select><select id="agent-filter" aria-label="Filtrar por agente"><option value="">Todos los agentes</option><option value="none">Sin asignar</option>${users
+        ? localizedHtml`<select id="company-filter" aria-label="Filtrar por cliente"><option value="">Todos los clientes</option>${companies.map((c) => localizedHtml`<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select><select id="agent-filter" aria-label="Filtrar por agente"><option value="">Todos los agentes</option><option value="none">Sin asignar</option>${users
             .filter((u) => u.role === "agent")
-            .map((u) => `<option value="${u.id}">${esc(u.name)}</option>`)
+            .map((u) => localizedHtml`<option value="${u.id}">${esc(u.name)}</option>`)
             .join("")}</select>`
         : ""
     }<select id="country-filter" aria-label="${saas.tr("Filtrar por país", "Filter by country")}"><option value="">${saas.tr("Todos los países", "All countries")}</option>${[
@@ -289,7 +293,7 @@ function render() {
       .sort()
       .map(
         (code) =>
-          `<option value="${code}">${esc(saas.countryName(code))}</option>`,
+          localizedHtml`<option value="${code}">${esc(saas.countryName(code))}</option>`,
       )
       .join(
         "",
@@ -308,18 +312,18 @@ function render() {
       });
     renderResults();
   } else if (view === "clients") {
-    el.innerHTML = `<div class="eyebrow">RELACIONES DE SERVICIO</div><h1>Clientes</h1><div class="actions"><button class="btn primary" id="new-company">+ Nuevo cliente</button><button class="btn" data-view="import">Importar CSV / Excel ↗</button></div><p class="subtitle">${workspace.is_demo ? "Organizaciones ficticias. " : ""}Contactos y seguimiento por sede.</p><div class="client-grid">${companies
+    el.innerHTML = localizedHtml`<div class="eyebrow">RELACIONES DE SERVICIO</div><h1>Clientes</h1><div class="actions"><button class="btn primary" id="new-company">+ Nuevo cliente</button><button class="btn" data-view="import">Importar CSV / Excel ↗</button></div><p class="subtitle">${workspace.is_demo ? "Organizaciones ficticias. " : ""}Contactos y seguimiento por sede.</p><div class="client-grid">${companies
       .map((c) => {
         const ts = tickets.filter((t) => t.company_id === c.id);
-        return `<div class="panel"><div class="client-banner"><div class="big-client">${esc(c.name)}</div><small>${esc(c.sector)}${workspace.is_demo ? " · EMPRESA FICTICIA" : ""}</small></div><p>${esc(c.site)}</p><p class="subtitle">${ts.length} ${saas.tr("solicitudes", "requests")} · ${ts.filter((t) => !["Resuelto", "Cerrado"].includes(t.status)).length} ${saas.tr("activas", "active")}</p>${contacts
+        return localizedHtml`<div class="panel"><div class="client-banner"><div class="big-client">${esc(c.name)}</div><small>${esc(c.sector)}${workspace.is_demo ? " · EMPRESA FICTICIA" : ""}</small></div><p>${esc(c.site)}</p><p class="subtitle">${ts.length} ${saas.tr("solicitudes", "requests")} · ${ts.filter((t) => !["Resuelto", "Cerrado"].includes(t.status)).length} ${saas.tr("activas", "active")}</p>${contacts
           .filter((n) => n.company_id === c.id)
           .map(
             (n) =>
-              `<p class="subtitle">${esc(n.name)} · ${esc(n.function)}<br>${esc(n.email)}</p>`,
+              localizedHtml`<p class="subtitle">${esc(n.name)} · ${esc(n.function)}<br>${esc(n.email)}</p>`,
           )
           .join(
             "",
-          )}<div class="branch-summary">${(c.branches || []).map((b) => `<div class="branch-row"><div data-user-content><strong>${esc(b.name)} · ${esc(saas.countryName(b.country_code))}</strong><small>${esc(b.city)} · ${esc(b.language.toUpperCase())} · ${esc(b.timezone)}</small></div><button class="btn" data-edit-branch="${b.id}" data-customer="${c.id}">${saas.tr("Editar filial", "Edit branch")}</button></div>`).join("")}</div><div class="actions"><button class="btn" data-new-branch="${c.id}">${saas.tr("+ Nueva filial", "+ New branch")}</button><button class="btn" data-company="${c.id}">Ver solicitudes ↗</button></div></div>`;
+          )}<div class="branch-summary">${(c.branches || []).map((b) => localizedHtml`<div class="branch-row"><div data-user-content><strong>${esc(b.name)} · ${esc(saas.countryName(b.country_code))}</strong><small>${esc(b.city)} · ${esc(b.language.toUpperCase())} · ${esc(b.timezone)}</small></div><button class="btn" data-edit-branch="${b.id}" data-customer="${c.id}">${saas.tr("Editar filial", "Edit branch")}</button></div>`).join("")}</div><div class="actions"><button class="btn" data-new-branch="${c.id}">${saas.tr("+ Nueva filial", "+ New branch")}</button><button class="btn" data-company="${c.id}">Ver solicitudes ↗</button></div></div>`;
       })
       .join("")}</div>`;
     $("#new-company").onclick = () => saas.companyForm(el);
@@ -346,7 +350,7 @@ function render() {
     renderUsers(el);
     return;
   } else if (view === "olivia") {
-    el.innerHTML = `<div class="eyebrow">OLIVIA IA V3.5 · ASISTENCIA DE SERVICIO</div><h1>Contexto para tu criterio.</h1><p class="subtitle">Asistencia integrada en cada caso: resumen, clasificación y respuesta preparada con Olivia IA V3.5.</p><div class="olivia-stage"><div class="orb">✦</div><h2>Una buena respuesta empieza por <em>entender el caso.</em></h2><p>Elige una solicitud para generar su resumen, sugerir prioridad y categoría, preparar una respuesta, proponer la siguiente acción y sintetizar la resolución.</p><label for="olivia-ticket">Solicitud autorizada</label><select id="olivia-ticket">${tickets.map((t) => `<option value="${t.id}">SH-${t.id} · ${esc(t.title)}</option>`).join("")}</select><div class="actions"><button class="btn primary" data-action="open-olivia" ${tickets.length ? "" : "disabled"}>Abrir espacio Olivia ↗</button></div><p class="notice">Las propuestas requieren validación humana. Ninguna respuesta se publica automáticamente.</p></div>`;
+    el.innerHTML = localizedHtml`<div class="eyebrow">OLIVIA IA V3.5 · ASISTENCIA DE SERVICIO</div><h1>Contexto para tu criterio.</h1><p class="subtitle">Asistencia integrada en cada caso: resumen, clasificación y respuesta preparada con Olivia IA V3.5.</p><div class="olivia-stage"><div class="orb">✦</div><h2>Una buena respuesta empieza por <em>entender el caso.</em></h2><p>Elige una solicitud para generar su resumen, sugerir prioridad y categoría, preparar una respuesta, proponer la siguiente acción y sintetizar la resolución.</p><label for="olivia-ticket">Solicitud autorizada</label><select id="olivia-ticket">${tickets.map((t) => localizedHtml`<option value="${t.id}">SH-${t.id} · ${esc(t.title)}</option>`).join("")}</select><div class="actions"><button class="btn primary" data-action="open-olivia" ${tickets.length ? "" : "disabled"}>Abrir espacio Olivia ↗</button></div><p class="notice">Las propuestas requieren validación humana. Ninguna respuesta se publica automáticamente.</p></div>`;
   }
 }
 function filtered() {
@@ -397,15 +401,15 @@ async function renderResults(append = false) {
     `${list.length} de ${ticketTotal} solicitudes autorizadas`;
   $("#ticket-results").innerHTML =
     mode === "list"
-      ? `<div class="panel">${table(list)}</div>`
-      : `<div class="kanban">${statuses
+      ? localizedHtml`<div class="panel">${table(list)}</div>`
+      : localizedHtml`<div class="kanban">${statuses
           .map(
             (s) =>
-              `<div class="kanban-col"><div class="kanban-head">${s} · ${list.filter((t) => t.status === s).length}</div>${list
+              localizedHtml`<div class="kanban-col"><div class="kanban-head">${s} · ${list.filter((t) => t.status === s).length}</div>${list
                 .filter((t) => t.status === s)
                 .map(
                   (t) =>
-                    `<div class="ticket-card"><span class="ticket-id">SH-${t.id}</span>${badge(t.priority)}<button class="ticket-title" data-ticket="${t.id}">${esc(t.title)}</button><p>${esc(company(t))}<br>${esc(t.site)}</p><div class="card-bottom"><span>${esc(t.agent || "Sin asignar")}</span><span>${esc(sla(t))}</span></div></div>`,
+                    localizedHtml`<div class="ticket-card"><span class="ticket-id">SH-${t.id}</span>${badge(t.priority)}<button class="ticket-title" data-ticket="${t.id}">${esc(t.title)}</button><p>${esc(company(t))}<br>${esc(t.site)}</p><div class="card-bottom"><span>${esc(t.agent || "Sin asignar")}</span><span>${esc(sla(t))}</span></div></div>`,
                 )
                 .join("")}</div>`,
           )
@@ -413,7 +417,7 @@ async function renderResults(append = false) {
   if (nextCursor) {
     $("#ticket-results").insertAdjacentHTML(
       "beforeend",
-      `<button class="btn load-more" id="load-more">${saas.tr("Cargar más solicitudes", "Load more requests")} ↗</button>`,
+      localizedHtml`<button class="btn load-more" id="load-more">${saas.tr("Cargar más solicitudes", "Load more requests")} ↗</button>`,
     );
     $("#load-more").onclick = () => renderResults(true);
   }
@@ -422,7 +426,7 @@ function showDialog(html) {
   lastFocus = document.activeElement;
   overlay.hidden = false;
   overlay.className = "overlay";
-  overlay.innerHTML = `<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1">${html}</div>`;
+  overlay.innerHTML = localizedHtml`<div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title" tabindex="-1">${html}</div>`;
   document.body.style.overflow = "hidden";
   $(".dialog").focus();
 }
@@ -435,18 +439,18 @@ function closeDialog() {
 }
 function newTicket(category) {
   showDialog(
-    `<div class="row"><div><div class="eyebrow">PORTAL DE ATENCIÓN</div><h2 id="dialog-title">Nueva solicitud</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">Describe lo que ocurre. El equipo validará la prioridad y te dará seguimiento.</p><form id="new-ticket"><label for="title">Asunto</label><input name="title" id="title" maxlength="160" required><div class="field-row"><div><label for="company">Cliente</label><select name="company_id" id="company" required>${companies.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div><div><label for="branch">Filial</label><select id="branch" name="branch_id"></select><label for="site">Sede</label><input name="site" id="site" maxlength="160" value="${esc(companies[0]?.site)}" required></div></div>${user.role !== "client" ? `<label for="ticket-department">${saas.tr("Departamento", "Department")}</label><select id="ticket-department" name="department_id"><option value="">—</option>${staffCatalog.departments.map((d) => `<option value="${d.id}" ${d.id === user.department_id ? "selected" : ""}>${esc(d.name)}</option>`).join("")}</select>` : ""}<div class="field-row"><div><label for="category">Categoría</label><select name="category" id="category">${option(categories, category)}</select></div><div><label for="new-priority">Prioridad deseada</label><select name="priority" id="new-priority">${option(priorities, "Media")}</select></div></div><label for="description">Descripción</label><textarea name="description" id="description" maxlength="4000" rows="5" required></textarea><p class="subtitle">No incluyas contraseñas ni datos bancarios.</p>${attachmentInput(saas.tr)}${saas.customFields(workspace.settings)}<button type="submit" class="btn primary">Registrar solicitud ↗</button></form>`,
+    localizedHtml`<div class="row"><div><div class="eyebrow">PORTAL DE ATENCIÓN</div><h2 id="dialog-title">Nueva solicitud</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">Describe lo que ocurre. El equipo validará la prioridad y te dará seguimiento.</p><form id="new-ticket"><label for="title">Asunto</label><input name="title" id="title" maxlength="160" required><div class="field-row"><div><label for="company">Cliente</label><select name="company_id" id="company" required>${companies.map((c) => localizedHtml`<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div><div><label for="branch">Filial</label><select id="branch" name="branch_id"></select><label for="site">Sede</label><input name="site" id="site" maxlength="160" value="${esc(companies[0]?.site)}" required></div></div>${user.role !== "client" ? localizedHtml`<label for="ticket-department">${saas.tr("Departamento", "Department")}</label><select id="ticket-department" name="department_id"><option value="">—</option>${staffCatalog.departments.map((d) => localizedHtml`<option value="${d.id}" ${d.id === user.department_id ? "selected" : ""}>${esc(d.name)}</option>`).join("")}</select>` : ""}<div class="field-row"><div><label for="category">Categoría</label><select name="category" id="category">${option(categories, category)}</select></div><div><label for="new-priority">Prioridad deseada</label><select name="priority" id="new-priority">${option(priorities, "Media")}</select></div></div><label for="description">Descripción</label><textarea name="description" id="description" maxlength="4000" rows="5" required></textarea><p class="subtitle">No incluyas contraseñas ni datos bancarios.</p>${attachmentInput(saas.tr)}${saas.customFields(workspace.settings)}<button type="submit" class="btn primary">Registrar solicitud ↗</button></form>`,
   );
   const updateBranch = () => {
     const c = companies.find((c) => c.id === Number($("#company").value));
     $("#site").value = c?.site || "";
     $("#site").readOnly = false;
     $("#branch").innerHTML =
-      `<option value="">${saas.tr("Sede general", "General site")}</option>` +
+      localizedHtml`<option value="">${saas.tr("Sede general", "General site")}</option>` +
       (c?.branches || [])
         .map(
           (b) =>
-            `<option value="${b.id}">${esc(b.name)} · ${esc(saas.countryName(b.country_code))}</option>`,
+            localizedHtml`<option value="${b.id}">${esc(b.name)} · ${esc(saas.countryName(b.country_code))}</option>`,
         )
         .join("");
   };
@@ -488,33 +492,33 @@ async function openTicket(ticketId, focusOlivia = false) {
   const isInternal = user.role !== "client",
     active = !["Resuelto", "Cerrado"].includes(t.status);
   showDialog(
-    `<div class="row"><div><div class="eyebrow">SH-${t.id} · ${esc(company(t))}</div><h2 id="dialog-title">${esc(t.title)}</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">${esc(t.site)} · ${esc(t.category)} · Creada ${date(t.created_at, branch?.timezone)}</p>${isInternal && t.department_id ? `<p class="subtitle department-context">${saas.tr("Departamento", "Department")} · ${esc(staffCatalog.departments.find((d) => d.id === t.department_id)?.name || "—")}</p>` : ""}${branch ? `<p class="subtitle branch-context">${esc(branch.name)} · ${esc(saas.countryName(branch.country_code))} · ${esc(branch.city)} · ${esc(branch.timezone)} · ${esc(branch.language.toUpperCase())}</p>` : ""}<div class="row"><div>${badge(t.status)} ${badge(t.priority)}</div><span class="subtitle">SLA: ${esc(sla(t))} · ${date(t.due_at, branch?.timezone)}</span></div><div class="dialog-grid"><div><div class="panel"><h3>Descripción</h3><div class="text-block">${esc(t.description)}</div>${Object.entries(
+    localizedHtml`<div class="row"><div><div class="eyebrow">SH-${t.id} · ${esc(company(t))}</div><h2 id="dialog-title">${esc(t.title)}</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">${esc(t.site)} · ${esc(displayLabel(t.category))} · Creada ${date(t.created_at, branch?.timezone)}</p>${isInternal && t.department_id ? localizedHtml`<p class="subtitle department-context">${saas.tr("Departamento", "Department")} · ${esc(staffCatalog.departments.find((d) => d.id === t.department_id)?.name || "—")}</p>` : ""}${branch ? localizedHtml`<p class="subtitle branch-context">${esc(branch.name)} · ${esc(saas.countryName(branch.country_code))} · ${esc(branch.city)} · ${esc(branch.timezone)} · ${esc(branch.language.toUpperCase())}</p>` : ""}<div class="row"><div>${badge(t.status)} ${badge(t.priority)}</div><span class="subtitle">SLA: ${esc(sla(t))} · ${date(t.due_at, branch?.timezone)}</span></div><div class="dialog-grid"><div><div class="panel"><h3>Descripción</h3><div class="text-block" data-user-content>${esc(t.description)}</div>${Object.entries(
       t.custom_fields || {},
     )
       .map(
         ([key, value]) =>
-          `<p><b>${esc(workspace.settings.fields.find((f) => f.key === key)?.label || key)}</b>: ${esc(value)}</p>`,
+          localizedHtml`<p><b>${esc(workspace.settings.fields.find((f) => f.key === key)?.label || key)}</b>: ${esc(value)}</p>`,
       )
       .join(
         "",
-      )}${isInternal ? `<form id="workflow-form"><label for="workflow-stage">Etapa</label><select id="workflow-stage">${workspace.settings.workflow.map((w) => `<option ${w.name === t.workflow_stage ? "selected" : ""}>${esc(w.name)}</option>`).join("")}</select><button class="btn">Actualizar etapa</button></form>` : ""}<p class="subtitle">Prioridad solicitada: ${esc(t.requested_priority)}</p></div><div class="panel chart-panel"><h3>Conversación e historial</h3><div class="timeline">${data.events.map((e) => `<div class="event ${e.internal ? "internal" : ""}"><small>${date(e.created_at, branch?.timezone)} · ${esc(e.actor)} · ${e.kind === "note" ? "Nota interna · solo equipo" : e.kind === "reply" ? "Respuesta" : e.kind === "resolution" ? "Resolución" : "Historial"}</small><p>${esc(e.body)}</p></div>`).join("")}</div>${active ? `<form id="reply-form"><label for="reply">${isInternal ? "Respuesta para el cliente" : "Responder al equipo"}</label><textarea id="reply" name="body" required maxlength="4000" rows="4"></textarea>${isInternal ? '<label class="check"><input type="checkbox" id="approval" required> Revisé el contenido y autorizo publicarlo en el portal cliente.</label>' : ""}<button class="btn primary">${isInternal ? "Validar y publicar respuesta" : "Enviar respuesta"}</button></form>` : '<p class="subtitle">Este caso está atendido. El equipo puede reabrirlo si requiere seguimiento.</p>'}</div>${isInternal ? `<div class="panel chart-panel"><h3>Trabajo interno</h3><form id="note-form"><label for="note">Nota interna (oculta al cliente)</label><textarea id="note" name="body" maxlength="4000" required></textarea><button class="btn">Guardar nota interna</button></form>${active ? '<form id="resolution-form"><label for="resolution">Resolución verificada</label><textarea id="resolution" name="body" required maxlength="4000" placeholder="Causa, acciones realizadas y verificación con la sede…"></textarea><button class="btn primary">Documentar y resolver</button></form>' : ""}<div class="actions">${t.status === "Resuelto" ? '<button class="btn primary" data-action="close-ticket">Cerrar solicitud</button>' : ""}${!active ? '<button class="btn" data-action="reopen">Reabrir con motivo</button>' : ""}</div></div>` : ""}</div><div>${
+      )}${isInternal ? localizedHtml`<form id="workflow-form"><label for="workflow-stage">Etapa</label><select id="workflow-stage">${workspace.settings.workflow.map((w) => localizedHtml`<option ${w.name === t.workflow_stage ? "selected" : ""}>${esc(w.name)}</option>`).join("")}</select><button class="btn">Actualizar etapa</button></form>` : ""}<p class="subtitle">Prioridad solicitada: ${esc(t.requested_priority)}</p></div><div class="panel chart-panel"><h3>Conversación e historial</h3><div class="timeline">${data.events.map((e) => localizedHtml`<div class="event ${e.internal ? "internal" : ""}"><small>${date(e.created_at, branch?.timezone)} · ${esc(e.actor)} · ${e.kind === "note" ? translateText("Nota interna · solo equipo") : e.kind === "reply" ? translateText("Respuesta") : e.kind === "resolution" ? translateText("Resolución") : translateText("Historial")}</small><p>${esc(e.body)}</p></div>`).join("")}</div>${active ? localizedHtml`<form id="reply-form"><label for="reply">${isInternal ? translateText("Respuesta para el cliente") : translateText("Responder al equipo")}</label><textarea id="reply" name="body" required maxlength="4000" rows="4"></textarea>${isInternal ? localizedHtml('<label class="check"><input type="checkbox" id="approval" required> Revisé el contenido y autorizo publicarlo en el portal cliente.</label>') : ""}<button class="btn primary">${isInternal ? translateText("Validar y publicar respuesta") : translateText("Enviar respuesta")}</button></form>` : localizedHtml('<p class="subtitle">Este caso está atendido. El equipo puede reabrirlo si requiere seguimiento.</p>')}</div>${isInternal ? localizedHtml`<div class="panel chart-panel"><h3>Trabajo interno</h3><form id="note-form"><label for="note">Nota interna (oculta al cliente)</label><textarea id="note" name="body" maxlength="4000" required></textarea><button class="btn">Guardar nota interna</button></form>${active ? localizedHtml('<form id="resolution-form"><label for="resolution">Resolución verificada</label><textarea id="resolution" name="body" required maxlength="4000" placeholder="Causa, acciones realizadas y verificación con la sede…"></textarea><button class="btn primary">Documentar y resolver</button></form>') : ""}<div class="actions">${t.status === "Resuelto" ? localizedHtml('<button class="btn primary" data-action="close-ticket">Cerrar solicitud</button>') : ""}${!active ? localizedHtml('<button class="btn" data-action="reopen">Reabrir con motivo</button>') : ""}</div></div>` : ""}</div><div>${
       isGlobal() && active
-        ? `<div class="panel"><h3>Responsable del caso</h3><form id="assign-form"><label for="assigned-agent">Agente</label><select id="assigned-agent" name="agent_id" required><option value="">Seleccionar agente…</option>${users
+        ? localizedHtml`<div class="panel"><h3>Responsable del caso</h3><form id="assign-form"><label for="assigned-agent">Agente</label><select id="assigned-agent" name="agent_id" required><option value="">Seleccionar agente…</option>${users
             .filter((u) => u.role === "agent")
             .map(
               (u) =>
-                `<option value="${u.id}" ${u.id === t.agent_id ? "selected" : ""}>${esc(u.name)}</option>`,
+                localizedHtml`<option value="${u.id}" ${u.id === t.agent_id ? "selected" : ""}>${esc(u.name)}</option>`,
             )
             .join(
               "",
             )}</select><div class="actions"><button class="btn primary">Asignar agente</button></div></form></div>`
         : ""
-    }${isInternal ? `<div class="panel ai chart-panel"><div class="ai-head"><div class="orb">✦</div><div><b>Olivia IA V3.5</b><div class="muted">ASISTENCIA · REVISIÓN HUMANA</div></div></div><p>Propuestas adaptadas al caso. Revisa todos los datos antes de usarlas.</p><button class="btn primary" data-action="suggest">Preparar con Olivia ↗</button><div id="suggestions"></div></div><div class="panel chart-panel"><h3>Clasificación validada</h3><form id="classification-form"><label for="edit-priority">Prioridad</label><select id="edit-priority" name="priority">${option(priorities, t.priority)}</select><label for="edit-category">Categoría</label><select id="edit-category" name="category">${option(categories, t.category)}</select><label class="check"><input type="checkbox" required> Confirmo esta clasificación.</label><button class="btn">Validar clasificación</button></form></div>` : '<div class="panel ai"><h3>Seguimiento compartido</h3><p>Las respuestas validadas y la resolución de tu equipo aparecen en este historial.</p></div>'}</div></div>`,
+    }${isInternal ? localizedHtml`<div class="panel ai chart-panel"><div class="ai-head"><div class="orb">✦</div><div><b>Olivia IA V3.5</b><div class="muted">ASISTENCIA · REVISIÓN HUMANA</div></div></div><p>Propuestas adaptadas al caso. Revisa todos los datos antes de usarlas.</p><button class="btn primary" data-action="suggest">Preparar con Olivia ↗</button><div id="suggestions"></div></div><div class="panel chart-panel"><h3>Clasificación validada</h3><form id="classification-form"><label for="edit-priority">Prioridad</label><select id="edit-priority" name="priority">${option(priorities, t.priority)}</select><label for="edit-category">Categoría</label><select id="edit-category" name="category">${option(categories, t.category)}</select><label class="check"><input type="checkbox" required> Confirmo esta clasificación.</label><button class="btn">Validar clasificación</button></form></div>` : localizedHtml('<div class="panel ai"><h3>Seguimiento compartido</h3><p>Las respuestas validadas y la resolución de tu equipo aparecen en este historial.</p></div>')}</div></div>`,
   );
   selected = t.id;
   const attachmentsPanel = document.createElement("section");
   attachmentsPanel.className = "panel chart-panel ticket-attachments";
-  attachmentsPanel.innerHTML = `<h3>${saas.tr("Archivos adjuntos", "Attachments")}</h3><div id="attachment-list">${(data.attachments || []).map(f => `<p><button class="btn" type="button" data-download-attachment="${esc(f.id)}">↓ ${esc(f.filename)}</button> <small>${Math.ceil(f.bytes/1024)} KB</small></p>`).join("") || `<p class="subtitle">${saas.tr("Sin archivos adjuntos", "No attachments yet")}</p>`}</div>${active ? `<form id="attachment-form">${attachmentInput(saas.tr)}<button class="btn primary">${saas.tr("Adjuntar archivos", "Attach files")}</button><p role="status" id="attachment-status"></p></form>` : ""}`;
+  attachmentsPanel.innerHTML = localizedHtml`<h3>${saas.tr("Archivos adjuntos", "Attachments")}</h3><div id="attachment-list">${(data.attachments || []).map(f => localizedHtml`<p><button class="btn" type="button" data-download-attachment="${esc(f.id)}">↓ ${esc(f.filename)}</button> <small>${Math.ceil(f.bytes/1024)} KB</small></p>`).join("") || localizedHtml`<p class="subtitle">${saas.tr("Sin archivos adjuntos", "No attachments yet")}</p>`}</div>${active ? localizedHtml`<form id="attachment-form">${attachmentInput(saas.tr)}<button class="btn primary">${saas.tr("Adjuntar archivos", "Attach files")}</button><p role="status" id="attachment-status"></p></form>` : ""}`;
   overlay.querySelector(".dialog-grid > div > .panel").after(attachmentsPanel);
   attachmentsPanel.querySelectorAll("[data-download-attachment]").forEach(button => {
     button.onclick = async () => {
@@ -589,7 +593,7 @@ async function suggest() {
     if (selected !== current) return;
     const s = suggestion;
     $("#suggestions").innerHTML =
-      `<p class="badge amber">${s.mode === "live" ? "OLIVIA V3.5" : "MODO DEMO"} · REVISIÓN HUMANA</p><h3>Resumen</h3><p>${esc(s.summary)}</p><h3>Clasificación sugerida</h3><p>${esc(s.category)} · ${esc(s.priority)}</p><button class="btn" data-action="copy-classification">Preparar clasificación</button><h3>Borrador de respuesta</h3><p class="text-block">${esc(s.draft)}</p>${$("#reply") ? '<button class="btn" data-action="copy-draft">Copiar al editor para revisar</button>' : ""}<h3>Próxima acción</h3><p>${esc(s.nextAction)}</p><h3>Síntesis de resolución</h3><p>${esc(s.resolution)}</p>${$("#resolution") ? '<button class="btn" data-action="copy-resolution">Preparar resolución para revisar</button>' : ""}`;
+      localizedHtml`<p class="badge amber">${s.mode === "live" ? translateText("OLIVIA V3.5") : translateText("MODO DEMO")} · REVISIÓN HUMANA</p><h3>Resumen</h3><p>${esc(s.summary)}</p><h3>Clasificación sugerida</h3><p>${esc(s.category)} · ${esc(s.priority)}</p><button class="btn" data-action="copy-classification">Preparar clasificación</button><h3>Borrador de respuesta</h3><p class="text-block">${esc(s.draft)}</p>${$("#reply") ? localizedHtml('<button class="btn" data-action="copy-draft">Copiar al editor para revisar</button>') : ""}<h3>Próxima acción</h3><p>${esc(s.nextAction)}</p><h3>Síntesis de resolución</h3><p>${esc(s.resolution)}</p>${$("#resolution") ? localizedHtml('<button class="btn" data-action="copy-resolution">Preparar resolución para revisar</button>') : ""}`;
   } finally {
     if (button) button.disabled = false;
   }
@@ -617,6 +621,7 @@ function exportCSV() {
       t.due_at,
     ]),
   ];
+  rows[0] = rows[0].map(value => translateText(value));
   const quote = (v) =>
     '"' +
     String(v)
@@ -719,7 +724,7 @@ document.addEventListener("click", async (e) => {
         break;
       case "reopen": {
         const body = prompt(
-          "Motivo de la reapertura (visible en el historial):",
+          translateText("Motivo de la reapertura (visible en el historial):"),
         );
         if (body?.trim()) await perform("reopen", { body });
         break;
@@ -790,14 +795,14 @@ try {
   else welcome();
 } catch (err) {
   app.innerHTML =
-    '<p class="empty">No fue posible cargar la plataforma. Actualiza la página.</p>';
+    localizedHtml('<p class="empty">No fue posible cargar la plataforma. Actualiza la página.</p>');
   notify(err.message);
 }
 let analyticsData = null,
   reportList = [];
 async function renderDashboard(el, reporting) {
   const activeView = view;
-  el.innerHTML = '<p class="empty">Preparando tus indicadores…</p>';
+  el.innerHTML = localizedHtml('<p class="empty">Preparando tus indicadores…</p>');
   try {
     const [data, integration, saved] = await Promise.all([
       api("/analytics"),
@@ -807,7 +812,7 @@ async function renderDashboard(el, reporting) {
     if (!el.isConnected || view !== activeView) return;
     analyticsData = data;
     reportList = saved.reports;
-    el.innerHTML = `<div class="row page-heading"><div><div class="eyebrow">${reporting ? "INTELIGENCIA DE SERVICIO" : user.role === "client" ? "TU PANEL CLIENTE" : "CONTROL DE OPERACIONES"}</div><h1>${reporting ? "Informes con perspectiva." : `Hola, ${esc(user.name.split(" ")[0])}.`}</h1><p class="subtitle">${reporting ? "Datos guardados, lectura clara y decisiones documentadas." : user.role === "client" ? `La atención de ${esc(companies[0]?.name)}. Todo tu seguimiento en un solo espacio.` : "Tu operación, en una sola mirada. Del volumen al siguiente paso."}</p></div><div class="actions">${!reporting && user.role !== "agent" ? '<button class="btn primary" data-action="new">+ Nueva solicitud</button>' : ""}<button class="btn" id="export-analytics">Exportar indicadores ↗</button></div></div>${!reporting ? `<div class="hero premium-hero"><div class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> ${user.role === "client" ? "SERVICIO CON CONTINUIDAD" : "LA PERSPECTIVA COMPLETA"}</div><h2>Más claridad.<br>Mejores <em>decisiones.</em></h2><p>Una visión del servicio que conecta a tu equipo, tus solicitudes y cada compromiso de atención.</p><button class="btn lime" data-view="${user.role === "client" ? "tickets" : "reports"}">${user.role === "client" ? "Ver mis solicitudes" : "Explorar informes"} ↗</button></div><div class="hero-art"><div class="hero-orbit"></div><div class="orb">✦</div><span class="orbit-tag">Olivia IA · V3.5</span></div></div>` : ""}<form class="report-filters" id="report-filters"><div><label for="report-start">Desde</label><input type="date" id="report-start" name="start" value="${data.filters.start}" required></div><div><label for="report-end">Hasta</label><input type="date" id="report-end" name="end" value="${data.filters.end}" required></div>${isGlobal() ? `<div><label for="report-company">Cliente</label><select id="report-company" name="company_id"><option value="">Todos los clientes</option>${companies.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div>` : ""}<button class="btn primary">Aplicar periodo</button><span class="period-caption">Alcance ${esc(data.scope)} · ${esc(data.timezone || workspace.settings.timezone)}</span></form><div id="analytics-data">${metricCards(data)}${charts(data)}</div>${reporting ? `<div class="panel report-actions"><div><div class="eyebrow">TU REPORTE EJECUTIVO</div><h2>Guarda una fotografía del servicio.</h2><p class="subtitle">El informe conserva los indicadores de este periodo, incluso cuando los tickets cambien.</p></div><div class="actions"><button class="btn primary" id="save-report">Guardar informe</button><button class="btn" id="ai-report" ${integration.huggingface.configured ? "" : "disabled"}>Síntesis con Hugging Face ✦</button><button class="btn" id="print-report">Imprimir / PDF ↗</button></div><p class="integration-note">${integration.huggingface.configured ? "Hugging Face configurado · síntesis bajo demanda con datos agregados autorizados." : "Hugging Face pendiente de API y modelo. Los gráficos, la exportación y los informes de datos están disponibles."}</p></div><div class="panel saved-reports"><div class="panel-head"><h2>Mis informes guardados</h2><span class="subtitle" id="report-count">${reportList.length} informes</span></div><div id="saved-report-list"></div></div><div id="saved-report-preview"></div>` : `<div class="panel recent-panel"><div class="panel-head"><div><div class="eyebrow">EL SIGUIENTE PASO</div><h2>Solicitudes recientes</h2></div><button class="small-link" data-view="tickets">Ver todas ↗</button></div>${table(tickets.slice(0, 5))}</div>`}`;
+    el.innerHTML = localizedHtml`<div class="row page-heading"><div><div class="eyebrow">${reporting ? translateText("INTELIGENCIA DE SERVICIO") : user.role === "client" ? translateText("TU PANEL CLIENTE") : translateText("CONTROL DE OPERACIONES")}</div><h1>${reporting ? translateText("Informes con perspectiva.") : translateText("Hello, __MX_SLOT_0__.").replace("__MX_SLOT_0__", esc(user.name.split(" ")[0]))}</h1><p class="subtitle">${reporting ? translateText("Datos guardados, lectura clara y decisiones documentadas.") : user.role === "client" ? `La atención de ${esc(companies[0]?.name)}. Todo tu seguimiento en un solo espacio.` : translateText("Tu operación, en una sola mirada. Del volumen al siguiente paso.")}</p></div><div class="actions">${!reporting && user.role !== "agent" ? localizedHtml('<button class="btn primary" data-action="new">+ Nueva solicitud</button>') : ""}<button class="btn" id="export-analytics">Exportar indicadores ↗</button></div></div>${!reporting ? localizedHtml`<div class="hero premium-hero"><div class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> ${user.role === "client" ? translateText("SERVICIO CON CONTINUIDAD") : translateText("LA PERSPECTIVA COMPLETA")}</div><h2>Más claridad.<br>Mejores <em>decisiones.</em></h2><p>Una visión del servicio que conecta a tu equipo, tus solicitudes y cada compromiso de atención.</p><button class="btn lime" data-view="${user.role === "client" ? "tickets" : "reports"}">${user.role === "client" ? translateText("Ver mis solicitudes") : translateText("Explorar informes")} ↗</button></div><div class="hero-art"><div class="hero-orbit"></div><div class="orb">✦</div><span class="orbit-tag">Olivia IA · V3.5</span></div></div>` : ""}<form class="report-filters" id="report-filters"><div><label for="report-start">Desde</label><input type="date" id="report-start" name="start" value="${data.filters.start}" required></div><div><label for="report-end">Hasta</label><input type="date" id="report-end" name="end" value="${data.filters.end}" required></div>${isGlobal() ? localizedHtml`<div><label for="report-company">Cliente</label><select id="report-company" name="company_id"><option value="">Todos los clientes</option>${companies.map((c) => localizedHtml`<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div>` : ""}<button class="btn primary">Aplicar periodo</button><span class="period-caption">Alcance ${esc(data.scope)} · ${esc(data.timezone || workspace.settings.timezone)}</span></form><div id="analytics-data">${metricCards(data)}${charts(data)}</div>${reporting ? localizedHtml`<div class="panel report-actions"><div><div class="eyebrow">TU REPORTE EJECUTIVO</div><h2>Guarda una fotografía del servicio.</h2><p class="subtitle">El informe conserva los indicadores de este periodo, incluso cuando los tickets cambien.</p></div><div class="actions"><button class="btn primary" id="save-report">Guardar informe</button><button class="btn" id="ai-report" ${integration.huggingface.configured ? "" : "disabled"}>Síntesis con Hugging Face ✦</button><button class="btn" id="print-report">Imprimir / PDF ↗</button></div><p class="integration-note">${integration.huggingface.configured ? translateText("Hugging Face configurado · síntesis bajo demanda con datos agregados autorizados.") : translateText("Hugging Face pendiente de API y modelo. Los gráficos, la exportación y los informes de datos están disponibles.")}</p></div><div class="panel saved-reports"><div class="panel-head"><h2>Mis informes guardados</h2><span class="subtitle" id="report-count">${reportList.length} informes</span></div><div id="saved-report-list"></div></div><div id="saved-report-preview"></div>` : localizedHtml`<div class="panel recent-panel"><div class="panel-head"><div><div class="eyebrow">EL SIGUIENTE PASO</div><h2>Solicitudes recientes</h2></div><button class="small-link" data-view="tickets">Ver todas ↗</button></div>${table(tickets.slice(0, 5))}</div>`}`;
     $("#report-filters").addEventListener("submit", async (evt) => {
       evt.preventDefault();
       evt.submitter.disabled = true;
@@ -845,7 +850,7 @@ async function renderDashboard(el, reporting) {
   } catch (err) {
     if (el.isConnected)
       el.innerHTML =
-        '<p class="empty">No fue posible cargar los indicadores.</p>';
+        localizedHtml('<p class="empty">No fue posible cargar los indicadores.</p>');
     notify(err.message);
   }
 }
@@ -876,10 +881,10 @@ function drawSavedReports() {
     ? reportList
         .map(
           (r) =>
-            `<button class="report-entry" data-report-id="${r.id}"><span><b>${r.filters.start} — ${r.filters.end}</b><small>${new Date(r.created_at).toLocaleString("es-MX")} · ${r.snapshot.metrics.total} solicitudes</small></span><span>${r.provider === "huggingface" ? "Síntesis IA" : "Informe de datos"} ↗</span></button>`,
+            localizedHtml`<button class="report-entry" data-report-id="${r.id}"><span><b>${r.filters.start} — ${r.filters.end}</b><small>${new Date(r.created_at).toLocaleString(document.documentElement.lang || "es")} · ${r.snapshot.metrics.total} solicitudes</small></span><span>${r.provider === "huggingface" ? translateText("Síntesis IA") : translateText("Informe de datos")} ↗</span></button>`,
         )
         .join("")
-    : '<p class="subtitle">Guarda tu primer informe para consultarlo después.</p>';
+    : localizedHtml('<p class="subtitle">Guarda tu primer informe para consultarlo después.</p>');
   el.querySelectorAll("[data-report-id]").forEach(
     (b) =>
       (b.onclick = () => {
@@ -913,7 +918,7 @@ function renderUsers(el) {
 }
 function clientWelcome() {
   app.classList.add("client-experience");
-  app.innerHTML = `<div class="portal-welcome"><header class="portal-entry-header"><a class="portal-wordmark" href="/cliente">${esc(config.brand)}<span>↗</span><small>Tu espacio de atención</small></a>${holdingLogo()}</header><div class="portal-entry-grid"><div class="portal-entry-copy"><div class="eyebrow">SERVICIO A TU RITMO</div><h1>Tu equipo de soporte.<br><em>Siempre a mano.</em></h1><p>Desde tu teléfono, iPad o computadora. Crea solicitudes, sigue cada respuesta y consulta tus indicadores.</p><div class="portal-entry-cards"><span>◫<b>Tu dashboard</b></span><span>▤<b>Tus solicitudes</b></span><span>✦<b>Tu asistente Olivia</b></span></div></div><div class="panel portal-entry-form"><div class="eyebrow">PORTAL CLIENTE</div><h2>Bienvenido a tu espacio.</h2>${config.clientDemo ? `<div class="demo-client-card"><span class="avatar">CV</span><div><b>Camila Vega</b><small>Aurora Salud · empresa ficticia</small></div></div><button class="btn primary" id="enter-client-demo">Entrar a la demo cliente ↗</button><p class="subtitle">Prueba el recorrido sin introducir credenciales. Las solicitudes se guardan en el entorno de demostración.</p><a class="portal-preview-link" href="/demo">Ver móvil, iPad / tablet y desktop ↗</a><details class="real-client-login"><summary>Entrar con mi cuenta cliente</summary>` : "<div>"}<form id="login"><label for="email">Correo electrónico</label><input id="email" name="email" type="email" autocomplete="username" required><label for="password">Contraseña</label><input id="password" name="password" type="password" autocomplete="current-password" required><p id="login-error" role="alert"></p><button class="btn">Entrar a mi espacio ↗</button></form>${config.clientDemo ? "</details>" : "</div>"}</div></div><footer>Service Hub · ${esc(config.subtitle)}<a href="https://www.o7digitalgroup.com/" target="_blank" rel="noopener noreferrer">O7 Digital Group Holding ↗</a></footer></div>`;
+  app.innerHTML = localizedHtml`<div class="portal-welcome"><header class="portal-entry-header"><a class="portal-wordmark" href="/cliente">${esc(config.brand)}<span>↗</span><small>Tu espacio de atención</small></a>${holdingLogo()}</header><div class="portal-entry-grid"><div class="portal-entry-copy"><div class="eyebrow">SERVICIO A TU RITMO</div><h1>Tu equipo de soporte.<br><em>Siempre a mano.</em></h1><p>Desde tu teléfono, iPad o computadora. Crea solicitudes, sigue cada respuesta y consulta tus indicadores.</p><div class="portal-entry-cards"><span>◫<b>Tu dashboard</b></span><span>▤<b>Tus solicitudes</b></span><span>✦<b>Tu asistente Olivia</b></span></div></div><div class="panel portal-entry-form"><div class="eyebrow">PORTAL CLIENTE</div><h2>Bienvenido a tu espacio.</h2>${config.clientDemo ? localizedHtml`<div class="demo-client-card"><span class="avatar">CV</span><div><b>Camila Vega</b><small>Aurora Salud · empresa ficticia</small></div></div><button class="btn primary" id="enter-client-demo">Entrar a la demo cliente ↗</button><p class="subtitle">Prueba el recorrido sin introducir credenciales. Las solicitudes se guardan en el entorno de demostración.</p><a class="portal-preview-link" href="/demo">Ver móvil, iPad / tablet y desktop ↗</a><details class="real-client-login"><summary>Entrar con mi cuenta cliente</summary>` : localizedHtml("<div>")}<form id="login"><label for="email">Correo electrónico</label><input id="email" name="email" type="email" autocomplete="username" required><label for="password">Contraseña</label><input id="password" name="password" type="password" autocomplete="current-password" required><p id="login-error" role="alert"></p><button class="btn">Entrar a mi espacio ↗</button></form>${config.clientDemo ? localizedHtml("</details>") : localizedHtml("</div>")}</div></div><footer>Service Hub · ${esc(config.subtitle)}<a href="https://www.o7digitalgroup.com/" target="_blank" rel="noopener noreferrer">O7 Digital Group Holding ↗</a></footer></div>`;
   $("#enter-client-demo")?.addEventListener("click", async (e) => {
     e.currentTarget.disabled = true;
     try {
@@ -953,7 +958,7 @@ async function enterClientDemo() {
 }
 function clientShell() {
   app.classList.add("client-experience");
-  app.innerHTML = `<div class="client-shell"><header class="client-top"><a class="portal-wordmark" href="${clientPortal ? "/cliente" : "/"}">${esc(config.brand)}<span>↗</span><small>Portal de atención</small></a><div class="client-company"><b>${esc(companies[0]?.name)}</b><small>${esc(user.name)}</small></div><div class="client-header-actions">${saas.languagePicker()}${config.clientDemo ? '<a class="btn client-preview-link" href="/demo" target="_blank" rel="noopener noreferrer">Ver dispositivos ↗</a>' : ""}<button class="btn" data-action="logout">Cerrar sesión</button><span class="avatar">${esc(
+  app.innerHTML = localizedHtml`<div class="client-shell"><header class="client-top"><a class="portal-wordmark" href="${clientPortal ? "/cliente" : "/"}">${esc(config.brand)}<span>↗</span><small>Portal de atención</small></a><div class="client-company"><b>${esc(companies[0]?.name)}</b><small>${esc(user.name)}</small></div><div class="client-header-actions">${saas.languagePicker()}${config.clientDemo ? localizedHtml('<a class="btn client-preview-link" href="/demo" target="_blank" rel="noopener noreferrer">Ver dispositivos ↗</a>') : ""}<button class="btn" data-action="logout">Cerrar sesión</button><span class="avatar">${esc(
     user.name
       .split(" ")
       .map((n) => n[0])
@@ -966,7 +971,7 @@ function clientShell() {
   ]
     .map(
       ([v, i, label]) =>
-        `<button data-view="${v}" class="${view === v ? "active" : ""}"><span class="nav-icon">${i}</span><span>${label}</span></button>`,
+        localizedHtml`<button data-view="${v}" class="${view === v ? "active" : ""}"><span class="nav-icon">${i}</span><span>${label}</span></button>`,
     )
     .join(
       "",
@@ -976,16 +981,16 @@ function clientShell() {
 }
 function clientTicketCards(list) {
   return list.length
-    ? `<div class="client-ticket-cards">${list.map((t) => `<button class="client-ticket-card" data-ticket="${t.id}" aria-label="${esc(t.title)}"><div class="row"><span class="ticket-id">SH-${t.id} · ${esc(t.category)}</span>${badge(t.status)}</div><h3>${esc(t.title)}</h3><p>${esc(t.site)}</p><div class="row"><span class="client-card-priority">${esc(t.priority)} · ${esc(sla(t))}</span><span class="client-card-arrow">↗</span></div></button>`).join("")}</div>`
-    : '<div class="panel empty">Tu primera solicitud empieza aquí. Cuéntanos cómo podemos ayudarte.</div>';
+    ? localizedHtml`<div class="client-ticket-cards">${list.map((t) => localizedHtml`<button class="client-ticket-card" data-ticket="${t.id}" aria-label="${esc(t.title)}"><div class="row"><span class="ticket-id">SH-${t.id} · ${esc(displayLabel(t.category))}</span>${badge(t.status)}</div><h3>${esc(t.title)}</h3><p>${esc(t.site)}</p><div class="row"><span class="client-card-priority">${esc(t.priority)} · ${esc(sla(t))}</span><span class="client-card-arrow">↗</span></div></button>`).join("")}</div>`
+    : localizedHtml('<div class="panel empty">Tu primera solicitud empieza aquí. Cuéntanos cómo podemos ayudarte.</div>');
 }
 async function renderClientHome(el) {
-  el.innerHTML = '<p class="empty">Preparando tu espacio…</p>';
+  el.innerHTML = localizedHtml('<p class="empty">Preparando tu espacio…</p>');
   try {
     const data = await api("/analytics");
     if (!el.isConnected || view !== "overview") return;
     const m = data.metrics;
-    el.innerHTML = `<div class="client-welcome-line"><div><div class="eyebrow">TU SERVICIO, CON CONTINUIDAD</div><h1>Hola, ${esc(user.name.split(" ")[0])}.</h1><p>Estamos contigo en cada solicitud.</p></div>${workspace.is_demo ? '<span class="client-demo-pill">ESPACIO ILUSTRATIVO · datos ficticios</span>' : ""}</div><div class="client-service-hero"><div><span class="eyebrow">CUÉNTANOS QUÉ NECESITAS</span><h2>Una solicitud.<br><em>El siguiente paso, claro.</em></h2><p>Tu equipo tiene el contexto. Tú tienes el seguimiento.</p><button class="btn lime" data-action="new">+ Nueva solicitud</button></div><div class="client-hero-graphic" aria-hidden="true"><div class="client-hero-ring"></div><span>↗</span><i>Todo en un solo lugar</i></div></div><div class="client-metrics">${[
+    el.innerHTML = localizedHtml`<div class="client-welcome-line"><div><div class="eyebrow">TU SERVICIO, CON CONTINUIDAD</div><h1>Hola, ${esc(user.name.split(" ")[0])}.</h1><p>Estamos contigo en cada solicitud.</p></div>${workspace.is_demo ? localizedHtml('<span class="client-demo-pill">ESPACIO ILUSTRATIVO · datos ficticios</span>') : ""}</div><div class="client-service-hero"><div><span class="eyebrow">CUÉNTANOS QUÉ NECESITAS</span><h2>Una solicitud.<br><em>El siguiente paso, claro.</em></h2><p>Tu equipo tiene el contexto. Tú tienes el seguimiento.</p><button class="btn lime" data-action="new">+ Nueva solicitud</button></div><div class="client-hero-graphic" aria-hidden="true"><div class="client-hero-ring"></div><span>↗</span><i>Todo en un solo lugar</i></div></div><div class="client-metrics">${[
       ["En atención", m.active, "Solicitudes activas"],
       ["Atendidas", m.resolved, "Resueltas o cerradas"],
       [
@@ -1003,7 +1008,7 @@ async function renderClientHome(el) {
     ]
       .map(
         ([label, value, caption]) =>
-          `<div><small>${label}</small><strong>${value}</strong><span>${caption}</span></div>`,
+          localizedHtml`<div><small>${label}</small><strong>${value}</strong><span>${caption}</span></div>`,
       )
       .join(
         "",
@@ -1015,7 +1020,7 @@ async function renderClientHome(el) {
     ]
       .map(
         ([category, icon, label]) =>
-          `<button data-client-category="${category}"><span>${icon}</span><b>${label}</b><i>↗</i></button>`,
+          localizedHtml`<button data-client-category="${category}"><span>${icon}</span><b>${label}</b><i>↗</i></button>`,
       )
       .join(
         "",
@@ -1025,7 +1030,7 @@ async function renderClientHome(el) {
     );
   } catch (err) {
     if (el.isConnected)
-      el.innerHTML = '<p class="empty">No fue posible cargar tu espacio.</p>';
+      el.innerHTML = localizedHtml('<p class="empty">No fue posible cargar tu espacio.</p>');
     notify(err.message);
   }
 }
@@ -1040,9 +1045,9 @@ function stats() {
     total: ["Total solicitudes", "Total requests"],
     resolved: ["Casos resueltos", "Resolved requests"],
   };
-  return `<div class="stats">${(workspace?.settings.dashboard || ["active", "critical", "overdue", "sla_percent"]).map((key) => `<div class="stat"><small>${esc(saas.tr(...labels[key]))}</small><strong>${m[key] === null ? "—" : m[key] + (key === "sla_percent" ? "%" : "")}</strong><footer>${saas.tr("Últimos 30 días · datos de tu espacio", "Last 30 days · workspace data")}</footer></div>`).join("")}</div>`;
+  return localizedHtml`<div class="stats">${(workspace?.settings.dashboard || ["active", "critical", "overdue", "sla_percent"]).map((key) => localizedHtml`<div class="stat"><small>${esc(saas.tr(...labels[key]))}</small><strong>${m[key] === null ? "—" : m[key] + (key === "sla_percent" ? "%" : "")}</strong><footer>${saas.tr("Últimos 30 días · datos de tu espacio", "Last 30 days · workspace data")}</footer></div>`).join("")}</div>`;
 }
 
 function renderStableOverview(el) {
-  el.innerHTML = `<div class="row"><div><div class="eyebrow">SERVICE INTELLIGENCE</div><h1>Hola, ${esc(user.name.split(" ")[0])}.</h1><p class="subtitle">Visibilidad para decidir. Contexto para responder.</p></div>${user.role !== "agent" ? '<button class="btn primary" data-action="new">+ Nueva solicitud</button>' : ""}</div><div class="hero"><div class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> ${user.role === "client" ? "TU PORTAL DE ATENCIÓN" : "OPERACIÓN CONECTADA"}</div><h2>La atención que avanza.<br>La información que <em>permanece.</em></h2><p>Solicitudes y conversaciones guardadas. Indicadores calculados con los casos autorizados para tu perfil.</p><button class="btn lime" data-view="tickets">Ver solicitudes ↗</button></div><div class="hero-art"><div class="hero-orbit"></div><div class="orb">✦</div><span class="orbit-tag">Olivia IA · V3.5</span></div></div>${stats()}<div class="columns"><div class="panel"><div class="panel-head"><h2>Solicitudes recientes</h2><button class="small-link" data-view="tickets">Ver todas ↗</button></div>${table(tickets.slice(0, 6))}</div><div class="secondary-column"><div class="panel ai"><div class="ai-head"><div class="orb">✦</div><div><b>Olivia IA V3.5</b><div class="muted">ASISTENCIA INTEGRADA</div></div></div><div class="insight-label">ASISTENCIA CON CONTEXTO</div><h3>Tu criterio.<br>Una mejor preparación.</h3><p>Resumen, clasificación y borradores por solicitud. Revisión humana antes de publicar.</p>${user.role !== "client" ? '<button class="btn primary" data-view="olivia">Explorar Olivia ↗</button>' : "<p>Tu equipo de atención mantiene el seguimiento en este portal.</p>"}<span class="ai-footer">Revisión humana antes de publicar.</span></div></div></div>`;
+  el.innerHTML = localizedHtml`<div class="row"><div><div class="eyebrow">SERVICE INTELLIGENCE</div><h1>Hola, ${esc(user.name.split(" ")[0])}.</h1><p class="subtitle">Visibilidad para decidir. Contexto para responder.</p></div>${user.role !== "agent" ? localizedHtml('<button class="btn primary" data-action="new">+ Nueva solicitud</button>') : ""}</div><div class="hero"><div class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> ${user.role === "client" ? translateText("TU PORTAL DE ATENCIÓN") : translateText("OPERACIÓN CONECTADA")}</div><h2>La atención que avanza.<br>La información que <em>permanece.</em></h2><p>Solicitudes y conversaciones guardadas. Indicadores calculados con los casos autorizados para tu perfil.</p><button class="btn lime" data-view="tickets">Ver solicitudes ↗</button></div><div class="hero-art"><div class="hero-orbit"></div><div class="orb">✦</div><span class="orbit-tag">Olivia IA · V3.5</span></div></div>${stats()}<div class="columns"><div class="panel"><div class="panel-head"><h2>Solicitudes recientes</h2><button class="small-link" data-view="tickets">Ver todas ↗</button></div>${table(tickets.slice(0, 6))}</div><div class="secondary-column"><div class="panel ai"><div class="ai-head"><div class="orb">✦</div><div><b>Olivia IA V3.5</b><div class="muted">ASISTENCIA INTEGRADA</div></div></div><div class="insight-label">ASISTENCIA CON CONTEXTO</div><h3>Tu criterio.<br>Una mejor preparación.</h3><p>Resumen, clasificación y borradores por solicitud. Revisión humana antes de publicar.</p>${user.role !== "client" ? localizedHtml('<button class="btn primary" data-view="olivia">Explorar Olivia ↗</button>') : localizedHtml("<p>Tu equipo de atención mantiene el seguimiento en este portal.</p>")}<span class="ai-footer">Revisión humana antes de publicar.</span></div></div></div>`;
 }

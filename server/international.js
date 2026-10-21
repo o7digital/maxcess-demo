@@ -10,7 +10,7 @@ import {
 export function installInternationalRoutes(app) {
   app.put("/api/preferences", async (req, res) => {
     const language = req.body.language;
-    if (!["es", "en", "fr"].includes(language))
+    if (!Object.hasOwn(languages, language))
       throw fail(400, "Idioma no válido");
     await pool.query(
       "UPDATE users SET language=$1 WHERE id=$2 AND tenant_id=$3",
