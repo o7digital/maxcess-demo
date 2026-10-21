@@ -326,7 +326,7 @@ export function createSaas({
             .map(
               (base) => {
                 const p = chosenPlan(base);
-                return `<article class="panel plan-card" data-public-plan="${e(p.id)}"><span class="eyebrow">${e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, period)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><a class="btn ${p.seat_limit === 5 ? "primary" : ""}" href="/signup">${t("trial")} ↗</a></article>`;
+                return `<article class="panel plan-card" data-public-plan="${e(p.id)}"><span class="eyebrow">${p.unit_cents ? `${p.min_seats}${p.max_seats === 10000 ? "+" : "–" + p.max_seats} ${tr("usuarios", "users")}` : e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, period)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><a class="btn ${p.seat_limit === 5 ? "primary" : ""}" href="/signup">${t("trial")} ↗</a></article>`;
               },
             )
             .join("");
@@ -909,7 +909,7 @@ export function createSaas({
         .map((base) => {
           const p = chosenPlan(base);
           const activationDue = b.activation_paid ? 0 : ACTIVATION_CENTS;
-          return `<article class="panel plan-card" data-billing-plan="${e(p.id)}"><span class="eyebrow">${e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, months, activationDue)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><button class="btn primary" data-plan="${e(p.id)}" ${!b.configured || b.billing_model === "legacy_usd_v1" ? "disabled" : ""}>${b.plan_id && b.status !== "canceled" ? tr("Cambiar plan", "Change plan") : t("choose")} ↗</button></article>`;
+          return `<article class="panel plan-card" data-billing-plan="${e(p.id)}"><span class="eyebrow">${p.unit_cents ? `${p.min_seats}${p.max_seats === 10000 ? "+" : "–" + p.max_seats} ${tr("usuarios", "users")}` : e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, months, activationDue)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><button class="btn primary" data-plan="${e(p.id)}" ${!b.configured || b.billing_model === "legacy_usd_v1" ? "disabled" : ""}>${b.plan_id && b.status !== "canceled" ? tr("Cambiar plan", "Change plan") : t("choose")} ↗</button></article>`;
         })
         .join("");
       bindSeats(el.querySelector("#billing-plans"), plans, () => months, b.activation_paid ? 0 : ACTIVATION_CENTS);
