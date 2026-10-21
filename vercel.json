@@ -5,6 +5,18 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/plans",
+      "destination": "/api/usd-catalog"
+    },
+    {
+      "source": "/api/billing/checkout",
+      "destination": "/api/billing-transition?action=checkout"
+    },
+    {
+      "source": "/api/billing/change-plan",
+      "destination": "/api/billing-transition?action=change-plan"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://service-hub-dev-3fbf.up.railway.app/api/:path*"
     },

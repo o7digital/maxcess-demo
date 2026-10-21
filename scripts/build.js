@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, mkdirSync, cpSync, rmSync } from "node:fs";
-for (const directory of ["server", "scripts", "public", "tests"])
+for (const directory of ["api", "server", "scripts", "public", "tests"])
   for (const file of readdirSync(directory).filter((f) => f.endsWith(".js")))
     execFileSync(process.execPath, ["--check", `${directory}/${file}`]);
 const html = readFileSync("public/index.html", "utf8");
