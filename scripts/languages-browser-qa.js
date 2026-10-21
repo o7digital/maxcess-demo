@@ -2,6 +2,7 @@ import {chromium} from '@playwright/test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const base=process.env.QA_BASE_URL||'http://127.0.0.1:3103';
+let originalLanguage;
 const codes=['es','en','fr','de','it','pt','ja','ru','da'];
 const browser=await chromium.launch({executablePath:'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',headless:true});
 const page=await browser.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
@@ -28,10 +29,11 @@ try{
  const credentials=JSON.parse(await readFile(process.env.QA_ACCESS_PATH||'.local/demo-access.json','utf8')).find(u=>u.role==='admin');
  await page.locator('[name=email]').fill(credentials.email);await page.locator('[name=password]').fill(credentials.password);
  await page.locator('#auth-form button').click();await page.locator('[data-view=subscription]').waitFor();
+ originalLanguage=(await (await page.request.get(base+'/api/me')).json()).user.language||'es';
  for(const code of codes){
-  await page.locator('#language').selectOption(code);await page.waitForFunction(code=>document.documentElement.lang===code,code);
+  await Promise.all([page.waitForResponse(r=>r.url().endsWith('/api/preferences')&&r.request().method()==='PUT'),page.locator('#language').selectOption(code)]);await page.reload();await page.locator('[data-view=subscription]').waitFor();await page.waitForFunction(code=>document.documentElement.lang===code,code);
   await page.locator('[data-view=subscription]').click();await page.locator('[data-plan]').first().waitFor();
   assert.ok(!/__MX_SLOT_|MXKEEP/.test(await page.locator('body').innerText()));
  }
  assert.deepEqual(errors,[]);console.log('Nine languages: signup, reload persistence, pricing, mobile layout, authenticated subscription and customer text preservation passed.');
-}finally{await browser.close();}
+}finally{if(originalLanguage){const config=await (await page.request.get(base+'/api/bootstrap')).json();const restored=await page.request.put(base+'/api/preferences',{headers:{'X-CSRF-Token':config.csrf},data:{language:originalLanguage}});assert.ok(restored.ok(),'Restore original language');}await browser.close();}

@@ -1,6 +1,6 @@
 # Rapports Hugging Face
 
-L'application conserve les tableaux, graphiques et exports PostgreSQL. Le bouton de synthèse ajoute un rapport rédigé à partir des indicateurs autorisés pour le rôle connecté. La langue suit le choix espagnol/anglais/français de l'utilisateur, puis la langue de son organisation. Les noms des clients sont remplacés par des références anonymes avant envoi ; aucun texte de ticket, mot de passe ni secret n'est envoyé. La génération consomme le quota IA de l'abonné et est limitée à 800 tokens de sortie.
+L'application conserve les tableaux, graphiques et exports PostgreSQL. Le bouton de synthèse ajoute un rapport rédigé à partir des indicateurs autorisés pour le rôle connecté. La langue suit le choix anglais, espagnol, français, allemand, italien, portugais, japonais, russe ou danois de l'utilisateur, puis la langue de son organisation. Les noms des clients sont remplacés par des références anonymes avant envoi ; aucun texte de ticket, mot de passe ni secret n'est envoyé. La génération consomme le quota IA de l'abonné et est limitée à 800 tokens de sortie.
 
 ## Éléments nécessaires sur Railway, service `service-hub`, environnement `dev`
 

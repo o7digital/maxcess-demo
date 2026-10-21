@@ -174,3 +174,15 @@ Le calcul annuel utilise exactement dix mensualités, sans multiplier le montant
 Chaque nouveau compte dispose de **12 jours calendaires consécutifs**, week-ends et jours fériés compris, depuis l'instant de création. La date précise reste visible dans l'abonnement. Aucun débit automatique à l'inscription ou à l'expiration ; le passage en lecture seule et les contrôles de paiement sont conservés.
 
 La migration aligne les essais standards non payés auparavant limités à sept jours sur douze jours depuis leur création. Elle ne redémarre pas l'essai au jour du déploiement et préserve les dates ajustées manuellement, les suspensions, les espaces illustratifs et les abonnements payants. Interface ES/EN/FR, message de bienvenue, catalogue API, conditions anglaises (`2026-10-20-v3`) et tests sont mis à jour.
+
+## Neuf langues, inscription complète et sécurité
+
+Les neuf langues demandées sont livrées : anglais, espagnol, français, allemand, italien, portugais, japonais, russe et danois. Le choix personnel est enregistré en base ; les libellés, les formulaires, les tarifs et les courriels applicatifs utilisent des dictionnaires locaux. Le reporting HF et Olivia reçoivent la langue choisie. Les données client et les valeurs canoniques des formulaires restent intactes. Les traductions juridiques sont des copies de lecture accompagnées de la référence anglaise.
+
+L'inscription ajoute prénom, nom, date de naissance, téléphone international, raison sociale, adresse, pays et Tax ID. L'essai dure douze jours naturels. La sécurité du compte propose les codes par e-mail à l'adresse du compte via le SMTP existant, ou Google Authenticator/TOTP, avec validation d'activation et huit codes de secours à usage unique. SMS/WhatsApp sont retirés à la demande du propriétaire. Les nouveaux champs privés ne sont pas exposés dans la projection générale des utilisateurs.
+
+Les alertes de tickets en retard sont configurables, dédupliquées par destinataire/jour, et revérifiées avant envoi. Les tickets affectés notifient le responsable actif et vérifié ; les tickets non affectés notifient les administrateurs vérifiés. Les espaces de démonstration et les accès bloqués sont exclus.
+
+Les connecteurs Zendesk/ServiceNow permettent une configuration administrateur et un export manuel dans un seul sens. Aucune instance ni aucun jeton n'est configuré : le propriétaire a reporté les connexions réelles. Voir [les détails de sécurité, les variables, la portée et les limites des connecteurs](ACCOUNT-SECURITY-AND-CONNECTORS.md).
+
+Validation : build natif, 38 tests automatisés ; contrôles navigateur des neuf langues, tarifs/remises, inscription, activation TOTP, connexion par code de secours et affichage mobile. Railway a de nouveau accepté les déploiements : l'essai de douze jours et les nouvelles fonctions API sont maintenant déployés. Le site de revue reste https://servicehub-o7.vercel.app. Le contrôle live confirme SMTP disponible pour la 2FA e-mail, aucune option SMS/WhatsApp et aucun connecteur externe configuré. Stripe reste à connecter en mode test ; aucun paiement réel n'a été effectué.
