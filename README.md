@@ -34,7 +34,7 @@ Le seed initial crée 20 entreprises, 20 contacts, 60 tickets, 25 comptes intern
 - Reporting **Hugging Face** : prêt côté serveur, en attente du token et du modèle du propriétaire. Variables `HF_TOKEN` et `HF_REPORT_MODEL`. Sans configuration, les rapports de données et graphiques restent disponibles et le bouton de synthèse IA est désactivé. Pas de réponse IA fabriquée.
 - Logo et lien holding : https://www.o7digitalgroup.com/. Marque Service Hub configurable via `BRAND_NAME` et `BRAND_SUBTITLE`.
 
-[Contrats, scopes et limites opérationnelles](docs/DEV.md). Aucune pièce jointe ou messagerie externe n’est activée.
+[Contrats, scopes et limites opérationnelles](docs/DEV.md). Les demandes acceptent des pièces jointes privées (PDF, Excel, Word, CSV, TXT, PNG et JPG), à la création et pendant le suivi. Limites : 5 fichiers et 2 Mo par envoi, 20 fichiers par ticket, 200 Mo par espace. Les fichiers sont conservés dans PostgreSQL et les téléchargements appliquent les mêmes droits que le ticket. Les e-mails transactionnels passent par Mailcow sur VPS1.
 
 ## Vérification
 

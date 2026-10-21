@@ -66,12 +66,29 @@ test("Persistent workflow, human approval and company/agent isolation", async ()
     category: "Conectividad",
     description: "No puede procesar pagos; los servicios están detenidos.",
     priority: "Alta",
+    attachments: [{name: "informe.pdf", file: Buffer.from("%PDF-1.4\n%%EOF").toString("base64")}],
   };
   await post(client, "/tickets", { ...body, category: "Invalid" }).expect(400);
   const { ticket } = (await post(client, "/tickets", body).expect(201)).body;
   const id = ticket.id,
     action = "/tickets/" + id + "/actions";
   try {
+    const files = (await client.agent.get(`/api/tickets/${id}`).expect(200)).body.attachments;
+    assert.equal(files.length, 1);
+    assert.equal(files[0].filename, "informe.pdf");
+    assert.equal(files[0].data, undefined);
+    const download = `/tickets/${id}/attachments/${files[0].id}`;
+    const pdf = await client.agent.get('/api'+download).expect(200);
+    assert.match(pdf.headers['content-disposition'], /^attachment;/);
+    assert.equal(pdf.headers['cache-control'], 'no-store');
+    assert.equal(pdf.body.toString(), '%PDF-1.4\n%%EOF');
+    await other.agent.get('/api'+download).expect(404);
+    await agent.agent.get('/api'+download).expect(404);
+    await request(app).get('/api'+download).expect(401);
+    await post(other, `/tickets/${id}/attachments`, {attachments:body.attachments}).expect(404);
+    await post(client, `/tickets/${id}/attachments`, {attachments:[{name:'bad.pdf',file:Buffer.from('wrong signature').toString('base64')}]}).expect(400);
+    await post(client, `/tickets/${id}/attachments`, {attachments:[{name:'evidence.csv',file:Buffer.from('date,value\n2026-10-20,42').toString('base64')}]}).expect(201);
+    assert.equal((await client.agent.get(`/api/tickets/${id}`)).body.attachments.length, 2);
     await other.agent.get("/api/tickets/" + id).expect(404);
     await post(other, action, { action: "reply", body: "Intrusión" }).expect(
       404,

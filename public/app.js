@@ -1,3 +1,4 @@
+import { attachmentInput, readAttachments, downloadAttachment } from "./attachments.js";
 import { installLegacyTranslations } from "./i18n.js";
 import { createSaas } from "./saas.js";
 import { metricCards, charts, reportDocument } from "./analytics.js";
@@ -434,7 +435,7 @@ function closeDialog() {
 }
 function newTicket(category) {
   showDialog(
-    `<div class="row"><div><div class="eyebrow">PORTAL DE ATENCIÓN</div><h2 id="dialog-title">Nueva solicitud</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">Describe lo que ocurre. El equipo validará la prioridad y te dará seguimiento.</p><form id="new-ticket"><label for="title">Asunto</label><input name="title" id="title" maxlength="160" required><div class="field-row"><div><label for="company">Cliente</label><select name="company_id" id="company" required>${companies.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div><div><label for="branch">Filial</label><select id="branch" name="branch_id"></select><label for="site">Sede</label><input name="site" id="site" maxlength="160" value="${esc(companies[0]?.site)}" required></div></div>${user.role !== "client" ? `<label for="ticket-department">${saas.tr("Departamento", "Department")}</label><select id="ticket-department" name="department_id"><option value="">—</option>${staffCatalog.departments.map((d) => `<option value="${d.id}" ${d.id === user.department_id ? "selected" : ""}>${esc(d.name)}</option>`).join("")}</select>` : ""}<div class="field-row"><div><label for="category">Categoría</label><select name="category" id="category">${option(categories, category)}</select></div><div><label for="new-priority">Prioridad deseada</label><select name="priority" id="new-priority">${option(priorities, "Media")}</select></div></div><label for="description">Descripción</label><textarea name="description" id="description" maxlength="4000" rows="5" required></textarea><p class="subtitle">No incluyas contraseñas ni datos bancarios. Las piezas adjuntas no están habilitadas.</p>${saas.customFields(workspace.settings)}<button type="submit" class="btn primary">Registrar solicitud ↗</button></form>`,
+    `<div class="row"><div><div class="eyebrow">PORTAL DE ATENCIÓN</div><h2 id="dialog-title">Nueva solicitud</h2></div><button class="btn" data-action="close">Cerrar ×</button></div><p class="subtitle">Describe lo que ocurre. El equipo validará la prioridad y te dará seguimiento.</p><form id="new-ticket"><label for="title">Asunto</label><input name="title" id="title" maxlength="160" required><div class="field-row"><div><label for="company">Cliente</label><select name="company_id" id="company" required>${companies.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div><div><label for="branch">Filial</label><select id="branch" name="branch_id"></select><label for="site">Sede</label><input name="site" id="site" maxlength="160" value="${esc(companies[0]?.site)}" required></div></div>${user.role !== "client" ? `<label for="ticket-department">${saas.tr("Departamento", "Department")}</label><select id="ticket-department" name="department_id"><option value="">—</option>${staffCatalog.departments.map((d) => `<option value="${d.id}" ${d.id === user.department_id ? "selected" : ""}>${esc(d.name)}</option>`).join("")}</select>` : ""}<div class="field-row"><div><label for="category">Categoría</label><select name="category" id="category">${option(categories, category)}</select></div><div><label for="new-priority">Prioridad deseada</label><select name="priority" id="new-priority">${option(priorities, "Media")}</select></div></div><label for="description">Descripción</label><textarea name="description" id="description" maxlength="4000" rows="5" required></textarea><p class="subtitle">No incluyas contraseñas ni datos bancarios.</p>${attachmentInput(saas.tr)}${saas.customFields(workspace.settings)}<button type="submit" class="btn primary">Registrar solicitud ↗</button></form>`,
   );
   const updateBranch = () => {
     const c = companies.find((c) => c.id === Number($("#company").value));
@@ -464,6 +465,7 @@ function newTicket(category) {
       const { ticket } = await api("/tickets", "POST", {
         ...Object.fromEntries(new FormData(e.target)),
         custom_fields: saas.readCustom(e.target, workspace.settings),
+        attachments: await readAttachments($("#ticket-files"), saas.tr),
       });
       await load();
       view = "tickets";
@@ -510,6 +512,27 @@ async function openTicket(ticketId, focusOlivia = false) {
     }${isInternal ? `<div class="panel ai chart-panel"><div class="ai-head"><div class="orb">✦</div><div><b>Olivia IA V3.5</b><div class="muted">ASISTENCIA · REVISIÓN HUMANA</div></div></div><p>Propuestas adaptadas al caso. Revisa todos los datos antes de usarlas.</p><button class="btn primary" data-action="suggest">Preparar con Olivia ↗</button><div id="suggestions"></div></div><div class="panel chart-panel"><h3>Clasificación validada</h3><form id="classification-form"><label for="edit-priority">Prioridad</label><select id="edit-priority" name="priority">${option(priorities, t.priority)}</select><label for="edit-category">Categoría</label><select id="edit-category" name="category">${option(categories, t.category)}</select><label class="check"><input type="checkbox" required> Confirmo esta clasificación.</label><button class="btn">Validar clasificación</button></form></div>` : '<div class="panel ai"><h3>Seguimiento compartido</h3><p>Las respuestas validadas y la resolución de tu equipo aparecen en este historial.</p></div>'}</div></div>`,
   );
   selected = t.id;
+  const attachmentsPanel = document.createElement("section");
+  attachmentsPanel.className = "panel chart-panel ticket-attachments";
+  attachmentsPanel.innerHTML = `<h3>${saas.tr("Archivos adjuntos", "Attachments")}</h3><div id="attachment-list">${(data.attachments || []).map(f => `<p><button class="btn" type="button" data-download-attachment="${esc(f.id)}">↓ ${esc(f.filename)}</button> <small>${Math.ceil(f.bytes/1024)} KB</small></p>`).join("") || `<p class="subtitle">${saas.tr("Sin archivos adjuntos", "No attachments yet")}</p>`}</div>${active ? `<form id="attachment-form">${attachmentInput(saas.tr)}<button class="btn primary">${saas.tr("Adjuntar archivos", "Attach files")}</button><p role="status" id="attachment-status"></p></form>` : ""}`;
+  overlay.querySelector(".dialog-grid > div > .panel").after(attachmentsPanel);
+  attachmentsPanel.querySelectorAll("[data-download-attachment]").forEach(button => {
+    button.onclick = async () => {
+      button.disabled = true;
+      try {
+        const f=data.attachments.find(f=>f.id===button.dataset.downloadAttachment);
+        await downloadAttachment(t.id,f.id,f.filename,clientPortal);
+      } catch(err) { notify(err.message); } finally { button.disabled=false; }
+    };
+  });
+  $("#attachment-form")?.addEventListener("submit", async e => {
+    e.preventDefault();e.submitter.disabled=true;
+    try {
+      $("#attachment-status").textContent=saas.tr("Subiendo archivos…", "Uploading files…");
+      await api(`/tickets/${t.id}/attachments`, "POST", {attachments:await readAttachments($("#ticket-files"),saas.tr)});
+      await openTicket(t.id);notify(saas.tr("Archivos guardados", "Files saved"));
+    } catch(err) { $("#attachment-status").textContent=err.message;e.submitter.disabled=false; }
+  });
   $("#workflow-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {

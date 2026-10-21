@@ -1,6 +1,14 @@
 // English source keys keep the Spanish API vocabulary and customer data unchanged.
 export const french = Object.fromEntries(
   `
+Attachments|Pièces jointes
+No attachments yet|Aucune pièce jointe
+Attach files|Joindre les fichiers
+Uploading files…|Envoi des fichiers…
+Files saved|Fichiers enregistrés
+Could not read the file|Impossible de lire le fichier
+Maximum 5 files and 2 MB total per upload|Maximum 5 fichiers et 2 Mo au total par envoi
+PDF, Excel, Word, CSV, TXT, PNG and JPG · Up to 5 files and 2 MB total per upload. Visible to the customer and the team handling this request.|PDF, Excel, Word, CSV, TXT, PNG et JPG · Jusqu’à 5 fichiers et 2 Mo au total par envoi. Visibles par le client et l’équipe chargée de la demande.
 Sign in|Connexion
 Create workspace|Créer un espace
 Start 7 days free|Essayer gratuitement 7 jours

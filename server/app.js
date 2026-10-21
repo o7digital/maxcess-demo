@@ -6,6 +6,7 @@ import {
   accessScope,
   conversationScope,
 } from "./roles.js";
+import { parseAttachments, saveAttachments, installAttachmentRoutes } from "./attachments.js";
 import { countries } from "../public/international.js";
 import { installInternationalRoutes } from "./international.js";
 import express from "express";
@@ -108,7 +109,7 @@ export function createApp({ getStripe } = {}) {
     }),
   );
   installBillingPublic(app, getStripe);
-  app.use(express.json({ limit: "2mb" }));
+  app.use(express.json({ limit: "3mb" }));
   app.get("/health", async (req, res) => {
     try {
       const migration = await pool.query(
@@ -306,6 +307,7 @@ export function createApp({ getStripe } = {}) {
   installInternationalRoutes(app);
   installLogoRoutes(app);
   installAccountPrivate(app);
+  installAttachmentRoutes(app, ticket);
   installAssistantRoutes(app);
   installImportRoutes(app);
   app.get("/api/me", (req, res) => res.json({ user: req.user }));
@@ -442,7 +444,8 @@ export function createApp({ getStripe } = {}) {
       )
     ).rows;
     if (!internal(req.user)) delete t.resolution;
-    res.json({ ticket: t, events });
+    const attachments = (await pool.query("SELECT id,filename,content_type,octet_length(data) bytes,created_at FROM ticket_attachments WHERE ticket_id=$1 AND tenant_id=$2 ORDER BY created_at,id", [t.id, req.user.tenant_id])).rows;
+    res.json({ ticket: t, events, attachments });
   });
   app.post("/api/tickets", async (req, res) => {
     if (req.user.role === "agent")
@@ -450,6 +453,7 @@ export function createApp({ getStripe } = {}) {
         403,
         "Las solicitudes nuevas se registran desde el portal cliente o la supervisión",
       );
+    const files = parseAttachments(req.body.attachments);
     const b = req.body,
       company =
         req.user.role === "client" ? req.user.company_id : id(b.company_id);
@@ -513,6 +517,7 @@ export function createApp({ getStripe } = {}) {
         )
       ).rows[0];
       await event(db, t, req.user, "history", "Solicitud registrada");
+      await saveAttachments(db, req, t, files);
       if (rule?.notify) {
         const agent = (
           await db.query(
