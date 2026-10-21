@@ -22,6 +22,7 @@ async function register() {
     .set("X-CSRF-Token", boot.body.csrf)
     .send({
       name: "Roles owner",
+    first_name: "Test", last_name: "Owner", birth_date: "1990-01-01", phone: "+525512345678", address: "10 Test Street", country: "MX", tax_id: "TEST123",
       company: "Roles " + randomUUID(),
       email: randomUUID() + "@example.test",
       password,

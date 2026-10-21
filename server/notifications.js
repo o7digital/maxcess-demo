@@ -1,6 +1,11 @@
 import nodemailer from "nodemailer";
 import { pool, transaction } from "./db.js";
-import { queueEmail, publicOrigin } from "./workspace.js";
+import {
+  queueEmail,
+  publicOrigin,
+  accessState,
+  settingsOf,
+} from "./workspace.js";
 let busy = false;
 export async function runNotifications() {
   if (
@@ -30,6 +35,12 @@ export async function runNotifications() {
         `${t.name}: tu prueba ${expired ? "ha finalizado" : "termina el " + t.trial_ends_at.toISOString()}. Tus datos se conservan. Elige tu suscripción: ${publicOrigin()}/subscription`,
       );
     }
+    await pool.query(
+      "DELETE FROM notification_outbox o WHERE o.sent_at IS NULL AND o.dedupe_key LIKE 'mfa:%' AND NOT EXISTS(SELECT 1 FROM mfa_challenges c WHERE 'mfa:'||c.id::text=o.dedupe_key AND c.consumed_at IS NULL AND c.expires_at>now())",
+    );
+    await pool.query(
+      "DELETE FROM mfa_challenges WHERE expires_at<now()-interval '1 day'",
+    );
     const transporter = nodemailer.createTransport(process.env.SMTP_URL);
     // Row locks prevent two application instances sending the same queued item concurrently.
     await transaction(async (db) => {
@@ -40,6 +51,26 @@ export async function runNotifications() {
       ).rows;
       for (const m of messages) {
         try {
+          if (m.dedupe_key.startsWith("overdue:")) {
+            const ticketId = Number(m.dedupe_key.split(":")[1]);
+            const {
+              rows: [tenant],
+            } = await db.query(
+              "SELECT w.* FROM tickets t JOIN tenants w ON w.id=t.tenant_id JOIN users u ON u.tenant_id=t.tenant_id AND u.active AND u.email_verified_at IS NOT NULL AND ((t.agent_id IS NOT NULL AND u.id=t.agent_id) OR (t.agent_id IS NULL AND u.role='admin')) WHERE t.id=$1 AND t.tenant_id=$2 AND u.email=$3 AND t.status IN ('Abierto','En curso') AND t.due_at<now()",
+              [ticketId, m.tenant_id, m.recipient],
+            );
+            if (
+              !tenant ||
+              tenant.is_demo ||
+              accessState(tenant) !== "full" ||
+              !settingsOf(tenant).overdue_alerts
+            ) {
+              await db.query("DELETE FROM notification_outbox WHERE id=$1", [
+                m.id,
+              ]);
+              continue;
+            }
+          }
           await transporter.sendMail({
             from: process.env.MAIL_FROM,
             to: m.recipient,
@@ -48,7 +79,7 @@ export async function runNotifications() {
             messageId: `<servicehub-${m.id}@o7digitalgroup.com>`,
           });
           await db.query(
-            "UPDATE notification_outbox SET sent_at=now(),attempts=attempts+1 WHERE id=$1",
+            "UPDATE notification_outbox SET sent_at=now(),attempts=attempts+1,body=CASE WHEN dedupe_key LIKE 'mfa:%' THEN '[redacted]' ELSE body END WHERE id=$1",
             [m.id],
           );
         } catch {

@@ -14,7 +14,7 @@ export async function ensureLocale(code) {
 export function translateText(value,code=document.documentElement.lang||'es') {
   if(Array.isArray(value)) return value.map(item=>translateText(item,code));
   const source=normalize(value), key=aliases[source]||source;
-  return dictionaries.get(code)?.[key] ?? (code==='es'?source:key);
+  return dictionaries.get(code)?.[key] ?? (code==='es'?String(value):(aliases[source]||String(value)));
 }
 function translateTree(root,code) {
   const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);let node;

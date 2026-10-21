@@ -113,6 +113,7 @@ async function register(label) {
     b = await agent.get("/api/bootstrap").expect(200);
   const body = {
     name: "Owner " + label,
+    first_name: "Test", last_name: "Owner", birth_date: "1990-01-01", phone: "+525512345678", address: "10 Test Street", country: "MX", tax_id: "TEST123",
     company: "Workspace " + label,
     email: `saas-${randomUUID()}@example.test`,
     password: "Secure-password-2026!",

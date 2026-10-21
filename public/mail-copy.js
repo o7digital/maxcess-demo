@@ -1,5 +1,10 @@
 // Canonical application email messages. Dynamic values are inserted after translation.
 export const mailMessages = {
+ overdueSubject: 'Overdue ticket __MX_SLOT_0__',
+ overdueBody: 'Ticket __MX_SLOT_0__: __MX_SLOT_1__ is overdue. Review the ticket and update its follow-up: __MX_SLOT_2__',
+ mfaSubject: 'Your verification code',
+ mfaBody: 'Your verification code is __MX_SLOT_0__. It expires in 10 minutes. Never share this code.',
+
   verifySubject: 'Confirm your email',
   resetSubject: 'Reset your password',
   accountBody: 'Open this link within one hour: __MX_SLOT_0__\nIf you did not request this action, you can ignore this message.',

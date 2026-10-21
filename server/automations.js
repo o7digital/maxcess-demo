@@ -1,5 +1,10 @@
 import { transaction } from "./db.js";
-import { accessState, settingsOf, queueEmail } from "./workspace.js";
+import {
+  accessState,
+  settingsOf,
+  queueEmail,
+  publicOrigin,
+} from "./workspace.js";
 let busy = false;
 export async function runAutomations() {
   if (busy) return;
@@ -19,6 +24,21 @@ export async function runAutomations() {
           [tenant.id],
         );
         if (!actor) continue;
+        if (settings.overdue_alerts && !tenant.is_demo) {
+          const { rows: late } = await db.query(
+            `SELECT t.id,t.title,t.due_at,u.email FROM tickets t JOIN users u ON u.tenant_id=t.tenant_id AND u.active AND u.email_verified_at IS NOT NULL AND ((t.agent_id IS NOT NULL AND u.id=t.agent_id) OR (t.agent_id IS NULL AND u.role='admin')) WHERE t.tenant_id=$1 AND t.status IN ('Abierto','En curso') AND t.due_at<now() AND NOT EXISTS(SELECT 1 FROM notification_outbox o WHERE o.tenant_id=t.tenant_id AND o.recipient=u.email AND o.dedupe_key LIKE 'overdue:'||t.id::text||':%' AND (o.created_at AT TIME ZONE 'UTC')::date=(now() AT TIME ZONE 'UTC')::date) ORDER BY t.due_at LIMIT 100`,
+            [tenant.id],
+          );
+          for (const item of late)
+            await queueEmail(
+              db,
+              tenant.id,
+              `overdue:${item.id}:${new Date(item.due_at).getTime()}:${item.email}:${new Date().toISOString().slice(0, 10)}`,
+              item.email,
+              `Service Hub · SLA vencido SH-${item.id}`,
+              `La solicitud SH-${item.id}: ${item.title} ha superado su fecha límite. Revisa el seguimiento: ${publicOrigin()}/`,
+            );
+        }
         for (const rule of settings.escalations) {
           const {
             rows: [agent],

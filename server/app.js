@@ -1,3 +1,5 @@
+import {installConnectorRoutes} from "./connectors.js";
+import {installSecurityPublic,installSecurityPrivate,beginChallenge} from "./security.js";
 import {
   installRoleRoutes,
   resolveStaff,
@@ -189,6 +191,7 @@ export function createApp({ getStripe } = {}) {
   });
   installPublicWorkspaceRoutes(app, loginLimit);
   installAccountPublic(app, loginLimit);
+  installSecurityPublic(app, loginLimit);
   app.post("/api/demo/client-login", loginLimit, async (req, res) => {
     if (!clientDemoEnabled())
       throw fail(
@@ -248,6 +251,8 @@ export function createApp({ getStripe } = {}) {
       if (!tenant || tenant.is_demo)
         throw fail(403, "Esta cuenta pertenece al espacio ilustrativo privado");
     }
+    const {rows:[mfa]}=await pool.query('SELECT method FROM user_mfa WHERE user_id=$1 AND enabled',[user.id]);
+    if(mfa){const challenge=await beginChallenge(user,'login',mfa.method);req.session.mfaPending={id:challenge,userId:user.id,at:Date.now()};req.session.csrf=randomBytes(24).toString('hex');return res.json({mfa_required:true,method:mfa.method,csrf:req.session.csrf});}
     req.session.userId = user.id;
     req.session.csrf = randomBytes(24).toString("hex");
     res.json({ user: exposeUser(user), csrf: req.session.csrf });
@@ -303,6 +308,8 @@ export function createApp({ getStripe } = {}) {
   });
   installBillingRoutes(app, getStripe);
   installWorkspaceRoutes(app);
+  installSecurityPrivate(app, loginLimit);
+  installConnectorRoutes(app, loginLimit);
   installRoleRoutes(app);
   installInternationalRoutes(app);
   installLogoRoutes(app);

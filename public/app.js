@@ -1,3 +1,5 @@
+import {connectorsDialog} from "./connectors.js";
+import {securityDialog} from "./security.js";
 import { localizedHtml, translateText, ensureLocale } from "./localization.js";
 import { attachmentInput, readAttachments, downloadAttachment } from "./attachments.js";
 import { installLegacyTranslations } from "./i18n.js";
@@ -117,6 +119,7 @@ async function api(path, method = "GET", body) {
     }
     throw new Error(translateText(data.error || "Operación no disponible"));
   }
+  if(data.csrf) csrf=data.csrf;
   return data;
 }
 await ensureLocale(localStorage.getItem("servicehub-language") || "es");
@@ -229,7 +232,7 @@ function shell() {
       .map((s) => s[0])
       .slice(0, 2)
       .join(""),
-  )}</span><div>${esc(user.name)}<small>${esc(user.role_name || roleLabel(user.role))}</small></div></div></div></aside><section><header class="top"><div class="breadcrumb">Centro de servicio / <b>${esc(user.role_name || roleLabel(user.role))}</b></div><div class="top-right">${workspace?.is_demo ? localizedHtml('<span class="demo-tag">ESPACIO ILUSTRATIVO · DATOS FICTICIOS</span>') : localizedHtml`<span class="workspace-label">${esc(workspace?.name)}</span>`}${saas.languagePicker()}<button class="btn" data-action="refresh">Actualizar</button><button class="btn" data-action="logout">Cerrar sesión</button></div></header><main class="body" id="content"></main></section></div>`;
+  )}</span><div>${esc(user.name)}<small>${esc(user.role_name || roleLabel(user.role))}</small></div></div></div></aside><section><header class="top"><div class="breadcrumb">Centro de servicio / <b>${esc(user.role_name || roleLabel(user.role))}</b></div><div class="top-right">${workspace?.is_demo ? localizedHtml('<span class="demo-tag">ESPACIO ILUSTRATIVO · DATOS FICTICIOS</span>') : localizedHtml`<span class="workspace-label">${esc(workspace?.name)}</span>`}${saas.languagePicker()}${["admin","platform_admin"].includes(user.role)?localizedHtml`<button class="btn" data-action="connectors">Ticket integrations</button>`:""}<button class="btn" data-action="security">${translateText("Security")}</button><button class="btn" data-action="refresh">Actualizar</button><button class="btn" data-action="logout">Cerrar sesión</button></div></header><main class="body" id="content"></main></section></div>`;
   if (workspace && workspace.access !== "full")
     document
       .querySelector("#content")
@@ -642,6 +645,8 @@ document.addEventListener("click", async (e) => {
   const b = e.target.closest("button");
   if (!b) return;
   try {
+    if (b.dataset.action === "connectors") { await connectorsDialog(api); return; }
+    if (b.dataset.action === "security") { await securityDialog(api); return; }
     if (b.dataset.view) {
       view = b.dataset.view;
       shell();

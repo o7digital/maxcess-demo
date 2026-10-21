@@ -24,7 +24,8 @@ try {
  // Check the authenticated subscription route uses the same quantities and totals.
  const credentials=JSON.parse(await readFile(process.env.QA_ACCESS_PATH || '.local/demo-access.json','utf8'));
  const c=credentials.find(c=>c.role==='admin') || credentials.find(c=>c.role==='platform_admin' || c.role==='manager');
- await page.goto(base+'/login');await page.locator('#email').fill(c.email);await page.locator('#password').fill(c.password);await page.locator('#auth-form button').click();await page.locator('nav').waitFor();
+ await page.goto(base+'/login');await page.locator('#email').fill(c.email);await page.locator('#password').fill(c.password);await page.locator('#auth-form button').click();await page.locator('[data-action=logout]').waitFor();
+ await Promise.all([page.waitForResponse(r=>r.url().endsWith('/api/preferences')&&r.request().method()==='PUT'),page.locator('#language').selectOption('fr')]);await page.reload();await page.locator('[data-action=logout]').waitFor();await page.waitForFunction(()=>document.documentElement.lang==='fr');
  await page.locator('nav [data-view="subscription"]').click();await page.locator('[data-billing-plan="solo-2"]').waitFor();
  await page.locator('[data-seats="team-5"]').fill('7');await page.locator('[data-seats="team-5"]').press('Tab');
  await page.locator('[data-months="6"]').click();

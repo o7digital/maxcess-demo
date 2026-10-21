@@ -93,6 +93,7 @@ export function installAccountPublic(app, limit) {
         "UPDATE account_tokens SET consumed_at=now() WHERE user_id=$1 AND consumed_at IS NULL",
         [token.user_id],
       );
+      await db.query("UPDATE mfa_challenges SET consumed_at=now() WHERE user_id=$1 AND consumed_at IS NULL",[token.user_id]);
       await db.query("DELETE FROM session WHERE sess->>'userId'=$1", [
         String(token.user_id),
       ]);

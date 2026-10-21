@@ -117,3 +117,9 @@
 html[lang="ja"] #mx-demo { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; }
 #mx-demo .detailed-legal details { margin-top: 28px; padding: 18px; border: 1px solid var(--line); border-radius: 12px; }
 #mx-demo .detailed-legal summary { cursor: pointer; font-weight: 600; }
+.security-dialog { width:min(540px,calc(100vw - 32px)); max-height:90vh; overflow:auto; border:1px solid #dce5d9; border-radius:20px; padding:28px; box-shadow:0 24px 100px #143c3438; }
+.security-dialog::backdrop { background:#122e2ab3; backdrop-filter:blur(5px); }
+.security-dialog label { display:block; margin:16px 0; }
+.security-dialog input,.security-dialog select { width:100%; }
+.security-dialog pre,.security-dialog code { overflow-wrap:anywhere; white-space:pre-wrap; }
+.totp-qr { max-width:220px; display:block; margin:16px auto; }

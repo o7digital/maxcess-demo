@@ -1,5 +1,5 @@
 import { localizedEmail } from "./localization.js";
-import { languages } from "../public/international.js";
+import { countries, languages } from "../public/international.js";
 import { LEGAL_VERSION } from "../public/legal.js";
 import { ACTIVATION_CENTS, CURRENCY } from "../public/pricing.js";
 import { resolveStaff, seedRoles } from "./roles.js";
@@ -29,6 +29,7 @@ export const defaults = {
   ],
   rules: [],
   escalations: [],
+  overdue_alerts: true,
   dashboard: ["active", "critical", "overdue", "sla_percent"],
 };
 export function str(value, label, max = 160) {
@@ -87,6 +88,7 @@ export function validateSettings(input) {
     !/^\/api\/workspace\/logo\/[0-9a-f-]{36}$/i.test(s.logo)
   )
     throw fail(400, "El logo debe usar una URL HTTPS");
+  if(typeof s.overdue_alerts !== "boolean") throw fail(400,"Alertas no válidas");
   for (const key of ["categories", "departments", "sites"]) {
     if (
       !Array.isArray(s[key]) ||
@@ -344,8 +346,13 @@ export function installPublicWorkspaceRoutes(app, limit) {
       );
     const b = req.body,
       mail = email(b.email),
-      name = str(b.name, "Nombre", 100),
+      first = str(b.first_name, "Nombre", 70),
+      last = str(b.last_name, "Apellido", 70),
+      name = `${first} ${last}`,
       business = str(b.company, "Empresa");
+    const address = str(b.address, "Dirección", 600), country = str(b.country, "País", 2).toUpperCase(), tax = str(b.tax_id, "Tax ID", 100), phone = str(b.phone, "Teléfono", 20);
+    if (!countries.includes(country) || !/^\+[1-9]\d{7,14}$/.test(phone)) throw fail(400, "País o teléfono internacional no válido");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(b.birth_date || "") || !Number.isFinite(Date.parse(b.birth_date)) || new Date(b.birth_date).toISOString().slice(0,10)!==b.birth_date || b.birth_date > new Date().toISOString().slice(0,10) || b.birth_date < "1900-01-01") throw fail(400,"Fecha de nacimiento no válida");
     const hash = await hashPassword(password(b.password));
     if (b.accepted_terms !== true || !Object.hasOwn(languages, b.language))
       throw fail(400, "Acepta las condiciones y selecciona el idioma");
@@ -361,15 +368,15 @@ export function installPublicWorkspaceRoutes(app, limit) {
       const {
         rows: [tenant],
       } = await db.query(
-        "INSERT INTO tenants(name,settings) VALUES($1,$2) RETURNING *",
-        [business, { ...defaults, language: b.language }],
+        "INSERT INTO tenants(name,settings,legal_name,billing_address,billing_country,tax_id) VALUES($1,$2,$1,$3,$4,$5) RETURNING *",
+        [business, { ...defaults, language: b.language }, address, country, tax],
       );
       await seedRoles(db, tenant.id);
       const {
         rows: [user],
       } = await db.query(
-        "INSERT INTO users(tenant_id,email,name,role,password_hash) VALUES($1,$2,$3,'admin',$4) RETURNING *",
-        [tenant.id, mail, name, hash],
+        "INSERT INTO users(tenant_id,email,name,role,password_hash,first_name,last_name,birth_date,phone,language) VALUES($1,$2,$3,'admin',$4,$5,$6,$7,$8,$9) RETURNING *",
+        [tenant.id, mail, name, hash, first, last, b.birth_date, phone, b.language],
       );
       await db.query(
         "INSERT INTO companies(tenant_id,name,sector,site) VALUES($1,$2,$3,$4)",
