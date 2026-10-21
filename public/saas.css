@@ -839,3 +839,21 @@
   color: #45682b;
   font-weight: 600;
 }
+/* Savings remain explicit in text as well as colour. */
+#mx-demo .pricing-saving { display: grid; gap: 7px; padding: 14px; border: 1px solid; border-radius: 12px; line-height: 1.5; }
+#mx-demo .pricing-saving span { font-size: .85rem; }
+#mx-demo .saving-period-1 { color: #38534c; background: #f0f5f2; border-color: #bed0c7; }
+#mx-demo .saving-period-3 { color: #174d88; background: #edf5ff; border-color: #8ab8e9; }
+#mx-demo .saving-period-6 { color: #653397; background: #f5efff; border-color: #bfa0e1; }
+#mx-demo .saving-period-12 { color: #24602c; background: #ecf8e9; border-color: #95c58b; }
+#mx-demo .period-1.primary { background: #38534c; color: white; }
+#mx-demo .period-3.primary { background: #174d88; color: white; }
+#mx-demo .period-6.primary { background: #653397; color: white; }
+#mx-demo .period-12.primary { background: #24602c; color: white; }
+#mx-demo .plan-payment-status { font-size: .85rem; line-height: 1.5; color: #4a5853; margin-top: 16px; }
+#mx-demo .plan-payment-status[role=alert] { color: #813b17; background: #fff3e7; border-left: 3px solid #a85b21; padding: 12px; }
+#mx-demo .signup-legal { font-size: .88rem; line-height: 1.65; padding: 18px; border: 1px solid #c9d4cc; border-radius: 12px; background: #f4f7f2; margin: 0 0 24px; }
+#mx-demo .signup-legal p { margin: 10px 0; }
+#mx-demo .signup-legal a, #mx-demo .detailed-legal a { text-decoration: underline; overflow-wrap: anywhere; }
+#mx-demo .detailed-legal { max-width: 960px; line-height: 1.8; }
+#mx-demo .detailed-legal h2 { margin-top: 32px; font-size: 1.3rem; }

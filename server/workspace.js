@@ -1,3 +1,4 @@
+import { LEGAL_VERSION } from "../public/legal.js";
 import { ACTIVATION_CENTS, CURRENCY } from "../public/pricing.js";
 import { resolveStaff, seedRoles } from "./roles.js";
 import { randomBytes, createHash, randomUUID } from "node:crypto";
@@ -377,7 +378,9 @@ export function installPublicWorkspaceRoutes(app, limit) {
           tenant.id,
           user.id,
           {
-            terms_version: "2026-10-15",
+            terms_version: LEGAL_VERSION,
+            privacy_version: LEGAL_VERSION,
+            notice_language: "en",
             accepted_at: new Date().toISOString(),
           },
         ],

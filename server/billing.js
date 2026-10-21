@@ -1,3 +1,4 @@
+import { LEGAL_VERSION } from "../public/legal.js";
 import {
   CURRENCY,
   ACTIVATION_CENTS,
@@ -51,7 +52,7 @@ async function prices(stripe, plan, months, db) {
     );
     return price;
   }
-  const activation = await cached("mxn-activation-2999-v1", async () => {
+  const activation = await cached("mxn-activation-2999-tax-v2", async () => {
     const product = await stripe.products.create(
       { name: "Service Hub · Activación", metadata: { kind: "activation" } },
       { idempotencyKey: "servicehub-mxn-activation-product-v1" },
@@ -61,13 +62,14 @@ async function prices(stripe, plan, months, db) {
         product: product.id,
         currency: CURRENCY,
         unit_amount: ACTIVATION_CENTS,
+        tax_behavior: "exclusive",
         metadata: { kind: "activation" },
       },
-      { idempotencyKey: "servicehub-mxn-activation-price-2999-v1" },
+      { idempotencyKey: "servicehub-mxn-activation-price-2999-tax-v2" },
     );
   });
   const users = await cached(
-    `mxn-users-${plan.id}-v${plan.version}-${plan.seat_limit}-${months}`,
+    `mxn-users-tax-v2-${plan.id}-v${plan.version}-${plan.seat_limit}-${months}`,
     async () => {
       const product = await stripe.products.create(
         { name: `Service Hub · ${plan.name}`, metadata: { kind: "users" } },
@@ -78,6 +80,7 @@ async function prices(stripe, plan, months, db) {
           product: product.id,
           currency: CURRENCY,
           unit_amount: q.users_period_cents,
+          tax_behavior: "exclusive",
           recurring: { interval: "month", interval_count: months },
           metadata: {
             kind: "users",
@@ -87,7 +90,7 @@ async function prices(stripe, plan, months, db) {
           },
         },
         {
-          idempotencyKey: `servicehub-mxn-price-${plan.id}-v${plan.version}-${plan.seat_limit}-${months}`,
+          idempotencyKey: `servicehub-mxn-price-tax-v2-${plan.id}-v${plan.version}-${plan.seat_limit}-${months}`,
         },
       );
     },
@@ -257,14 +260,18 @@ export function installBillingPublic(app, getStripe = stripeClient) {
           o.mode === "subscription" &&
           o.subscription
         ) {
-          if (o.payment_status === "paid" && o.currency === CURRENCY) {
+          const tax = o.total_details?.amount_tax;
+          const validTaxTotal = o.automatic_tax?.enabled === true
+            ? o.automatic_tax.status === "complete" && Number.isSafeInteger(tax) && tax >= 0 && Number.isSafeInteger(o.amount_subtotal) && o.amount_total === o.amount_subtotal + tax && !o.total_details?.amount_discount && !o.total_details?.amount_shipping
+            : true;
+          if (o.payment_status === "paid" && o.currency === CURRENCY && validTaxTotal) {
             await db.query(
               "UPDATE tenants SET activation_paid_at=COALESCE(activation_paid_at,now()) WHERE checkout_session_id=$1 AND stripe_customer_id=$2 AND checkout_activation_cents=$3 AND checkout_total_cents=$4 AND billing_model=$5 AND NOT is_demo",
               [
                 o.id,
                 typeof o.customer === "string" ? o.customer : o.customer?.id,
                 ACTIVATION_CENTS,
-                o.amount_total,
+                o.automatic_tax?.enabled ? o.amount_subtotal : o.amount_total,
                 BILLING_MODEL,
               ],
             );
@@ -442,6 +449,10 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
         {
           mode: "subscription",
           customer,
+          automatic_tax: { enabled: true },
+          billing_address_collection: "required",
+          tax_id_collection: { enabled: true },
+          customer_update: { address: "auto", name: "auto" },
           line_items: [
             ...(activationDue ? [{ price: p.activation.id, quantity: 1 }] : []),
             { price: p.users.id, quantity: 1 },
@@ -455,12 +466,12 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
           cancel_url: origin + "/subscription",
           custom_text: {
             submit: {
-              message: `Activación: ${activationDue / 100} MXN una sola vez. Plan: ${q.users_period_cents / 100} MXN cada ${q.months} mes(es). Total inicial: ${(activationDue + q.users_period_cents) / 100} MXN. Al confirmar comienza la suscripción de pago y termina la prueba gratuita. Solo el plan se renueva. Cancela antes de renovar.`,
+              message: `Activación: ${activationDue / 100} MXN HT una sola vez. Plan: ${q.users_period_cents / 100} MXN HT cada ${q.months} mes(es). Total inicial: ${(activationDue + q.users_period_cents) / 100} MXN HT. Los impuestos aplicables se calculan antes de confirmar el pago. Al confirmar comienza la suscripción de pago y termina la prueba gratuita. Solo el plan se renueva. Cancela antes de renovar.`,
             },
           },
         },
         {
-          idempotencyKey: `servicehub-checkout-${t.id}-${plan.id}-v${plan.version}-${plan.seat_limit}-${q.months}-${t.checkout_session_id || "initial"}`,
+          idempotencyKey: `servicehub-checkout-tax-v2-${t.id}-${plan.id}-v${plan.version}-${plan.seat_limit}-${q.months}-${t.checkout_session_id || "initial"}`,
         },
       );
       await db.query(
@@ -472,7 +483,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
         activation_due_cents: activationDue,
         plan_id: plan.id,
         seats: plan.seat_limit,
-        terms_version: "2026-10-16-mxn-v1",
+        terms_version: LEGAL_VERSION,
         accepted_at: new Date().toISOString(),
       });
       return { url: session.url };

@@ -1,3 +1,4 @@
+import { signupLegal, legalDocument, LEGAL_VERSION } from "./legal.js";
 import { ACTIVATION_CENTS, periodQuote, withSeats } from "./pricing.js";
 import { createStaffUI } from "./staff.js";
 import { inFrench } from "./french.js";
@@ -41,7 +42,7 @@ const translations = {
     annual: "Anual",
     license: "Activación única",
     licenseDetail:
-      "2,999 MXN de activación en el primer pago, más el plan elegido. No se vuelve a cobrar en las renovaciones.",
+      "2,999 MXN HT de activación en el primer pago, más el plan elegido. No se vuelve a cobrar en las renovaciones.",
     trialStatus: "Tu prueba gratuita",
     readonly:
       "Tu espacio está en modo lectura. Tus datos se conservan. Activa tu suscripción para continuar.",
@@ -89,7 +90,7 @@ const translations = {
     annual: "Annual",
     license: "One-time activation",
     licenseDetail:
-      "2,999 MXN activation with the first payment, plus your chosen plan. Not charged again on renewals.",
+      "2,999 MXN activation excluding tax with the first payment, plus your chosen plan. Not charged again on renewals.",
     trialStatus: "Your free trial",
     readonly:
       "Your workspace is read only. Your data is retained. Activate your subscription to continue.",
@@ -172,7 +173,7 @@ export function createSaas({
   const selectedSeats = new Map();
   const chosenPlan = p => withSeats(p, selectedSeats.get(p.id) ?? p.seat_limit);
   function seatPicker(p) {
-    return p.unit_cents ? `<p class="unit-price"><b>${money(p.unit_cents)}</b> / ${tr("usuario / mes", "user / month")}</p><label for="seats-${e(p.id)}">${tr("Número de usuarios", "Number of users")}</label><input id="seats-${e(p.id)}" data-seats="${e(p.id)}" type="number" min="${p.min_seats}" max="${p.max_seats}" step="1" value="${p.seat_limit}">` : "";
+    return p.unit_cents ? `<p class="unit-price"><b>${money(p.unit_cents)} ${tr("HT", "excl. tax")}</b> / ${tr("usuario / mes", "user / month")}</p><label for="seats-${e(p.id)}">${tr("Número de usuarios", "Number of users")}</label><input id="seats-${e(p.id)}" data-seats="${e(p.id)}" type="number" min="${p.min_seats}" max="${p.max_seats}" step="1" value="${p.seat_limit}">` : "";
   }
   function bindSeats(target, plans, getMonths, activationDue = ACTIVATION_CENTS) {
     target.querySelectorAll("[data-seats]").forEach(input => {
@@ -189,7 +190,7 @@ export function createSaas({
   }
   function priceBreakdown(plan, months, activationDue = ACTIVATION_CENTS) {
     const q = periodQuote(plan, months);
-    return `<div class="plan-price">${money(q.users_period_cents)}</div><p>${tr("cada", "every")} ${months} ${tr("mes(es), por adelantado", "month(s), in advance")}</p>${months > 1 ? `<p>${money(q.monthly_equivalent_cents)} / ${tr("mes equivalente", "month equivalent")}</p><p class="pricing-saving">${q.discount + "% " + tr("de descuento por pago anticipado", "off for advance payment")}</p>` : ""}<p>${activationDue ? "+ " + money(activationDue) + " · " + tr("activación única", "one-time activation") : tr("Activación ya pagada", "Activation already paid")}</p><small>${tr("Total inicial", "Initial total")}: ${money(q.users_period_cents + activationDue)}</small>`;
+    return `<div class="plan-price">${money(q.users_period_cents)} <small>${tr("HT", "excl. tax")}</small></div><p>${tr("cada", "every")} ${months} ${tr("mes(es), por adelantado", "month(s), in advance")}</p>${months > 1 ? `<p>${money(q.monthly_equivalent_cents)} / ${tr("mes equivalente", "month equivalent")}</p><div class="pricing-saving saving-period-${months}" role="status"><strong>${tr("Ahorras", "You save")} ${money(q.savings_cents)} · ${q.discount}%</strong><span>${tr("frente al pago mensual durante el mismo periodo", "compared with monthly payments over the same period")}</span><span>${tr("Precio sin descuento", "Price before discount")}: <s>${money(plan.monthly_cents * months)}</s></span></div>` : `<p class="pricing-saving saving-period-1">${tr("Pago mensual · sin descuento por periodo", "Monthly payment · no period discount")}</p>`}<p>${activationDue ? "+ " + money(activationDue) + " · " + tr("activación única", "one-time activation") : tr("Activación ya pagada", "Activation already paid")}</p><small>${tr("Total inicial", "Initial total")}: ${money(q.users_period_cents + activationDue)} ${tr("HT", "excl. tax")}</small><p class="tax-notice">${tr("Impuestos aplicables calculados en el pago según tus datos de facturación.", "Applicable taxes calculated at checkout from your billing details.")}</p>`;
   }
   const periodOptions = () => [
     [1, t("monthly")],
@@ -207,7 +208,7 @@ export function createSaas({
         invitation = path === "/invitation";
       app.innerHTML =
         header() +
-        `<div class="auth-layout"><section class="auth-copy"><span class="eyebrow">${t("tag")}</span><h1>${signup ? t("configure") : invitation ? tr("Tu equipo te espera.", "Your team is waiting.") : t("welcome")}</h1><p>${signup ? tr("Cinco minutos para dar forma a tu operación. Un solo espacio para trabajar mejor.", "Five minutes to shape your operation. One workspace to work better.") : t("signin")}</p><div class="auth-feature">◫ ${tr("Solicitudes, equipos e indicadores. Conectados.", "Requests, teams and insights. Connected.")}</div><div class="auth-feature">✦ ${tr("Olivia prepara. Tu equipo decide.", "Olivia prepares. Your team decides.")}</div><span class="auth-note">${t("nocard")}</span></section><section class="panel auth-panel"><div class="eyebrow">SERVICE HUB</div><h2>${signup ? t("signup") : invitation ? tr("Aceptar invitación", "Accept invitation") : t("login")}</h2><form id="auth-form">${signup ? input("name", t("name")) + input("company", t("company")) : ""}${!invitation ? input("email", t("email"), "email") : ""}${input("password", t("password"), "password")}${signup ? `<small>${t("passwordHint")}</small><label class="check"><input name="accepted_terms" type="checkbox" required><span>${t("terms")} <a href="/terms" target="_blank">↗</a></span></label>` : ""}<p id="login-error" role="alert"></p><button class="btn primary">${signup ? t("create") : invitation ? tr("Unirme al equipo ↗", "Join workspace ↗") : t("enter")}</button></form><p class="subtitle">${signup ? `<a href="/login">${t("login")} ↗</a>` : `<a href="/signup">${t("trial")} ↗</a> · <a href="/forgot-password">${tr("Recuperar contraseña", "Forgot password")}</a>`}</p></section></div>` +
+        `<div class="auth-layout"><section class="auth-copy"><span class="eyebrow">${t("tag")}</span><h1>${signup ? t("configure") : invitation ? tr("Tu equipo te espera.", "Your team is waiting.") : t("welcome")}</h1><p>${signup ? tr("Cinco minutos para dar forma a tu operación. Un solo espacio para trabajar mejor.", "Five minutes to shape your operation. One workspace to work better.") : t("signin")}</p><div class="auth-feature">◫ ${tr("Solicitudes, equipos e indicadores. Conectados.", "Requests, teams and insights. Connected.")}</div><div class="auth-feature">✦ ${tr("Olivia prepara. Tu equipo decide.", "Olivia prepares. Your team decides.")}</div><span class="auth-note">${t("nocard")}</span></section><section class="panel auth-panel"><div class="eyebrow">SERVICE HUB</div><h2>${signup ? t("signup") : invitation ? tr("Aceptar invitación", "Accept invitation") : t("login")}</h2><form id="auth-form">${signup ? signupLegal() : ""}${signup ? input("name", t("name")) + input("company", t("company")) : ""}${!invitation ? input("email", t("email"), "email") : ""}${input("password", t("password"), "password")}${signup ? `<small>${t("passwordHint")}</small><label class="check"><input name="accepted_terms" type="checkbox" required><span>I accept the <a href="/terms" target="_blank" rel="noopener">Service Terms</a> and acknowledge the <a href="/privacy" target="_blank" rel="noopener">Privacy and Cookie Notice</a> (English, ${LEGAL_VERSION}).</span></label>` : ""}<p id="login-error" role="alert"></p><button class="btn primary">${signup ? t("create") : invitation ? tr("Unirme al equipo ↗", "Join workspace ↗") : t("enter")}</button></form><p class="subtitle">${signup ? `<a href="/login">${t("login")} ↗</a>` : `<a href="/signup">${t("trial")} ↗</a> · <a href="/forgot-password">${tr("Recuperar contraseña", "Forgot password")}</a>`}</p></section></div>` +
         footer();
       const passwordInput = document.querySelector("#password");
       if (!signup && !invitation) {
@@ -217,7 +218,8 @@ export function createSaas({
       document.querySelector("#auth-form").onsubmit = safe(async (event) => {
         const body = Object.fromEntries(new FormData(event.target));
         if (signup) {
-          body.accepted_terms = true;
+          body.accepted_terms = event.target.elements.accepted_terms.checked;
+          body.legal_version = LEGAL_VERSION;
           body.language = lang;
         }
         if (invitation) body.token = location.hash.slice(1);
@@ -271,10 +273,8 @@ export function createSaas({
           `<p>${verify ? tr("Correo confirmado.", "Email confirmed.") : reset ? tr("Contraseña actualizada.", "Password updated.") : tr("Si la cuenta existe, recibirás un enlace por correo.", "If the account exists, you will receive an email link.")}</p><a class="btn primary" href="/login">${t("login")} ↗</a>`;
       });
     } else if (["/terms", "/privacy"].includes(path)) {
-      app.innerHTML =
-        header() +
-        `<article class="legal panel"><div class="eyebrow">SERVICE HUB · O7 DIGITAL GROUP</div><h1>${path === "/terms" ? tr("Condiciones de servicio", "Terms of service") : tr("Privacidad", "Privacy")}</h1>${path === "/terms" ? `<h2>${tr("Tu espacio y tu prueba", "Your workspace and trial")}</h2><p>${tr("Prueba gratuita de 7 días desde la creación de tu cuenta. No se requiere tarjeta. Al finalizar, el espacio pasa a modo lectura y los datos se conservan.", "Your free trial lasts 7 days from registration. No card required. At expiry, your workspace becomes read only and your data is retained.")}</p><h2>${tr("Suscripción y renovaciones", "Subscriptions and renewals")}</h2><p>${tr("La activación cuesta 2,999 MXN una sola vez. El plan de usuarios se factura por adelantado cada 1, 3, 6 o 12 meses. Descuentos por pago anticipado: trimestral 3%, semestral 7.5% y anual 18%. Al confirmar la suscripción comienza el periodo de pago y termina la prueba gratuita. Los importes se muestran antes de confirmar. No hay cargos sin consentimiento.", "Activation costs 2,999 MXN once. Your user plan is billed in advance every 1, 3, 6 or 12 months. Advance-payment discounts: quarterly 3%, semiannual 7.5% and annual 18%. Confirming your subscription starts the paid period and ends the free trial. Amounts are shown before confirmation. No charge is made without consent.")}</p><p>${tr("Puedes cancelar antes de la siguiente renovación desde Suscripción. Una cancelación detiene futuras renovaciones; no elimina inmediatamente tus datos. Los cambios de plan pueden generar ajustes prorrateados que requieren confirmación.", "You can cancel before renewal from Subscription. Cancellation stops future renewals and does not immediately erase your data. Plan changes may result in prorated adjustments that require confirmation.")}</p><h2>${tr("Uso responsable y asistencia IA", "Responsible use and AI assistance")}</h2><p>${tr("Protege tus credenciales y administra los permisos de tu equipo. Las sugerencias de Olivia requieren revisión humana; no sustituyen tu criterio ni se publican automáticamente.", "Protect your credentials and manage your team permissions. Olivia suggestions require human review, do not replace your judgment and are never published automatically.")}</p>` : `<p>${tr("Service Hub trata los datos de tu cuenta, empresa, usuarios, solicitudes y facturación para prestar el servicio. Cada espacio abono mantiene sus propios datos y permisos.", "Service Hub processes account, company, user, request and billing data to provide the service. Each subscriber workspace has separate data and permissions.")}</p><p>${tr("La aplicación y sus datos se alojan en Vercel y Railway/PostgreSQL. Los pagos se procesan mediante Stripe; Service Hub no almacena números de tarjeta. Si utilizas asistencia IA, el contexto autorizado de la solicitud se envía a Olivia.", "The application and its data are hosted on Vercel and Railway/PostgreSQL. Stripe processes payments; Service Hub does not store card numbers. When you use AI assistance, the authorized request context is sent to Olivia.")}</p><p>${tr("Las cookies de sesión son necesarias para iniciar sesión. No se utilizan cookies publicitarias en esta aplicación. Puedes contactar con O7 Digital Group para solicitar acceso, corrección, exportación o eliminación de tus datos. Los plazos de conservación y las obligaciones aplicables deben acordarse antes de la apertura comercial.", "Session cookies are required to sign in. This application uses no advertising cookies. Contact O7 Digital Group to request access, correction, export or deletion of your data. Retention periods and applicable obligations must be agreed before commercial launch.")}</p>`}<p><a href="https://www.o7digitalgroup.com/">O7 Digital Group ↗</a></p></article>` +
-        footer();
+      app.innerHTML = header() + legalDocument(path) + footer();
+      bindLanguage(publicPage);
     } else {
       app.innerHTML =
         header() +
@@ -310,7 +310,7 @@ export function createSaas({
           )}</section><section class="commercial-pricing" id="pricing"><div class="row"><div><span class="eyebrow">${tr("CRECE CON TU EQUIPO", "GROW WITH YOUR TEAM")}</span><h2>${t("pricing")}</h2></div><div class="license-note"><b>${t("license")}</b><p>${t("licenseDetail")}</p></div></div><div class="billing-periods" id="public-periods">${periodOptions()
           .map(
             ([months, label]) =>
-              `<button class="btn ${months === 1 ? "primary" : ""}" data-public-months="${months}">${label}${months > 1 ? " · −" + ({3:3,6:7.5,12:18}[months]) + "%" : ""}</button>`,
+              `<button class="btn period-option period-${months} ${months === 1 ? "primary" : ""}" data-public-months="${months}">${label}${months > 1 ? " · −" + ({3:3,6:7.5,12:18}[months]) + "%" : ""}</button>`,
           )
           .join(
             "",
@@ -899,7 +899,7 @@ export function createSaas({
     ]
       .map(
         ([m, key]) =>
-          `<button class="btn ${m === 1 ? "primary" : ""}" data-months="${m}">${t(key)}${m > 1 ? " · −" + ({3:3,6:7.5,12:18}[m]) + "%" : ""}</button>`,
+          `<button class="btn period-option period-${m} ${m === 1 ? "primary" : ""}" data-months="${m}">${t(key)}${m > 1 ? " · −" + ({3:3,6:7.5,12:18}[m]) + "%" : ""}</button>`,
       )
       .join(
         "",
@@ -909,13 +909,20 @@ export function createSaas({
         .map((base) => {
           const p = chosenPlan(base);
           const activationDue = b.activation_paid ? 0 : ACTIVATION_CENTS;
-          return `<article class="panel plan-card" data-billing-plan="${e(p.id)}"><span class="eyebrow">${p.unit_cents ? `${p.min_seats}${p.max_seats === 10000 ? "+" : "–" + p.max_seats} ${tr("usuarios", "users")}` : e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, months, activationDue)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><button class="btn primary" data-plan="${e(p.id)}" ${!b.configured || b.billing_model === "legacy_usd_v1" ? "disabled" : ""}>${b.plan_id && b.status !== "canceled" ? tr("Cambiar plan", "Change plan") : t("choose")} ↗</button></article>`;
+          return `<article class="panel plan-card" data-billing-plan="${e(p.id)}"><span class="eyebrow">${p.unit_cents ? `${p.min_seats}${p.max_seats === 10000 ? "+" : "–" + p.max_seats} ${tr("usuarios", "users")}` : e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, months, activationDue)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><p class="plan-payment-status">${!b.configured ? tr("Pago en línea aún no disponible: Stripe está pendiente de conexión. Puedes comparar los planes.", "Online payment is not available yet: Stripe connection is pending. You can compare plans.") : tr("Continuar al pago seguro con Stripe", "Continue to secure payment with Stripe")}</p><button class="btn primary" data-plan="${e(p.id)}" >${b.plan_id && b.status !== "canceled" ? tr("Cambiar plan", "Change plan") : t("choose")} ↗</button></article>`;
         })
         .join("");
       bindSeats(el.querySelector("#billing-plans"), plans, () => months, b.activation_paid ? 0 : ACTIVATION_CENTS);
       el.querySelectorAll("[data-plan]").forEach(
         (button) =>
           (button.onclick = safe(async () => {
+            const status = button.closest("article").querySelector(".plan-payment-status");
+            if (!b.configured) {
+              status.textContent = tr("Stripe todavía no está conectado. No se ha iniciado ningún pago. Contacta con info@o7digitalgroup.com.", "Stripe is not connected yet. No payment has been started. Contact info@o7digitalgroup.com.");
+              status.setAttribute("role", "alert");
+              return;
+            }
+            if (b.billing_model === "legacy_usd_v1") { status.textContent = tr("Contacta con O7 para migrar tu contrato anterior.", "Contact O7 to migrate your previous contract."); status.setAttribute("role", "alert"); return; }
             if (![...el.querySelectorAll("[data-seats]")].find(input => input.dataset.seats === button.dataset.plan)?.reportValidity()) return;
             if (!el.querySelector("#billing-consent").checked)
               throw new Error(t("billingConsent"));
@@ -942,7 +949,7 @@ export function createSaas({
         (button.onclick = () => {
           months = Number(button.dataset.months);
           el.querySelectorAll("[data-months]").forEach((b) =>
-            b.classList.toggle("primary", b === button),
+            (b.classList.toggle("primary", b === button), b.setAttribute("aria-pressed", String(b === button))),
           );
           draw();
         }),

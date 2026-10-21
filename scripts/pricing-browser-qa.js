@@ -15,7 +15,7 @@ try {
    await page.locator(`[data-seats="${id}"]`).fill(String(seats));await page.locator(`[data-seats="${id}"]`).press('Tab');
    for(const [months,factor] of [[1,1],[3,.97],[6,.925],[12,.82]]) {
     await page.locator(`[data-public-months="${months}"]`).click();
-    assert.equal(await page.locator(`[data-public-plan="${id}"] .plan-price`).innerText(),money(Math.round(seats*unit*months*factor),lang));
+    assert.equal(await page.locator(`[data-public-plan="${id}"] .plan-price`).innerText(),money(Math.round(seats*unit*months*factor),lang)+" "+(lang==="en"?"excl. tax":"HT"));
    }
   }
   assert.ok(!/2 months free|2 meses gratis|2 mois offerts|USD/.test(await page.locator('body').innerText()));
@@ -28,8 +28,30 @@ try {
  await page.locator('[data-seats="team-5"]').fill('7');await page.locator('[data-seats="team-5"]').press('Tab');
  await page.locator('[data-months="6"]').click();
  const lang=await page.locator('html').getAttribute('lang');
- assert.equal(await page.locator('[data-billing-plan="team-5"] .plan-price').innerText(),money(1550115,lang));
+ assert.equal(await page.locator('[data-billing-plan="team-5"] .plan-price').innerText(),money(1550115,lang)+" "+(lang==="en"?"excl. tax":"HT"));
+ const billingState=await (await page.request.get(base+'/api/billing')).json();
+ if(!billingState.configured) {
+  const before=page.url();await page.locator('[data-plan="team-5"]').click();
+  await page.locator('[data-billing-plan="team-5"] [role="alert"]').waitFor();assert.equal(page.url(),before);
+ }
+ const colours=new Set();
+ for(const m of [1,3,6,12]) {
+  await page.locator(`[data-months="${m}"]`).click();
+  colours.add(await page.locator(`[data-months="${m}"]`).evaluate(n=>getComputedStyle(n).backgroundColor));
+  const savings=page.locator(`[data-billing-plan="team-5"] .pricing-saving`);
+  await savings.waitFor();if(m>1) assert.ok((await savings.innerText()).includes(money(Math.round(7*39900*m*({3:.03,6:.075,12:.18}[m])),lang)));
+ }
+ assert.equal(colours.size,4);
  await mkdir('.local/screenshots',{recursive:true});await page.screenshot({path:'.local/screenshots/servicehub-volume-pricing.png',fullPage:true});
  await page.setViewportSize({width:390,height:844});assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));assert.deepEqual(errors,[]);
+ await Promise.all([page.waitForResponse(r=>r.url().endsWith("/api/logout")),page.locator('[data-action="logout"]').click()]);
+ await page.goto(base+'/signup');await page.locator('.signup-legal').waitFor();
+ assert.ok((await page.locator('.signup-legal').innerText()).includes('FR17899748560'));
+ assert.equal(await page.locator('input[name=accepted_terms]').isChecked(),false);
+ for(const path of ['/terms','/privacy']) {
+  await page.goto(base+path);await page.locator('.detailed-legal').waitFor();
+  assert.equal(await page.locator('.detailed-legal').getAttribute('lang'),'en');
+  assert.ok((await page.locator('.detailed-legal').innerText()).length>5000);
+ }
  console.log('Pricing browser QA passed: all volume boundaries, four periods, exact discounts, ES/EN/FR, subscription quantities and mobile layout.');
 }finally{await browser.close();}

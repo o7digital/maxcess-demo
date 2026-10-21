@@ -14,6 +14,17 @@ Number of users|Nombre d’utilisateurs
 Monthly MXN price per user (volume tiers)|Prix mensuel en MXN par utilisateur (tranches)
 The per-user price depends on the total number of subscribed users.|Le prix par utilisateur dépend du nombre total d’utilisateurs souscrits.
 2,999 MXN activation with the first payment, plus your chosen plan. Not charged again on renewals.|Activation de 2 999 MXN au premier règlement, plus le forfait choisi. Aucun nouveau frais d’activation aux renouvellements.
+You save|Vous économisez
+compared with monthly payments over the same period|par rapport aux paiements mensuels sur la même période
+Price before discount|Prix avant remise
+Monthly payment · no period discount|Paiement mensuel · sans remise de durée
+Online payment is not available yet: Stripe connection is pending. You can compare plans.|Le paiement en ligne n’est pas encore disponible : connexion Stripe en attente. Vous pouvez comparer les offres.
+Continue to secure payment with Stripe|Continuer vers le paiement sécurisé Stripe
+Stripe is not connected yet. No payment has been started. Contact info@o7digitalgroup.com.|Stripe n’est pas encore connecté. Aucun paiement n’a été lancé. Contactez info@o7digitalgroup.com.
+Contact O7 to migrate your previous contract.|Contactez O7 pour migrer votre ancien contrat.
+excl. tax|HT
+Applicable taxes calculated at checkout from your billing details.|Taxes applicables calculées au paiement selon vos informations de facturation.
+2,999 MXN activation excluding tax with the first payment, plus your chosen plan. Not charged again on renewals.|Activation de 2 999 MXN HT au premier règlement, plus le forfait choisi. Aucun nouveau frais d’activation aux renouvellements.
 Sign in|Connexion
 Create workspace|Créer un espace
 Start 7 days free|Essayer gratuitement 7 jours

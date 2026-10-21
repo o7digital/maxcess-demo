@@ -1,3 +1,4 @@
+import { LEGAL_VERSION } from "../public/legal.js";
 import { test, after } from "node:test";
 import assert from "node:assert/strict";
 import request from "supertest";
@@ -141,6 +142,10 @@ test("Registration creates an empty workspace with exactly seven trial days and 
   b = await register("B");
   assert.notEqual(a.user.tenant_id, b.user.tenant_id);
   assert.equal(a.user.role, "admin");
+  const consent = (await pool.query("SELECT details FROM workspace_audit WHERE tenant_id=$1 AND action='registered'",[a.user.tenant_id])).rows[0].details;
+  assert.equal(consent.terms_version,LEGAL_VERSION);
+  assert.equal(consent.privacy_version,LEGAL_VERSION);
+  assert.equal(consent.notice_language,"en");
   assert.equal(a.user.is_platform_owner, false);
   const ws = (await a.agent.get("/api/workspace").expect(200)).body.workspace;
   assert.equal(ws.is_demo, false);
@@ -907,7 +912,7 @@ test("Checkout consents to a one-time MXN activation and a recurring user plan",
     assert.equal(checkoutBody.subscription_data.trial_end, undefined);
     assert.ok(
       checkoutBody.custom_text.submit.message.includes(
-        "Activación: 2999 MXN una sola vez",
+        "Activación: 2999 MXN HT una sola vez",
       ),
     );
     const activation = createdPrices.get(checkoutBody.line_items[0].price),
@@ -919,6 +924,11 @@ test("Checkout consents to a one-time MXN activation and a recurring user plan",
     assert.equal(users.unit_amount, 9975);
     assert.equal(users.metadata.seat_limit, "7");
     assert.equal(users.recurring.interval_count, 3);
+    assert.equal(users.tax_behavior, "exclusive");
+    assert.equal(activation.tax_behavior, "exclusive");
+    assert.equal(checkoutBody.automatic_tax.enabled, true);
+    assert.equal(checkoutBody.billing_address_collection, "required");
+    assert.equal(checkoutBody.tax_id_collection.enabled, true);
   } finally {
     await pool.query(
       "UPDATE billing_plans SET monthly_cents=$1,discounts=$2,unit_cents=$4 WHERE id=$3",
@@ -1022,8 +1032,15 @@ test("MXN activation requires verified paid checkout, is idempotent and is never
   const paid = {
     ...completed,
     id: "evt_fixture_" + randomUUID(),
-    data: { object: { ...completed.data.object, payment_status: "paid" } },
+    data: { object: { ...completed.data.object, payment_status: "paid",
+      automatic_tax: {enabled:true,status:"complete"},
+      amount_subtotal: stored.checkout_total_cents,
+      total_details: {amount_tax:16000,amount_discount:0,amount_shipping:0},
+      amount_total: stored.checkout_total_cents+16000,
+    } },
   };
+  await signed({...paid,id:"evt_fixture_"+randomUUID(),data:{object:{...paid.data.object,amount_total:1}}}).expect(200);
+  assert.equal((await m.agent.get("/api/billing")).body.activation_paid,false);
   await signed(paid).expect(200);
   await signed(paid).expect(200);
   const bill = (await m.agent.get("/api/billing")).body;

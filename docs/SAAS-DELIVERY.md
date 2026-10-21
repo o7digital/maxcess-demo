@@ -150,3 +150,15 @@ Ce catalogue remplace les anciens forfaits et l'offre annuelle de deux mois grat
 Périodes : mensuelle sans remise, trimestrielle **−3 %**, semestrielle **−7,5 %**, annuelle **−18 %**. Les remises portent sur le forfait utilisateurs ; l'activation n'est pas remisée. Le nombre exact se choisit dans chaque tranche. Le serveur recalcule les tarifs, limites et prix Stripe à partir du catalogue, sans accepter de montant fourni par le navigateur. Les anciens contrats Stripe ne sont pas modifiés automatiquement.
 
 Validation : 30 tests API, seuils de chaque tranche, remises et arrondis, consentement et quantité Checkout simulé, pages publiques ES/EN/FR, abonnement et affichage mobile. Paiement réel toujours indisponible tant que les clés Stripe test ne sont pas configurées.
+
+## Économies, informations légales et taxes — 20 octobre 2026
+
+Les cartes montrent désormais l'économie en MXN et en pourcentage par rapport aux mensualités du même intervalle, avec prix avant remise et couleurs distinctes par durée. Sans Stripe, le clic affiche une raison explicite plutôt qu'un bouton gris inerte.
+
+Les prix sont **HT**, selon confirmation du propriétaire. Les nouveaux prix Stripe ont `tax_behavior=exclusive`; Checkout active Stripe Tax, exige l'adresse et permet un identifiant fiscal. L'activation est validée sur le sous-total contractuel, avec vérification du total taxe comprise pour les événements taxés signés. Les immatriculations fiscales et les réglages Stripe Tax du vendeur doivent être vérifiés avant paiement réel ; aucun numéro fiscal de pays supplémentaire n'est inventé.
+
+Les pages `/terms` et `/privacy` proposent des notices détaillées en anglais, avec résumé avant la saisie des données d'inscription et liens vers les deux textes. Éditeur : O7 DIGITAL CONSULTING SASU, 10 rue de Penthièvre, 75008 Paris, France ; SIREN 899748560, SIRET 89974856000013, TVA FR17899748560 ; directeur de publication Olivier Steineur ; contact info@o7digitalgroup.com, informations confirmées par le propriétaire. L'audit d'inscription conserve la version des conditions et de confidentialité et la langue du texte.
+
+Les notices distinguent les rôles de traitement, données réellement traitées, cookies nécessaires, assistance IA, sous-traitants, transferts, droits UE/France, USA, Canada/Québec et Mexique. Sources officielles liées dans la notice. Elles précisent les limites actuelles : pas de suppression automatisée générale, accords de traitement/transfert et durées à finaliser, capital/RCS et contacts légaux complets d'hébergement à vérifier. Ce texte n'est pas présenté comme une certification mondiale de conformité.
+
+Connexion Stripe retrouvée : compte CLI O7digital, accès de test expiré. Une connexion navigateur est nécessaire pour renouveler l'accès ; les clés de production existantes du CRM ne sont pas réutilisées pour les essais Maxcess.
