@@ -12,7 +12,7 @@ export async function runAutomations() {
   try {
     await transaction(async (db) => {
       const { rows: tenants } = await db.query(
-        "SELECT * FROM tenants WHERE settings ? 'escalations' AND status IN ('active','trialing','past_due')",
+        "SELECT * FROM tenants WHERE status IN ('active','trialing','past_due')",
       );
       for (const tenant of tenants) {
         if (accessState(tenant) !== "full") continue;

@@ -218,6 +218,7 @@ test("Overdue alerts are tenant-scoped, deduplicated, optional and stop for reso
     "INSERT INTO tickets(tenant_id,company_id,title,description,site,category,priority,requested_priority,created_by,due_at) VALUES($1,$2,'Reports','Private description','Main','Servicio','Media','Media',$3,now()-interval '1 hour') RETURNING id",
     [u.user.tenant_id, company.id, u.user.id],
   );
+  await pool.query("UPDATE tenants SET settings=settings-'escalations' WHERE id=$1",[u.user.tenant_id]);
   await runAutomations();
   await runAutomations();
   let { rows } = await pool.query(
