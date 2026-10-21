@@ -9,6 +9,11 @@ Files saved|Fichiers enregistrés
 Could not read the file|Impossible de lire le fichier
 Maximum 5 files and 2 MB total per upload|Maximum 5 fichiers et 2 Mo au total par envoi
 PDF, Excel, Word, CSV, TXT, PNG and JPG · Up to 5 files and 2 MB total per upload. Visible to the customer and the team handling this request.|PDF, Excel, Word, CSV, TXT, PNG et JPG · Jusqu’à 5 fichiers et 2 Mo au total par envoi. Visibles par le client et l’équipe chargée de la demande.
+user / month|utilisateur / mois
+Number of users|Nombre d’utilisateurs
+Monthly MXN price per user (volume tiers)|Prix mensuel en MXN par utilisateur (tranches)
+The per-user price depends on the total number of subscribed users.|Le prix par utilisateur dépend du nombre total d’utilisateurs souscrits.
+2,999 MXN activation with the first payment, plus your chosen plan. Not charged again on renewals.|Activation de 2 999 MXN au premier règlement, plus le forfait choisi. Aucun nouveau frais d’activation aux renouvellements.
 Sign in|Connexion
 Create workspace|Créer un espace
 Start 7 days free|Essayer gratuitement 7 jours
@@ -85,7 +90,7 @@ Cybersecurity|Cybersécurité
 Manage roles and collaborators|Gérer les rôles et collaborateurs
 One-time activation|Activation unique
 2,999 MXN once when you activate your subscription. Not charged again at renewal.|2 999 MXN une seule fois à l’activation de votre abonnement. Aucun nouveau frais d’activation lors des renouvellements.
-Activation costs 2,999 MXN once. Your user plan is billed in advance every 1, 3, 6 or 12 months. Annual payment covers 12 months for the price of 10. Confirming your subscription starts the paid period and ends the free trial. Amounts are shown before confirmation. No charge is made without consent.|L’activation coûte 2 999 MXN une seule fois. L’abonnement utilisateurs est payé d’avance pour 1, 3, 6 ou 12 mois. Le paiement annuel couvre 12 mois au prix de 10. La confirmation démarre la période payante et termine l’essai gratuit. Les montants sont affichés avant confirmation. Aucun prélèvement sans consentement.
+Activation costs 2,999 MXN once. Your user plan is billed in advance every 1, 3, 6 or 12 months. Advance-payment discounts: quarterly 3%, semiannual 7.5% and annual 18%. Confirming your subscription starts the paid period and ends the free trial. Amounts are shown before confirmation. No charge is made without consent.|L’activation coûte 2 999 MXN une seule fois. L’abonnement utilisateurs est payé d’avance pour 1, 3, 6 ou 12 mois. Remises pour paiement anticipé : trimestre 3 %, semestre 7,5 % et année 18 %. La confirmation démarre la période payante et termine l’essai gratuit. Les montants sont affichés avant confirmation. Aucun prélèvement sans consentement.
 Only the user plan renews. Activation is charged once. Confirming starts your paid subscription and ends your free trial. Plan changes may result in prorated adjustments.|Seul l’abonnement utilisateurs est renouvelé. L’activation est facturée une seule fois. La confirmation démarre l’abonnement payant et termine l’essai gratuit. Un changement d’offre peut entraîner un ajustement au prorata.
 MXN subscriptions only; excludes activation fees|Abonnements en MXN uniquement ; frais d’activation exclus
 MXN. Changes apply to new subscriptions or explicit plan changes.|MXN. Les modifications s’appliquent aux nouveaux abonnements ou aux changements d’offre explicites.

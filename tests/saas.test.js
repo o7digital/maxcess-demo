@@ -881,7 +881,7 @@ test("Checkout consents to a one-time MXN activation and a recurring user plan",
   } = await pool.query("SELECT * FROM billing_plans WHERE id='team-5'");
   try {
     await pool.query(
-      "UPDATE billing_plans SET monthly_cents=2500,discounts='{" +
+      "UPDATE billing_plans SET monthly_cents=2500,unit_cents=500,discounts='{" +
         '"1":0,"3":5,"6":10,"12":15' +
         "}' WHERE id='team-5'",
     );
@@ -890,8 +890,10 @@ test("Checkout consents to a one-time MXN activation and a recurring user plan",
       months: 3,
       accepted_terms: false,
     }).expect(400);
+    await send(b, "/billing/checkout", {plan_id:"team-5",seats:2,months:3,accepted_terms:true}).expect(400);
     await send(b, "/billing/checkout", {
       plan_id: "team-5",
+      seats: 7,
       months: 3,
       accepted_terms: true,
     }).expect(200);
@@ -914,12 +916,13 @@ test("Checkout consents to a one-time MXN activation and a recurring user plan",
     assert.equal(activation.unit_amount, 299900);
     assert.equal(activation.recurring, undefined);
     assert.equal(users.currency, "mxn");
-    assert.equal(users.unit_amount, 7125);
+    assert.equal(users.unit_amount, 9975);
+    assert.equal(users.metadata.seat_limit, "7");
     assert.equal(users.recurring.interval_count, 3);
   } finally {
     await pool.query(
-      "UPDATE billing_plans SET monthly_cents=$1,discounts=$2 WHERE id=$3",
-      [old.monthly_cents, old.discounts, old.id],
+      "UPDATE billing_plans SET monthly_cents=$1,discounts=$2,unit_cents=$4 WHERE id=$3",
+      [old.monthly_cents, old.discounts, old.id, old.unit_cents],
     );
   }
 });
@@ -941,14 +944,15 @@ test("MXN activation requires verified paid checkout, is idempotent and is never
     m.user.id,
   ]);
   await send(m, "/billing/checkout", {
-    plan_id: "team-10",
+    plan_id: "team-5",
+    seats: 10,
     months: 12,
     accepted_terms: true,
   }).expect(200);
   const invoiceUsers = createdPrices.get(checkoutBody.line_items[1].price),
     activation = createdPrices.get(checkoutBody.line_items[0].price);
   assert.equal(activation.recurring, undefined);
-  assert.equal(invoiceUsers.unit_amount, 2848100);
+  assert.equal(invoiceUsers.unit_amount, 3926160);
   const stored = (
     await pool.query(
       "SELECT checkout_session_id,checkout_total_cents FROM tenants WHERE id=$1",
@@ -1032,7 +1036,7 @@ test("MXN activation requires verified paid checkout, is idempotent and is never
       [m.user.tenant_id],
     )
   ).rows[0].monthly_recurring_cents;
-  assert.equal(recurring, Math.round(2848100 / 12));
+  assert.equal(recurring, Math.round(3926160 / 12));
   await send(m, "/billing/change-plan", {
     plan_id: "team-15",
     months: 12,

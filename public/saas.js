@@ -1,4 +1,4 @@
-import { ACTIVATION_CENTS, periodQuote } from "./pricing.js";
+import { ACTIVATION_CENTS, periodQuote, withSeats } from "./pricing.js";
 import { createStaffUI } from "./staff.js";
 import { inFrench } from "./french.js";
 import { countries, languages, countryName } from "./international.js";
@@ -41,7 +41,7 @@ const translations = {
     annual: "Anual",
     license: "Activación única",
     licenseDetail:
-      "2,999 MXN una sola vez al activar tu suscripción. No se vuelve a cobrar en las renovaciones.",
+      "2,999 MXN de activación en el primer pago, más el plan elegido. No se vuelve a cobrar en las renovaciones.",
     trialStatus: "Tu prueba gratuita",
     readonly:
       "Tu espacio está en modo lectura. Tus datos se conservan. Activa tu suscripción para continuar.",
@@ -89,7 +89,7 @@ const translations = {
     annual: "Annual",
     license: "One-time activation",
     licenseDetail:
-      "2,999 MXN once when you activate your subscription. Not charged again at renewal.",
+      "2,999 MXN activation with the first payment, plus your chosen plan. Not charged again on renewals.",
     trialStatus: "Your free trial",
     readonly:
       "Your workspace is read only. Your data is retained. Activate your subscription to continue.",
@@ -169,9 +169,27 @@ export function createSaas({
     }).format(c / 100) +
     " " +
     currency.toUpperCase();
+  const selectedSeats = new Map();
+  const chosenPlan = p => withSeats(p, selectedSeats.get(p.id) ?? p.seat_limit);
+  function seatPicker(p) {
+    return p.unit_cents ? `<p class="unit-price"><b>${money(p.unit_cents)}</b> / ${tr("usuario / mes", "user / month")}</p><label for="seats-${e(p.id)}">${tr("Número de usuarios", "Number of users")}</label><input id="seats-${e(p.id)}" data-seats="${e(p.id)}" type="number" min="${p.min_seats}" max="${p.max_seats}" step="1" value="${p.seat_limit}">` : "";
+  }
+  function bindSeats(target, plans, getMonths, activationDue = ACTIVATION_CENTS) {
+    target.querySelectorAll("[data-seats]").forEach(input => {
+      input.oninput = () => {
+        if (!input.checkValidity()) return;
+        selectedSeats.set(input.dataset.seats, Number(input.value));
+        const p = chosenPlan(plans.find(p => p.id === input.dataset.seats));
+        const card = input.closest("article");
+        card.querySelector("h3").innerHTML = `${p.seat_limit} <small>${tr("usuarios", "users")}</small>`;
+        card.querySelector("[data-price-breakdown]").innerHTML = priceBreakdown(p, getMonths(), activationDue);
+        card.querySelector("[data-ai-limit]").textContent = p.ai_limit;
+      };
+    });
+  }
   function priceBreakdown(plan, months, activationDue = ACTIVATION_CENTS) {
     const q = periodQuote(plan, months);
-    return `<div class="plan-price">${money(q.users_period_cents)}</div><p>${tr("cada", "every")} ${months} ${tr("mes(es), por adelantado", "month(s), in advance")}</p>${months > 1 ? `<p>${money(q.monthly_equivalent_cents)} / ${tr("mes equivalente", "month equivalent")}</p><p class="pricing-saving">${q.free_months ? tr("12 meses de acceso · 2 meses gratis", "12 months of access · 2 months free") : q.discount + "% " + tr("de descuento por pago anticipado", "off for advance payment")}</p>` : ""}<p>${activationDue ? "+ " + money(activationDue) + " · " + tr("activación única", "one-time activation") : tr("Activación ya pagada", "Activation already paid")}</p><small>${tr("Total inicial", "Initial total")}: ${money(q.users_period_cents + activationDue)}</small>`;
+    return `<div class="plan-price">${money(q.users_period_cents)}</div><p>${tr("cada", "every")} ${months} ${tr("mes(es), por adelantado", "month(s), in advance")}</p>${months > 1 ? `<p>${money(q.monthly_equivalent_cents)} / ${tr("mes equivalente", "month equivalent")}</p><p class="pricing-saving">${q.discount + "% " + tr("de descuento por pago anticipado", "off for advance payment")}</p>` : ""}<p>${activationDue ? "+ " + money(activationDue) + " · " + tr("activación única", "one-time activation") : tr("Activación ya pagada", "Activation already paid")}</p><small>${tr("Total inicial", "Initial total")}: ${money(q.users_period_cents + activationDue)}</small>`;
   }
   const periodOptions = () => [
     [1, t("monthly")],
@@ -255,7 +273,7 @@ export function createSaas({
     } else if (["/terms", "/privacy"].includes(path)) {
       app.innerHTML =
         header() +
-        `<article class="legal panel"><div class="eyebrow">SERVICE HUB · O7 DIGITAL GROUP</div><h1>${path === "/terms" ? tr("Condiciones de servicio", "Terms of service") : tr("Privacidad", "Privacy")}</h1>${path === "/terms" ? `<h2>${tr("Tu espacio y tu prueba", "Your workspace and trial")}</h2><p>${tr("Prueba gratuita de 7 días desde la creación de tu cuenta. No se requiere tarjeta. Al finalizar, el espacio pasa a modo lectura y los datos se conservan.", "Your free trial lasts 7 days from registration. No card required. At expiry, your workspace becomes read only and your data is retained.")}</p><h2>${tr("Suscripción y renovaciones", "Subscriptions and renewals")}</h2><p>${tr("La activación cuesta 2,999 MXN una sola vez. El plan de usuarios se factura por adelantado cada 1, 3, 6 o 12 meses. El pago anual cubre 12 meses y cobra solo 10 mensualidades. Al confirmar la suscripción comienza el periodo de pago y termina la prueba gratuita. Los importes se muestran antes de confirmar. No hay cargos sin consentimiento.", "Activation costs 2,999 MXN once. Your user plan is billed in advance every 1, 3, 6 or 12 months. Annual payment covers 12 months for the price of 10. Confirming your subscription starts the paid period and ends the free trial. Amounts are shown before confirmation. No charge is made without consent.")}</p><p>${tr("Puedes cancelar antes de la siguiente renovación desde Suscripción. Una cancelación detiene futuras renovaciones; no elimina inmediatamente tus datos. Los cambios de plan pueden generar ajustes prorrateados que requieren confirmación.", "You can cancel before renewal from Subscription. Cancellation stops future renewals and does not immediately erase your data. Plan changes may result in prorated adjustments that require confirmation.")}</p><h2>${tr("Uso responsable y asistencia IA", "Responsible use and AI assistance")}</h2><p>${tr("Protege tus credenciales y administra los permisos de tu equipo. Las sugerencias de Olivia requieren revisión humana; no sustituyen tu criterio ni se publican automáticamente.", "Protect your credentials and manage your team permissions. Olivia suggestions require human review, do not replace your judgment and are never published automatically.")}</p>` : `<p>${tr("Service Hub trata los datos de tu cuenta, empresa, usuarios, solicitudes y facturación para prestar el servicio. Cada espacio abono mantiene sus propios datos y permisos.", "Service Hub processes account, company, user, request and billing data to provide the service. Each subscriber workspace has separate data and permissions.")}</p><p>${tr("La aplicación y sus datos se alojan en Vercel y Railway/PostgreSQL. Los pagos se procesan mediante Stripe; Service Hub no almacena números de tarjeta. Si utilizas asistencia IA, el contexto autorizado de la solicitud se envía a Olivia.", "The application and its data are hosted on Vercel and Railway/PostgreSQL. Stripe processes payments; Service Hub does not store card numbers. When you use AI assistance, the authorized request context is sent to Olivia.")}</p><p>${tr("Las cookies de sesión son necesarias para iniciar sesión. No se utilizan cookies publicitarias en esta aplicación. Puedes contactar con O7 Digital Group para solicitar acceso, corrección, exportación o eliminación de tus datos. Los plazos de conservación y las obligaciones aplicables deben acordarse antes de la apertura comercial.", "Session cookies are required to sign in. This application uses no advertising cookies. Contact O7 Digital Group to request access, correction, export or deletion of your data. Retention periods and applicable obligations must be agreed before commercial launch.")}</p>`}<p><a href="https://www.o7digitalgroup.com/">O7 Digital Group ↗</a></p></article>` +
+        `<article class="legal panel"><div class="eyebrow">SERVICE HUB · O7 DIGITAL GROUP</div><h1>${path === "/terms" ? tr("Condiciones de servicio", "Terms of service") : tr("Privacidad", "Privacy")}</h1>${path === "/terms" ? `<h2>${tr("Tu espacio y tu prueba", "Your workspace and trial")}</h2><p>${tr("Prueba gratuita de 7 días desde la creación de tu cuenta. No se requiere tarjeta. Al finalizar, el espacio pasa a modo lectura y los datos se conservan.", "Your free trial lasts 7 days from registration. No card required. At expiry, your workspace becomes read only and your data is retained.")}</p><h2>${tr("Suscripción y renovaciones", "Subscriptions and renewals")}</h2><p>${tr("La activación cuesta 2,999 MXN una sola vez. El plan de usuarios se factura por adelantado cada 1, 3, 6 o 12 meses. Descuentos por pago anticipado: trimestral 3%, semestral 7.5% y anual 18%. Al confirmar la suscripción comienza el periodo de pago y termina la prueba gratuita. Los importes se muestran antes de confirmar. No hay cargos sin consentimiento.", "Activation costs 2,999 MXN once. Your user plan is billed in advance every 1, 3, 6 or 12 months. Advance-payment discounts: quarterly 3%, semiannual 7.5% and annual 18%. Confirming your subscription starts the paid period and ends the free trial. Amounts are shown before confirmation. No charge is made without consent.")}</p><p>${tr("Puedes cancelar antes de la siguiente renovación desde Suscripción. Una cancelación detiene futuras renovaciones; no elimina inmediatamente tus datos. Los cambios de plan pueden generar ajustes prorrateados que requieren confirmación.", "You can cancel before renewal from Subscription. Cancellation stops future renewals and does not immediately erase your data. Plan changes may result in prorated adjustments that require confirmation.")}</p><h2>${tr("Uso responsable y asistencia IA", "Responsible use and AI assistance")}</h2><p>${tr("Protege tus credenciales y administra los permisos de tu equipo. Las sugerencias de Olivia requieren revisión humana; no sustituyen tu criterio ni se publican automáticamente.", "Protect your credentials and manage your team permissions. Olivia suggestions require human review, do not replace your judgment and are never published automatically.")}</p>` : `<p>${tr("Service Hub trata los datos de tu cuenta, empresa, usuarios, solicitudes y facturación para prestar el servicio. Cada espacio abono mantiene sus propios datos y permisos.", "Service Hub processes account, company, user, request and billing data to provide the service. Each subscriber workspace has separate data and permissions.")}</p><p>${tr("La aplicación y sus datos se alojan en Vercel y Railway/PostgreSQL. Los pagos se procesan mediante Stripe; Service Hub no almacena números de tarjeta. Si utilizas asistencia IA, el contexto autorizado de la solicitud se envía a Olivia.", "The application and its data are hosted on Vercel and Railway/PostgreSQL. Stripe processes payments; Service Hub does not store card numbers. When you use AI assistance, the authorized request context is sent to Olivia.")}</p><p>${tr("Las cookies de sesión son necesarias para iniciar sesión. No se utilizan cookies publicitarias en esta aplicación. Puedes contactar con O7 Digital Group para solicitar acceso, corrección, exportación o eliminación de tus datos. Los plazos de conservación y las obligaciones aplicables deben acordarse antes de la apertura comercial.", "Session cookies are required to sign in. This application uses no advertising cookies. Contact O7 Digital Group to request access, correction, export or deletion of your data. Retention periods and applicable obligations must be agreed before commercial launch.")}</p>`}<p><a href="https://www.o7digitalgroup.com/">O7 Digital Group ↗</a></p></article>` +
         footer();
     } else {
       app.innerHTML =
@@ -292,11 +310,11 @@ export function createSaas({
           )}</section><section class="commercial-pricing" id="pricing"><div class="row"><div><span class="eyebrow">${tr("CRECE CON TU EQUIPO", "GROW WITH YOUR TEAM")}</span><h2>${t("pricing")}</h2></div><div class="license-note"><b>${t("license")}</b><p>${t("licenseDetail")}</p></div></div><div class="billing-periods" id="public-periods">${periodOptions()
           .map(
             ([months, label]) =>
-              `<button class="btn ${months === 1 ? "primary" : ""}" data-public-months="${months}">${label}</button>`,
+              `<button class="btn ${months === 1 ? "primary" : ""}" data-public-months="${months}">${label}${months > 1 ? " · −" + ({3:3,6:7.5,12:18}[months]) + "%" : ""}</button>`,
           )
           .join(
             "",
-          )}</div><div id="public-plans" class="plan-grid"><p>${t("loading")}</p></div><p class="subtitle">${tr("Más de 50 usuarios: una propuesta a tu medida.", "More than 50 users: a plan tailored to you.")} <a href="https://www.o7digitalgroup.com/">O7 Digital Group ↗</a></p></section>` +
+          )}</div><div id="public-plans" class="plan-grid"><p>${t("loading")}</p></div><p class="subtitle">${tr("El precio por usuario depende del total de usuarios contratados.", "The per-user price depends on the total number of subscribed users.")} <a href="https://www.o7digitalgroup.com/">O7 Digital Group ↗</a></p></section>` +
         footer();
       bindLanguage(publicPage);
       const plansTarget = document.querySelector("#public-plans");
@@ -306,10 +324,13 @@ export function createSaas({
         function drawPublicPlans() {
           plansTarget.innerHTML = plans
             .map(
-              (p) =>
-                `<article class="panel plan-card" data-public-plan="${e(p.id)}"><span class="eyebrow">${e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${priceBreakdown(p, period)}<p>✦ ${p.ai_limit} ${tr("consultas IA / mes", "AI requests / month")}</p><a class="btn ${p.seat_limit === 5 ? "primary" : ""}" href="/signup">${t("trial")} ↗</a></article>`,
+              (base) => {
+                const p = chosenPlan(base);
+                return `<article class="panel plan-card" data-public-plan="${e(p.id)}"><span class="eyebrow">${e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, period)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><a class="btn ${p.seat_limit === 5 ? "primary" : ""}" href="/signup">${t("trial")} ↗</a></article>`;
+              },
             )
             .join("");
+          bindSeats(plansTarget, plans, () => period);
         }
         drawPublicPlans();
         document.querySelectorAll("[data-public-months]").forEach(
@@ -878,25 +899,29 @@ export function createSaas({
     ]
       .map(
         ([m, key]) =>
-          `<button class="btn ${m === 1 ? "primary" : ""}" data-months="${m}">${t(key)}</button>`,
+          `<button class="btn ${m === 1 ? "primary" : ""}" data-months="${m}">${t(key)}${m > 1 ? " · −" + ({3:3,6:7.5,12:18}[m]) + "%" : ""}</button>`,
       )
       .join(
         "",
       )}</div><div id="billing-plans" class="plan-grid"></div><p class="notice">${tr("Solo el plan de usuarios se renueva. La activación se cobra una sola vez. Al confirmar comienza tu suscripción de pago y termina la prueba gratuita. Los cambios de plan pueden generar ajustes prorrateados.", "Only the user plan renews. Activation is charged once. Confirming starts your paid subscription and ends your free trial. Plan changes may result in prorated adjustments.")}</p><label class="check"><input id="billing-consent" type="checkbox">${t("billingConsent")}</label>${!b.configured ? `<p class="notice">${tr("La facturación está en preparación. Contacta con O7 Digital Group.", "Billing is being prepared. Contact O7 Digital Group.")}</p>` : ""}<section class="panel"><h2>${tr("Historial de facturas", "Invoice history")}</h2>${b.invoices.length ? b.invoices.map((i) => `<p>${e(i.status)} · ${money(i.amount_paid, i.currency)} ${i.hosted_url ? `<a href="${e(i.hosted_url)}" target="_blank" rel="noopener noreferrer">${tr("Ver factura", "View invoice")} ↗</a>` : ""}</p>`).join("") : `<p class="subtitle">${tr("Aún no hay facturas.", "No invoices yet.")}</p>`}</section>`;
     function draw() {
       el.querySelector("#billing-plans").innerHTML = plans
-        .map((p) => {
+        .map((base) => {
+          const p = chosenPlan(base);
           const activationDue = b.activation_paid ? 0 : ACTIVATION_CENTS;
-          return `<article class="panel plan-card" data-billing-plan="${e(p.id)}"><span class="eyebrow">${e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${priceBreakdown(p, months, activationDue)}<p>✦ ${p.ai_limit} ${tr("consultas IA / mes", "AI requests / month")}</p><button class="btn primary" data-plan="${e(p.id)}" ${!b.configured || b.billing_model === "legacy_usd_v1" ? "disabled" : ""}>${b.plan_id && b.status !== "canceled" ? tr("Cambiar plan", "Change plan") : t("choose")} ↗</button></article>`;
+          return `<article class="panel plan-card" data-billing-plan="${e(p.id)}"><span class="eyebrow">${e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, months, activationDue)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><button class="btn primary" data-plan="${e(p.id)}" ${!b.configured || b.billing_model === "legacy_usd_v1" ? "disabled" : ""}>${b.plan_id && b.status !== "canceled" ? tr("Cambiar plan", "Change plan") : t("choose")} ↗</button></article>`;
         })
         .join("");
+      bindSeats(el.querySelector("#billing-plans"), plans, () => months, b.activation_paid ? 0 : ACTIVATION_CENTS);
       el.querySelectorAll("[data-plan]").forEach(
         (button) =>
           (button.onclick = safe(async () => {
+            if (![...el.querySelectorAll("[data-seats]")].find(input => input.dataset.seats === button.dataset.plan)?.reportValidity()) return;
             if (!el.querySelector("#billing-consent").checked)
               throw new Error(t("billingConsent"));
             const body = {
               plan_id: button.dataset.plan,
+              seats: chosenPlan(plans.find(p => p.id === button.dataset.plan)).seat_limit,
               months,
               accepted_terms: true,
             };
@@ -941,7 +966,7 @@ export function createSaas({
       )
       .join(
         "",
-      )}</div><section class="panel"><h2>${tr("Organizaciones suscritas", "Subscriber companies")}</h2><div class="table-wrap"><table><thead><tr>${["Empresa", "Estado", "Usuarios", "Prueba", "Plan", "Acceso"].map((x) => `<th>${x}</th>`).join("")}</tr></thead><tbody>${data.tenants.map((w) => `<tr><td>${e(w.name)}${w.is_demo ? "<small>Espacio ilustrativo privado</small>" : ""}</td><td>${e(w.status)}</td><td>${w.users} / ${w.seat_limit}</td><td>${new Date(w.trial_ends_at).toLocaleDateString(lang)}</td><td>${e(w.billing_plan_id || "—")}</td><td>${!w.is_demo ? `<button class="btn" data-tenant="${w.id}" data-status="${w.status === "suspended" ? "trialing" : "suspended"}">${w.status === "suspended" ? tr("Reactivar", "Reactivate") : tr("Suspender", "Suspend")}</button>` : ""}</td></tr>`).join("")}</tbody></table></div></section><h2>${tr("Catálogo de precios", "Pricing catalog")}</h2><p class="subtitle">${tr("MXN. Los cambios se aplican a nuevas suscripciones o cambios de plan explícitos.", "MXN. Changes apply to new subscriptions or explicit plan changes.")}</p><div class="settings-grid">${data.plans.map((p) => `<form class="panel plan-form" data-plan-edit="${e(p.id)}"><h3>${e(p.name)} · ${p.seat_limit} ${tr("usuarios", "users")}</h3><label>${tr("Nombre", "Name")}<input name="name" value="${e(p.name)}" required></label><label>${tr("Precio mensual en MXN", "Monthly price in MXN")}<input name="price" type="number" min="1" step="0.01" value="${p.monthly_cents ? p.monthly_cents / 100 : ""}" required></label>${[3, 6].map((m) => `<label>${tr("Descuento", "Discount")} ${m} ${tr("meses", "months")} (%)<input name="discount-${m}" type="number" min="0" max="80" value="${p.discounts[m] || 0}"></label>`).join("")}<p>${tr("Anual: 12 meses por el precio de 10", "Annual: 12 months for the price of 10")}</p><label>IA / ${tr("mes", "month")}<input name="ai_limit" type="number" min="0" value="${p.ai_limit}"></label><label class="check"><input name="active" type="checkbox" ${p.active ? "checked" : ""}>${tr("Disponible", "Available")}</label><button class="btn primary">${t("save")}</button></form>`).join("")}</div>`;
+      )}</div><section class="panel"><h2>${tr("Organizaciones suscritas", "Subscriber companies")}</h2><div class="table-wrap"><table><thead><tr>${["Empresa", "Estado", "Usuarios", "Prueba", "Plan", "Acceso"].map((x) => `<th>${x}</th>`).join("")}</tr></thead><tbody>${data.tenants.map((w) => `<tr><td>${e(w.name)}${w.is_demo ? "<small>Espacio ilustrativo privado</small>" : ""}</td><td>${e(w.status)}</td><td>${w.users} / ${w.seat_limit}</td><td>${new Date(w.trial_ends_at).toLocaleDateString(lang)}</td><td>${e(w.billing_plan_id || "—")}</td><td>${!w.is_demo ? `<button class="btn" data-tenant="${w.id}" data-status="${w.status === "suspended" ? "trialing" : "suspended"}">${w.status === "suspended" ? tr("Reactivar", "Reactivate") : tr("Suspender", "Suspend")}</button>` : ""}</td></tr>`).join("")}</tbody></table></div></section><h2>${tr("Catálogo de precios", "Pricing catalog")}</h2><p class="subtitle">${tr("MXN. Los cambios se aplican a nuevas suscripciones o cambios de plan explícitos.", "MXN. Changes apply to new subscriptions or explicit plan changes.")}</p><div class="settings-grid">${data.plans.map((p) => `<form class="panel plan-form" data-plan-edit="${e(p.id)}"><h3>${e(p.name)} · ${p.seat_limit} ${tr("usuarios", "users")}</h3><label>${tr("Nombre", "Name")}<input name="name" value="${e(p.name)}" required></label><label>${tr("Precio mensual en MXN por usuario (planes por rango)", "Monthly MXN price per user (volume tiers)")}<input name="price" type="number" min="1" step="0.01" value="${(p.unit_cents || p.monthly_cents) ? (p.unit_cents || p.monthly_cents) / 100 : ""}" required></label>${[3, 6, 12].map((m) => `<label>${tr("Descuento", "Discount")} ${m} ${tr("meses", "months")} (%)<input name="discount-${m}" type="number" min="0" max="80" step="0.1" value="${p.discounts[m] || 0}"></label>`).join("")}<label>IA / ${tr("mes", "month")}<input name="ai_limit" type="number" min="0" value="${p.ai_limit}"></label><label class="check"><input name="active" type="checkbox" ${p.active ? "checked" : ""}>${tr("Disponible", "Available")}</label><button class="btn primary">${t("save")}</button></form>`).join("")}</div>`;
     el.insertAdjacentHTML(
       "beforeend",
       `<h2>${tr("Modelos de configuración", "Configuration templates")}</h2><div class="settings-grid">${data.templates.map((template) => `<form class="panel" data-template-edit="${e(template.id)}"><label>${tr("Nombre", "Name")}<input name="name" value="${e(template.name)}" required></label><label>${tr("Servicios (uno por línea)", "Services (one per line)")}<textarea name="categories" rows="4" required>${e((template.settings.categories || []).join("\n"))}</textarea></label><label>${tr("Departamentos", "Departments")}<textarea name="departments" rows="2">${e((template.settings.departments || []).join("\n"))}</textarea></label><label class="check"><input name="active" type="checkbox" ${template.active ? "checked" : ""}>${tr("Disponible", "Available")}</label><button class="btn primary">${t("save")}</button></form>`).join("")}</div>`,
@@ -984,7 +1009,7 @@ export function createSaas({
               1: 0,
               3: Number(values["discount-3"]),
               6: Number(values["discount-6"]),
-              12: 100 / 6,
+              12: Number(values["discount-12"]),
             },
           });
           notify(t("saveSuccess"));

@@ -1,43 +1,25 @@
-import { test } from "node:test";
-import assert from "node:assert/strict";
-import { periodQuote } from "../public/pricing.js";
-import { pool } from "../server/db.js";
-import { after } from "node:test";
-after(() => pool.end());
-test("MXN catalog matches approved volume tiers and every annual price is exactly ten monthly payments", async () => {
-  const plans = (
-    await pool.query(
-      "SELECT * FROM billing_plans WHERE active AND currency='mxn' ORDER BY seat_limit",
-    )
-  ).rows;
-  assert.deepEqual(
-    plans.map((p) => p.seat_limit),
-    [5, 10, 15, 30, 50],
-  );
-  assert.deepEqual(
-    plans.map((p) => p.monthly_cents),
-    [149900, 284810, 404730, 764490, 1199200],
-  );
-  for (const plan of plans) {
-    assert.equal(periodQuote(plan, 1).users_period_cents, plan.monthly_cents);
-    assert.equal(
-      periodQuote(plan, 3).users_period_cents,
-      Math.round(plan.monthly_cents * 3 * 0.95),
-    );
-    assert.equal(
-      periodQuote(plan, 6).users_period_cents,
-      Math.round(plan.monthly_cents * 6 * 0.9),
-    );
-    assert.equal(
-      periodQuote(plan, 12).users_period_cents,
-      plan.monthly_cents * 10,
-    );
-    assert.equal(periodQuote(plan, 12).free_months, 2);
+import {test,after} from 'node:test';
+import assert from 'node:assert/strict';
+import {periodQuote,withSeats} from '../public/pricing.js';
+import {pool} from '../server/db.js';
+after(()=>pool.end());
+test('Volume pricing applies the correct whole-team rate at every tier boundary and exact period discounts',async()=>{
+ const plans=(await pool.query("SELECT * FROM billing_plans WHERE active AND currency='mxn' ORDER BY seat_limit")).rows;
+ assert.equal(plans.length,4);
+ for(const [seats,unit] of [[1,49900],[2,49900],[3,39900],[10,39900],[11,29900],[20,29900],[21,19900],[50,19900],[100,19900]]) {
+  const base=plans.find(p=>seats>=p.min_seats && seats<=p.max_seats);
+  const plan=withSeats(base,seats);assert.equal(plan.monthly_cents,seats*unit);
+  for(const [months,factor] of [[1,1],[3,.97],[6,.925],[12,.82]]) {
+   const q=periodQuote(plan,months);
+   assert.equal(q.users_period_cents,Math.round(seats*unit*months*factor));
+   assert.equal(q.activation_cents,299900);assert.equal(q.free_months,0);
   }
-  const base = plans[0];
-  assert.equal(periodQuote(base, 3).users_period_cents, 427215);
-  assert.equal(periodQuote(base, 6).users_period_cents, 809460);
-  assert.equal(periodQuote(base, 12).users_period_cents + 299900, 1798900);
-  assert.throws(() => periodQuote({ ...base, currency: "usd" }, 1));
-  assert.throws(() => periodQuote(base, 2));
+ }
+ const p=withSeats(plans[0],1);
+ assert.equal(periodQuote(p,1).users_period_cents+299900,349800);
+ assert.equal(periodQuote(p,3).users_period_cents,145209);
+ assert.equal(periodQuote(p,6).users_period_cents,276945);
+ assert.equal(periodQuote(p,12).users_period_cents,491016);
+ for(const seats of [0,3,1.5,'2']) assert.throws(()=>withSeats(plans[0],seats));
+ assert.throws(()=>periodQuote({...p,currency:'usd'},1));assert.throws(()=>periodQuote(p,2));
 });

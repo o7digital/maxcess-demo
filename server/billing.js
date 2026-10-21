@@ -3,6 +3,7 @@ import {
   ACTIVATION_CENTS,
   BILLING_MODEL,
   periodQuote,
+  withSeats,
 } from "../public/pricing.js";
 import express from "express";
 import Stripe from "stripe";
@@ -66,11 +67,11 @@ async function prices(stripe, plan, months, db) {
     );
   });
   const users = await cached(
-    `mxn-users-${plan.id}-v${plan.version}-${months}`,
+    `mxn-users-${plan.id}-v${plan.version}-${plan.seat_limit}-${months}`,
     async () => {
       const product = await stripe.products.create(
         { name: `Service Hub · ${plan.name}`, metadata: { kind: "users" } },
-        { idempotencyKey: `servicehub-mxn-plan-${plan.id}-v${plan.version}` },
+        { idempotencyKey: `servicehub-mxn-plan-${plan.id}-v${plan.version}-${plan.seat_limit}` },
       );
       return stripe.prices.create(
         {
@@ -86,7 +87,7 @@ async function prices(stripe, plan, months, db) {
           },
         },
         {
-          idempotencyKey: `servicehub-mxn-price-${plan.id}-v${plan.version}-${months}`,
+          idempotencyKey: `servicehub-mxn-price-${plan.id}-v${plan.version}-${plan.seat_limit}-${months}`,
         },
       );
     },
@@ -379,11 +380,14 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
           "Ya existe una suscripción. Usa Gestionar suscripción.",
         );
       const {
-        rows: [plan],
+        rows: [basePlan],
       } = await db.query("SELECT * FROM billing_plans WHERE id=$1 AND active", [
         req.body.plan_id,
       ]);
-      if (!plan) throw fail(400, "Plan no disponible");
+      if (!basePlan) throw fail(400, "Plan no disponible");
+      let plan;
+      try { plan = withSeats(basePlan, req.body.seats); }
+      catch { throw fail(400, "Número de usuarios fuera del rango del plan"); }
       const q = quote(plan, req.body.months);
       const {
         rows: [count],
@@ -456,7 +460,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
           },
         },
         {
-          idempotencyKey: `servicehub-checkout-${t.id}-${plan.id}-v${plan.version}-${q.months}-${t.checkout_session_id || "initial"}`,
+          idempotencyKey: `servicehub-checkout-${t.id}-${plan.id}-v${plan.version}-${plan.seat_limit}-${q.months}-${t.checkout_session_id || "initial"}`,
         },
       );
       await db.query(
@@ -467,6 +471,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
         ...q,
         activation_due_cents: activationDue,
         plan_id: plan.id,
+        seats: plan.seat_limit,
         terms_version: "2026-10-16-mxn-v1",
         accepted_at: new Date().toISOString(),
       });
@@ -503,11 +508,14 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
           "Contacta con O7 Digital Group para migrar tu contrato anterior a MXN.",
         );
       const {
-        rows: [plan],
+        rows: [basePlan],
       } = await db.query("SELECT * FROM billing_plans WHERE id=$1 AND active", [
         req.body.plan_id,
       ]);
-      if (!plan) throw fail(400, "Plan no disponible");
+      if (!basePlan) throw fail(400, "Plan no disponible");
+      let plan;
+      try { plan = withSeats(basePlan, req.body.seats); }
+      catch { throw fail(400, "Número de usuarios fuera del rango del plan"); }
       quote(plan, req.body.months);
       const {
         rows: [c],
@@ -619,13 +627,13 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       throw fail(400, "Tarifa no válida");
     const discounts = {};
     for (const months of [1, 3, 6, 12]) {
-      const d = months === 12 ? 100 / 6 : b.discounts?.[String(months)];
+      const d = b.discounts?.[String(months)];
       if (!Number.isFinite(d) || d < 0 || d > 80 || (months === 1 && d !== 0))
         throw fail(400, "Descuento no válido");
       discounts[months] = d;
     }
     const r = await pool.query(
-      "UPDATE billing_plans SET name=$1,monthly_cents=$2,discounts=$3,ai_limit=$4,active=$5,version=version+1 WHERE id=$6 AND currency='mxn' RETURNING id",
+      "UPDATE billing_plans SET name=$1,monthly_cents=CASE WHEN unit_cents IS NOT NULL THEN $2*seat_limit ELSE $2 END,unit_cents=CASE WHEN unit_cents IS NOT NULL THEN $2 ELSE NULL END,discounts=$3,ai_limit=$4,active=$5,version=version+1 WHERE id=$6 AND currency='mxn' RETURNING id",
       [
         b.name.trim(),
         b.monthly_cents,

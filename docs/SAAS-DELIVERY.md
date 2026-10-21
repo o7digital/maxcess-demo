@@ -142,3 +142,11 @@ Le bootstrap expose `recoveryAvailable`, calculé à partir de la configuration 
 L'émission d'un nouveau jeton invalide les précédents du même usage et retire leurs messages non envoyés de la file pour éviter l'envoi ultérieur de liens déjà invalides. La réinitialisation conserve le contrôle du jeton haché, l'expiration d'une heure, l'usage unique et la révocation des sessions. Un lien d'assistance peut être émis par l'opérateur habilité et remis dans un fichier local privé, sans exposer de secret dans Git ou créer un accès public d'administration.
 
 Validation : `npm run build`, `npm test` et `node scripts/recovery-browser-qa.js` ; configuration SMTP simulée uniquement dans les tests de la file, refus uniforme sans service, formulaire de réinitialisation accessible, connexion avec mot de passe existant et affichage ES/EN/FR de l'indisponibilité.
+
+## Tarification par utilisateur — 20 octobre 2026
+
+Ce catalogue remplace les anciens forfaits et l'offre annuelle de deux mois gratuits. Activation unique de **2 999 MXN au premier règlement**, en plus du forfait payé d'avance. Tarif mensuel appliqué à tous les utilisateurs selon le nombre total souscrit : 1–2 à **499 MXN/utilisateur**, 3–10 à **399 MXN**, 11–20 à **299 MXN**, 21 et plus à **199 MXN**. Le seuil de deux utilisateurs appartient à la première tranche.
+
+Périodes : mensuelle sans remise, trimestrielle **−3 %**, semestrielle **−7,5 %**, annuelle **−18 %**. Les remises portent sur le forfait utilisateurs ; l'activation n'est pas remisée. Le nombre exact se choisit dans chaque tranche. Le serveur recalcule les tarifs, limites et prix Stripe à partir du catalogue, sans accepter de montant fourni par le navigateur. Les anciens contrats Stripe ne sont pas modifiés automatiquement.
+
+Validation : 30 tests API, seuils de chaque tranche, remises et arrondis, consentement et quantité Checkout simulé, pages publiques ES/EN/FR, abonnement et affichage mobile. Paiement réel toujours indisponible tant que les clés Stripe test ne sont pas configurées.
