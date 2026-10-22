@@ -18,11 +18,11 @@
     },
     {
       "source": "/api/:path*",
-      "destination": "https://service-hub-dev-3fbf.up.railway.app/api/:path*"
+      "destination": "https://olivia.o7digitalgroup.com/servicehub-backend/api/:path*"
     },
     {
       "source": "/health",
-      "destination": "https://service-hub-dev-3fbf.up.railway.app/health"
+      "destination": "https://olivia.o7digitalgroup.com/servicehub-backend/health"
     },
     {
       "source": "/cliente",

@@ -8,14 +8,14 @@ await migrate();
 const server = createApp().listen(process.env.PORT || 3000, "0.0.0.0", () =>
   console.log(`Service Hub listening on port ${process.env.PORT || 3000}`),
 );
-const notifications = setInterval(
+const notifications = process.env.BACKGROUND_JOBS_ENABLED === "false" ? null : setInterval(
   () =>
     Promise.all([runNotifications(), runAutomations()]).catch(() =>
       console.error("Background worker failed"),
     ),
   60000,
 );
-notifications.unref();
+notifications?.unref();
 async function shutdown() {
   clearInterval(notifications);
   server.close(async () => {
