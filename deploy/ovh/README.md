@@ -19,6 +19,18 @@ Mailcow configuration, SMTP account or mail port is changed.
   old application is stopped and its database fenced against writes.
 - Restart policy is `unless-stopped`; do not alter the Mailcow/Pulse writer guards.
 
+## Backups
+
+`maxcess-backup.timer` runs daily at 04:40 UTC with up to five minutes of jitter
+(22:40 Mexico City on the previous calendar day). The root-only script creates a
+transactional logical dump plus the private configuration, sends it over pinned
+SSH to `/srv/maxcess-backups` on VPS2, and verifies the remote SHA256. Both servers
+retain seven successful archives. A dedicated source-IP-restricted key can only
+invoke `backup-receive.py`; it provides no interactive shell. Backup archives
+contain secrets and must remain private. Check `maxcess-backup.service`,
+`backup-status.json` and the timer after failures. These are backups, not an
+automatic Maxcess failover configuration.
+
 ## Migration sequence
 
 1. Take a logical PostgreSQL dump including sessions, accounts, tickets, attachments
