@@ -67,10 +67,10 @@ async function prices(stripe, plan, months, db) {
     );
     return price;
   }
-  const activation = await cached(`${CURRENCY}-activation-${ACTIVATION_CENTS}-tax-v2`, async () => {
+  const activation = await cached(`${CURRENCY}-activation-${ACTIVATION_CENTS}-tax-v3`, async () => {
     const product = await stripe.products.create(
-      { name: "Service Hub · Activación", metadata: { kind: "activation" } },
-      { idempotencyKey: "servicehub-usd-activation-product-v1" },
+      { name: "Service Hub · Activación", tax_code: "txcd_20120002", metadata: { kind: "activation" } },
+      { idempotencyKey: "servicehub-usd-activation-product-tax-v1" },
     );
     return stripe.prices.create(
       {
@@ -80,15 +80,15 @@ async function prices(stripe, plan, months, db) {
         tax_behavior: "exclusive",
         metadata: { kind: "activation" },
       },
-      { idempotencyKey: "servicehub-usd-activation-price-149-tax-v2" },
+      { idempotencyKey: "servicehub-usd-activation-price-149-tax-v3" },
     );
   });
   const users = await cached(
-    `usd-users-tax-v2-${plan.id}-v${plan.version}-${plan.seat_limit}-${months}`,
+    `usd-users-tax-v3-${plan.id}-v${plan.version}-${plan.seat_limit}-${months}`,
     async () => {
       const product = await stripe.products.create(
-        { name: `Service Hub · ${plan.name}`, metadata: { kind: "users" } },
-        { idempotencyKey: `servicehub-usd-plan-${plan.id}-v${plan.version}-${plan.seat_limit}` },
+        { name: `Service Hub · ${plan.name}`, tax_code: "txcd_10103001", metadata: { kind: "users" } },
+        { idempotencyKey: `servicehub-usd-plan-tax-v1-${plan.id}-v${plan.version}-${plan.seat_limit}` },
       );
       return stripe.prices.create(
         {
@@ -105,7 +105,7 @@ async function prices(stripe, plan, months, db) {
           },
         },
         {
-          idempotencyKey: `servicehub-usd-price-tax-v2-${plan.id}-v${plan.version}-${plan.seat_limit}-${months}`,
+          idempotencyKey: `servicehub-usd-price-tax-v3-${plan.id}-v${plan.version}-${plan.seat_limit}-${months}`,
         },
       );
     },
@@ -489,7 +489,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
           },
         },
         {
-          idempotencyKey: `servicehub-checkout-tax-v2-${t.id}-${plan.id}-v${plan.version}-${plan.seat_limit}-${q.months}-${t.checkout_session_id || "initial"}`,
+          idempotencyKey: `servicehub-checkout-tax-v3-${t.id}-${plan.id}-v${plan.version}-${plan.seat_limit}-${q.months}-${t.checkout_session_id || "initial"}`,
         },
       );
       await db.query(

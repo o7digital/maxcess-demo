@@ -27,10 +27,11 @@ let subscription,
   priceId = 0,
   checkoutId = 0;
 const createdPrices = new Map();
+const createdProducts = [];
 const sdk = new Stripe("sk_test_fixture");
 const fake = {
   webhooks: sdk.webhooks,
-  products: { create: async () => ({ id: "prod_fixture" }) },
+  products: { create: async (body) => { createdProducts.push(body); return { id: "prod_fixture" }; } },
   prices: {
     create: async (body) => {
       const price = { id: "price_fixture_" + ++priceId, ...body };
@@ -1156,6 +1157,8 @@ test("Signed webhooks sync current Stripe state, reject forged/live events and h
     livemode: false,
     data: { object: { id: subscription.id } },
   };
+  assert.ok(createdProducts.some(p => p.metadata.kind === "activation" && p.tax_code === "txcd_20120002"));
+  assert.ok(createdProducts.some(p => p.metadata.kind === "users" && p.tax_code === "txcd_10103001"));
   await signed({ ...event, livemode: true }).expect(400);
   const previousMode = process.env.STRIPE_MODE;
   try {
