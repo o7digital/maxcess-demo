@@ -59,3 +59,20 @@ any reverse migration. Never point users back at the old Railway snapshot.
 
 Do not invoke a seed/bootstrap command on the migrated database. Build and test
 commands use a separate local test database, never the migrated business database.
+
+## Stripe payment modes
+
+`STRIPE_MODE` defaults to `test`. Live payments require `STRIPE_MODE=live` and
+a matching `sk_live_` or restricted `rk_live_` key in the private `app.env`.
+The webhook signing secret must belong to the endpoint in the same account and
+mode. Signed events and fetched subscriptions from the other mode are rejected.
+Live price references use a separate catalog namespace so test prices are never
+reused for real Checkout sessions. Existing customers and subscriptions must be
+audited before changing modes; their identifiers are also mode-specific.
+An optional `STRIPE_PORTAL_CONFIGURATION_ID` selects an app-specific customer portal.
+
+Before enabling live payments: verify account identity, API permissions, Stripe
+Tax readiness and live webhook registration; back up the database and private
+configuration. Validate Checkout and webhook processing in test mode first.
+Never charge a customer as an infrastructure test. CLI credentials expire and
+must be replaced with a durable, appropriately scoped server credential.

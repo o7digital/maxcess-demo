@@ -1157,6 +1157,18 @@ test("Signed webhooks sync current Stripe state, reject forged/live events and h
     data: { object: { id: subscription.id } },
   };
   await signed({ ...event, livemode: true }).expect(400);
+  const previousMode = process.env.STRIPE_MODE;
+  try {
+    process.env.STRIPE_MODE = "live";
+    const probe = { id: "evt_live_probe_" + randomUUID(), type: "servicehub.mode_check", livemode: true, data: { object: {} } };
+    await signed(probe).expect(200);
+    await signed({ ...probe, livemode: false }).expect(400);
+    // A signed live event must still reject a subscription fetched from test mode.
+    await signed({ ...event, id: "evt_wrong_subscription_" + randomUUID(), livemode: true }).expect(400);
+  } finally {
+    if (previousMode === undefined) delete process.env.STRIPE_MODE;
+    else process.env.STRIPE_MODE = previousMode;
+  }
   await signed(event).expect(200);
   await signed(event).expect(200);
   const {
@@ -1199,7 +1211,7 @@ test("A signed removal of the mandatory annual license suspends access instead o
   await b.agent.get("/api/tickets").expect(403);
   await b.agent.get("/api/billing").expect(200);
 });
-test("Commercial mode disables illustrative identities and a live Stripe key is never accepted", async () => {
+test("Commercial mode disables illustrative identities and live Stripe requires explicit mode", async () => {
   process.env.COMMERCIAL_MODE = "true";
   try {
     const fresh = request.agent(app),
@@ -1218,6 +1230,16 @@ test("Commercial mode disables illustrative identities and a live Stripe key is 
   process.env.STRIPE_SECRET_KEY = "sk_live_should_never_be_used";
   try {
     assert.throws(stripeClient, { status: 503 });
+    const previousMode = process.env.STRIPE_MODE;
+    try {
+      process.env.STRIPE_MODE = "live";
+      assert.doesNotThrow(stripeClient);
+      process.env.STRIPE_SECRET_KEY = "sk_test_wrong_mode";
+      assert.throws(stripeClient, { status: 503 });
+    } finally {
+      if (previousMode === undefined) delete process.env.STRIPE_MODE;
+      else process.env.STRIPE_MODE = previousMode;
+    }
   } finally {
     if (old) process.env.STRIPE_SECRET_KEY = old;
     else delete process.env.STRIPE_SECRET_KEY;

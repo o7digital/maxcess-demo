@@ -20,9 +20,21 @@ import {
   accessState,
 } from "./workspace.js";
 const LEGACY_LICENSE = 39900;
+export function stripeMode() {
+  return process.env.STRIPE_MODE === "live" ? "live" : "test";
+}
+export function stripeConfigured() {
+  const key = process.env.STRIPE_SECRET_KEY || "";
+  const mode = stripeMode();
+  return ["sk_", "rk_"].some(prefix => key.startsWith(prefix + mode + "_"));
+}
+function assertStripeMode(object) {
+  if (Boolean(object.livemode) !== (stripeMode() === "live"))
+    throw fail(400, "El modo del evento Stripe no coincide con la configuración");
+}
 export function stripeClient() {
   const key = process.env.STRIPE_SECRET_KEY;
-  if (!key?.startsWith("sk_test_"))
+  if (!stripeConfigured())
     throw fail(
       503,
       "La facturación está en preparación. Contacta con O7 Digital Group.",
@@ -39,6 +51,7 @@ export function quote(plan, months) {
 async function prices(stripe, plan, months, db) {
   const q = quote(plan, months);
   async function cached(key, create) {
+    if (stripeMode() === "live") key = "live:" + key;
     await db.query("SELECT pg_advisory_xact_lock(hashtext($1))", [key]);
     const {
       rows: [existing],
@@ -103,8 +116,7 @@ async function syncSubscription(db, stripe, id) {
   let subscription = await stripe.subscriptions.retrieve(id, {
     expand: ["items.data.price"],
   });
-  if (subscription.livemode)
-    throw fail(400, "Los eventos live no están habilitados");
+  assertStripeMode(subscription);
   const tenantId = Number(subscription.metadata?.tenant_id);
   if (!Number.isSafeInteger(tenantId) || tenantId < 1) return null;
   const {
@@ -116,6 +128,7 @@ async function syncSubscription(db, stripe, id) {
   subscription = await stripe.subscriptions.retrieve(id, {
     expand: ["items.data.price"],
   });
+  assertStripeMode(subscription);
   if (t?.retired_subscription_ids?.includes(id)) return null;
   if (
     !t ||
@@ -242,8 +255,7 @@ export function installBillingPublic(app, getStripe = stripeClient) {
       } catch {
         throw fail(400, "Firma no válida");
       }
-      if (event.livemode)
-        throw fail(400, "Los eventos live no están habilitados");
+      assertStripeMode(event);
       await transaction(async (db) => {
         const inserted = await db.query(
           "INSERT INTO billing_events(id,event_type) VALUES($1,$2) ON CONFLICT DO NOTHING RETURNING id",
@@ -363,7 +375,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       activation_cents: ACTIVATION_MODELS[req.tenant.billing_model]?.activation_cents ?? 0,
       activation_paid: Boolean(req.tenant.activation_paid_at),
       configured: Boolean(
-        process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_") &&
+        stripeConfigured() &&
         process.env.STRIPE_WEBHOOK_SECRET,
       ),
       invoices,
@@ -502,6 +514,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       throw fail(409, "No tienes una suscripción");
     const session = await getStripe().billingPortal.sessions.create({
       customer: req.tenant.stripe_customer_id,
+      ...(process.env.STRIPE_PORTAL_CONFIGURATION_ID ? { configuration: process.env.STRIPE_PORTAL_CONFIGURATION_ID } : {}),
       return_url: publicOrigin() + "/subscription",
     });
     res.json({ url: session.url });
@@ -613,7 +626,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       },
       services: {
         database: true,
-        stripe: Boolean(process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_")),
+        stripe: stripeConfigured(),
         email: Boolean(process.env.SMTP_URL && process.env.MAIL_FROM),
         olivia: process.env.OLIVIA_TENANT_READY === "true",
         huggingface: Boolean(
