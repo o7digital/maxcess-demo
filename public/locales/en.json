@@ -1120,5 +1120,9 @@
   "Illustrated customer portal with a request, supporting document and progress stages": "Illustrated customer portal with a request, supporting document and progress stages",
   "Illustrated team workspace with requests organised by progress and responsibility": "Illustrated team workspace with requests organised by progress and responsibility",
   "Illustrated management dashboard showing workload, progress and reporting": "Illustrated management dashboard showing workload, progress and reporting",
-  "Manage customer requests, field work and service operations.": "Manage customer requests, field work and service operations."
+  "Manage customer requests, field work and service operations.": "Manage customer requests, field work and service operations.",
+  "GLPI integration via API": "GLPI integration via API",
+  "GLPI can be connected through its REST API. We configure the connection for your GLPI version, access rights and agreed ticket exchanges. This integration is available on request and is not enabled by default.": "GLPI can be connected through its REST API. We configure the connection for your GLPI version, access rights and agreed ticket exchanges. This integration is available on request and is not enabled by default.",
+  "GLPI API documentation": "GLPI API documentation",
+  "API integration on request": "API integration on request"
 }

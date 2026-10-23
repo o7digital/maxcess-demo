@@ -1120,5 +1120,9 @@
   "Illustrated customer portal with a request, supporting document and progress stages": "Portal de cliente ilustrado com pedido, documento e etapas de progresso",
   "Illustrated team workspace with requests organised by progress and responsibility": "Espaço de equipa ilustrado com pedidos por progresso e responsabilidade",
   "Illustrated management dashboard showing workload, progress and reporting": "Painel de gestão ilustrado com carga de trabalho, progresso e relatórios",
-  "Manage customer requests, field work and service operations.": "Gira pedidos de clientes, intervenções e operações de serviço."
+  "Manage customer requests, field work and service operations.": "Gira pedidos de clientes, intervenções e operações de serviço.",
+  "GLPI integration via API": "Integração GLPI através de API",
+  "GLPI can be connected through its REST API. We configure the connection for your GLPI version, access rights and agreed ticket exchanges. This integration is available on request and is not enabled by default.": "O GLPI pode ser ligado através da sua API REST. Adaptamos a ligação à versão do GLPI, aos direitos de acesso e às trocas de pedidos acordadas. Esta integração está disponível mediante pedido e não está ativada por predefinição.",
+  "GLPI API documentation": "Documentação da API GLPI",
+  "API integration on request": "Integração API mediante pedido"
 }

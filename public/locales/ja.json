@@ -1120,5 +1120,9 @@
   "Illustrated customer portal with a request, supporting document and progress stages": "依頼、添付資料、進捗段階を示す顧客ポータルのイメージ",
   "Illustrated team workspace with requests organised by progress and responsibility": "進捗や担当者ごとに依頼を整理するチーム画面のイメージ",
   "Illustrated management dashboard showing workload, progress and reporting": "業務量、進捗、レポートを示す管理ダッシュボードのイメージ",
-  "Manage customer requests, field work and service operations.": "顧客の依頼、現場対応、サービス業務を一元管理。"
+  "Manage customer requests, field work and service operations.": "顧客の依頼、現場対応、サービス業務を一元管理。",
+  "GLPI integration via API": "API経由のGLPI連携",
+  "GLPI can be connected through its REST API. We configure the connection for your GLPI version, access rights and agreed ticket exchanges. This integration is available on request and is not enabled by default.": "GLPIのREST APIを通じて連携できます。GLPIのバージョン、アクセス権、合意したチケット交換の範囲に応じて接続を設定します。この連携はご依頼に応じて提供し、初期状態では有効になっていません。",
+  "GLPI API documentation": "GLPI APIドキュメント",
+  "API integration on request": "API連携はご依頼に応じて提供"
 }
