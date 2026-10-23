@@ -95,3 +95,44 @@ Vercel accepts the backend catalogue only if its billing model matches, otherwis
 it displays the approved offer with checkout unavailable. After accepting any new
 payment, use a forward fix rather than restoring an image that cannot process
 this billing model; never rewrite existing invoices or Stripe contracts.
+
+## Automatic Service Hub ZIP backups
+
+VPS1 runs `maxcess-backup` hourly (up to two minutes jitter), using an exported
+read-only PostgreSQL snapshot shared by the dump, row counts and binary hashes.
+The private ZIP includes the database (all accounts and attachments), source,
+lockfile, service configuration and Service Hub TLS material. It does not back up
+Mailcow, WordPress, Pulse or the whole VPS. Root-only copies are retained on VPS1
+and transferred by the existing pinned, forced-command SSH key to VPS2. ZIP CRC
+and SHA256 are checked before success is recorded. Retention on both hosts:
+latest 48 copies plus one copy per day for the latest 30 available days. Existing
+TGZ copies remain untouched. The receiver accepts up to 2 GiB per archive.
+
+`maxcess-backup-restore-test.timer` runs daily on VPS2 at 06:15 UTC plus up to
+five minutes jitter. It restores into a disposable PostgreSQL 18 with no network,
+no published ports, 384 MiB RAM, 0.5 CPU and a 512 MiB temporary database. It checks
+every table count and attachment/logo hash against the dump snapshot, tests
+writes, then deletes the temporary container. Increase these explicit limits as
+data grows. Neither workers nor mail, payments or connectors run in this test.
+Status: `/srv/maxcess-backups/restore-test-status.json`; failures are visible in
+`systemctl status maxcess-backup-restore-test.service` and its journal.
+
+The Mac script uses existing SSH authentication to pull the latest ZIP directly
+from VPS2 every hour while the user session is running and the Mac is awake.
+Destination: `~/Documents/ServiceHub Backups` (0700, archives 0600), same retention.
+It verifies SHA256/ZIP CRC and rejects remote copies older than three hours.
+LaunchAgent: `com.o7digital.servicehub-backup`. State: `sync-status.json` in the
+backup folder; logs under `~/Library/Application Support/O7 Service Hub/`.
+No external alert delivery is configured; inspect status files and systemd/launchd
+failures. A successful hourly backup limits the restore point to approximately
+one hour plus scheduling/runtime; missed backups increase that gap. A backup is
+not an automatic service failover and does not guarantee zero data loss.
+
+Workspace administrators with verified email can download their own portable ZIP
+in Settings via `/api/workspace/backup.zip`, including UTF-8 JSON Lines and exact
+attachment bytes. The export uses a read-only repeatable snapshot and includes a
+SHA256 manifest. It excludes credentials, passwords, sessions, MFA and all other
+workspaces. It remains available when an expired trial is read only. Exports are
+rate/concurrency limited, streamed, and not cached. This portable archive supports
+assisted recovery; automatic complete ZIP import is not implemented. Never give
+the global operator ZIP (all tenants and secrets) to a customer.

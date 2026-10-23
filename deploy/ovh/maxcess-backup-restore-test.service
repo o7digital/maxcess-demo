@@ -1,0 +1,10 @@
+[Unit]
+Description=Restore Service Hub backup in an isolated temporary PostgreSQL on VPS2
+After=docker.service
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/maxcess-backup-restore-test
+TimeoutStartSec=12min
+UMask=0077
+Nice=15
+IOSchedulingClass=idle

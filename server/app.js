@@ -1,3 +1,4 @@
+import { installBackupExportRoutes } from "./backup-export.js";
 import {installConnectorRoutes} from "./connectors.js";
 import {installSecurityPublic,installSecurityPrivate,beginChallenge} from "./security.js";
 import {
@@ -308,6 +309,7 @@ export function createApp({ getStripe } = {}) {
   });
   installBillingRoutes(app, getStripe);
   installWorkspaceRoutes(app);
+  installBackupExportRoutes(app);
   installSecurityPrivate(app, loginLimit);
   installConnectorRoutes(app, loginLimit);
   installRoleRoutes(app);

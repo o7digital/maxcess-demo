@@ -1,0 +1,8 @@
+[Unit]
+Description=Daily Service Hub restore verification on VPS2
+[Timer]
+OnCalendar=*-*-* 06:15:00 UTC
+RandomizedDelaySec=5min
+Persistent=true
+[Install]
+WantedBy=timers.target

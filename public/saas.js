@@ -739,6 +739,7 @@ export function createSaas({
         drawStages();
       }
     };
+    el.insertAdjacentHTML("beforeend", localizedHtml`<section class="panel" id="workspace-backup"><h2>${translateText("Your data, saved locally")}</h2><p>${translateText("Download a ZIP of this workspace, including requests, conversations, configuration and attachments. Keep it in a safe place. Passwords and service credentials are excluded. This export supports assisted recovery; it cannot be imported automatically.")}</p><a class="btn" href="/api/workspace/backup.zip" download>${translateText("Download my workspace ZIP")}</a></section>`);
     el.querySelector("#workspace-settings").onsubmit = safe(async () => {
       readFields();
       readStages();

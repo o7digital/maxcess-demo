@@ -1284,3 +1284,26 @@ test("Existing paid USD contracts retain their activation and are not switched t
  const bill=(await w.agent.get('/api/billing')).body;assert.equal(bill.activation_cents,14900);assert.equal(bill.migration_required,true);
  await send(w,'/billing/change-plan',{plan_id:'agents',seats:1,months:1,accepted_terms:true}).expect(409);
 });
+
+test('Workspace ZIP export preserves attachment bytes, isolates tenants and excludes authentication/payment secrets',async()=>{
+ const w=await register('Private export'),other=await register('Other export');
+ await request(app).get('/api/workspace/backup.zip').expect(401);
+ await w.agent.get('/api/workspace/backup.zip').expect(403);
+ await pool.query('UPDATE users SET email_verified_at=now() WHERE id=$1',[w.user.id]);
+ const company=(await w.agent.get('/api/companies')).body.companies[0];
+ const {rows:[t]}=await pool.query("INSERT INTO tickets(tenant_id,title,company_id,site,category,description,priority,requested_priority,created_by,due_at) VALUES($1,'Backup roundtrip',$2,'HQ','Servicio','Export fixture','Media','Media',$3,now()+interval '1 day') RETURNING id",[w.user.tenant_id,company.id,w.user.id]);
+ const pdf=Buffer.from('%PDF-1.4\nService Hub attachment byte preservation test\n%%EOF\n');const attachment=randomUUID();
+ await pool.query("INSERT INTO ticket_attachments(id,tenant_id,ticket_id,uploaded_by,filename,content_type,data) VALUES($1,$2,$3,$4,'../proof.pdf','application/pdf',$5)",[attachment,w.user.tenant_id,t.id,w.user.id,pdf]);
+ await pool.query("UPDATE tenants SET trial_ends_at=now()-interval '1 day' WHERE id=$1",[w.user.tenant_id]);
+ const response=await w.agent.get('/api/workspace/backup.zip').buffer(true).parse((res,cb)=>{const chunks=[];res.on('data',c=>chunks.push(c));res.on('end',()=>cb(null,Buffer.concat(chunks)));}).expect(200);
+ assert.match(response.headers['content-type'],/application\/zip/);assert.match(response.headers['cache-control'],/no-store/);
+ const {default:unzipper}=await import('unzipper');const zip=await unzipper.Open.buffer(response.body);const files=new Map(await Promise.all(zip.files.map(async f=>[f.path,await f.buffer()])));
+ const manifest=JSON.parse(files.get('manifest.json'));assert.equal(manifest.workspace_id,w.user.tenant_id);assert.equal(manifest.consistent_snapshot,true);
+ const workspace=JSON.parse(files.get('workspace.json'));assert.equal(workspace.id,w.user.tenant_id);assert.ok(!('stripe_customer_id'in workspace));
+ const users=files.get('data/users.jsonl').toString();assert.ok(users.includes(w.credentials.email));assert.ok(!users.includes(other.credentials.email));assert.ok(!users.includes('password_hash'));assert.ok(!users.includes('email_verified_at'));
+ const {createHash}=await import('node:crypto');for(const[path,hash]of Object.entries(manifest.files_sha256))assert.equal(createHash('sha256').update(files.get(path)).digest('hex'),hash,path);
+ const attachmentPath=[...files.keys()].find(p=>p.startsWith('attachments/'));assert.deepEqual(files.get(attachmentPath),pdf);assert.ok(!attachmentPath.split('/').includes('..'));
+ assert.ok(![...files.keys()].some(k=>/session|token|connector|mfa/.test(k)));
+ await pool.query("UPDATE users SET role='agent',role_id=NULL WHERE id=$1",[w.user.id]);
+ await w.agent.get('/api/workspace/backup.zip').expect(403);
+});
