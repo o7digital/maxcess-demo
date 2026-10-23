@@ -1,16 +1,18 @@
 export const CURRENCY = "usd";
-export const ACTIVATION_CENTS = 9900;
+export const ACTIVATION_CENTS = 14900;
 export const ANNUAL_FREE_MONTHS = 2;
 export const PERIOD_DISCOUNTS = {1: 0, 3: 7.5, 6: 12.5, 12: 100 * ANNUAL_FREE_MONTHS / 12};
-export const BILLING_MODEL = "activation_usd_agents_v2";
+export const BILLING_MODEL = "activation_usd_agents_v3";
 export const ACTIVATION_MODELS = {
  activation_mxn_v1: {currency:"mxn",activation_cents:299900},
  activation_usd_v1: {currency:CURRENCY,activation_cents:14900},
- activation_usd_agents_v2: {currency:CURRENCY,activation_cents:ACTIVATION_CENTS},
+ activation_usd_agents_v2: {currency:CURRENCY,activation_cents:9900},
+ activation_usd_agents_v3: {currency:CURRENCY,activation_cents:ACTIVATION_CENTS},
 };
 export function activationFor(months, settled = false, model = BILLING_MODEL) {
   if (settled) return 0;
-  if (model === BILLING_MODEL && [3,6,12].includes(months)) return 0;
+  if (model === BILLING_MODEL) return ({1:14900,3:9900,6:4900,12:0})[months] ?? ACTIVATION_CENTS;
+  if (model === "activation_usd_agents_v2" && [3,6,12].includes(months)) return 0;
   return ACTIVATION_MODELS[model]?.activation_cents ?? ACTIVATION_CENTS;
 }
 export function withSeats(plan, seats = plan.seat_limit) {

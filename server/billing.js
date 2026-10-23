@@ -69,7 +69,8 @@ async function prices(stripe, plan, months, db) {
     );
     return price;
   }
-  const activation = await cached(`${CURRENCY}-activation-${ACTIVATION_CENTS}-tax-v3`, async () => {
+  const activationAmount = q.activation_cents || ACTIVATION_CENTS;
+  const activation = await cached(`${CURRENCY}-activation-${activationAmount}-tax-v3`, async () => {
     const product = await stripe.products.create(
       { name: "Service Hub · Activación", tax_code: "txcd_20120002", metadata: { kind: "activation" } },
       { idempotencyKey: "servicehub-usd-activation-product-tax-v1" },
@@ -78,11 +79,11 @@ async function prices(stripe, plan, months, db) {
       {
         product: product.id,
         currency: CURRENCY,
-        unit_amount: ACTIVATION_CENTS,
+        unit_amount: activationAmount,
         tax_behavior: "exclusive",
         metadata: { kind: "activation" },
       },
-      { idempotencyKey: "servicehub-usd-activation-price-99-agents-v2-tax-v1" },
+      { idempotencyKey: `servicehub-usd-activation-price-${activationAmount}-agents-v3-tax-v1` },
     );
   });
   const users = await cached(
@@ -288,11 +289,12 @@ export function installBillingPublic(app, getStripe = stripeClient) {
             const terms = pending && ACTIVATION_MODELS[pending.billing_model];
             const amount = o.automatic_tax?.enabled ? o.amount_subtotal : o.amount_total;
             if (terms && terms.currency === o.currency && pending.checkout_total_cents === amount) {
-              if (pending.checkout_activation_cents === terms.activation_cents) {
+              if (pending.checkout_activation_cents === terms.activation_cents ||
+                (pending.billing_model === BILLING_MODEL && o.metadata?.billing_model === BILLING_MODEL && pending.checkout_activation_cents > 0 && pending.checkout_activation_cents === activationFor(Number(o.metadata?.months),false,pending.billing_model))) {
                 await db.query("UPDATE tenants SET activation_paid_at=COALESCE(activation_paid_at,now()) WHERE id=$1",[pending.id]);
-              } else if (pending.billing_model === BILLING_MODEL && pending.checkout_activation_cents === 0 &&
-                o.metadata?.billing_model === BILLING_MODEL && o.metadata?.activation_waived === "true" &&
-                [3,6,12].includes(Number(o.metadata?.months))) {
+              } else if (["activation_usd_agents_v2", BILLING_MODEL].includes(pending.billing_model) && pending.checkout_activation_cents === 0 &&
+                o.metadata?.billing_model === pending.billing_model && o.metadata?.activation_waived === "true" &&
+                [3,6,12].includes(Number(o.metadata?.months)) && activationFor(Number(o.metadata?.months),false,pending.billing_model) === 0) {
                 await db.query("UPDATE tenants SET activation_waived_at=COALESCE(activation_waived_at,now()) WHERE id=$1",[pending.id]);
               }
             }
@@ -465,7 +467,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
         tenant_id: String(t.id),
         billing_model: BILLING_MODEL,
         months: String(q.months),
-        activation_waived: String(!t.activation_paid_at && !t.activation_waived_at && q.months > 1),
+        activation_waived: String(!t.activation_paid_at && !t.activation_waived_at && activationDue === 0),
       };
       const session = await stripe.checkout.sessions.create(
         {

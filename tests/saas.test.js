@@ -919,13 +919,13 @@ test("Checkout consents to a one-time USD activation and a recurring user plan",
     assert.equal(checkoutBody.subscription_data.trial_end, undefined);
     assert.ok(
       checkoutBody.custom_text.submit.message.includes(
-        "Activación: 99 USD HT una sola vez",
+        "Activación: 149 USD HT una sola vez",
       ),
     );
     const activation = createdPrices.get(checkoutBody.line_items[0].price),
       users = createdPrices.get(checkoutBody.line_items[1].price);
     assert.equal(activation.currency, "usd");
-    assert.equal(activation.unit_amount, 9900);
+    assert.equal(activation.unit_amount, 14900);
     assert.equal(activation.recurring, undefined);
     assert.equal(users.currency, "usd");
     assert.equal(users.unit_amount, 3500);
@@ -968,7 +968,7 @@ test("USD activation requires verified paid checkout, is idempotent and is never
   }).expect(200);
   const invoiceUsers = createdPrices.get(checkoutBody.line_items[0].price);
   assert.equal(checkoutBody.line_items.length,1);
-  assert.equal(invoiceUsers.unit_amount,139900);
+  assert.equal(invoiceUsers.unit_amount,180000);
   const stored = (
     await pool.query(
       "SELECT checkout_session_id,checkout_total_cents FROM tenants WHERE id=$1",
@@ -980,7 +980,7 @@ test("USD activation requires verified paid checkout, is idempotent and is never
     customer: "cus_fixture_" + m.user.tenant_id,
     metadata: {
       tenant_id: String(m.user.tenant_id),
-      billing_model: "activation_usd_agents_v2",
+      billing_model: "activation_usd_agents_v3",
     },
     status: "active",
     livemode: false,
@@ -1062,7 +1062,7 @@ test("USD activation requires verified paid checkout, is idempotent and is never
       [m.user.tenant_id],
     )
   ).rows[0].monthly_recurring_cents;
-  assert.equal(recurring, Math.round(139900 / 12));
+  assert.equal(recurring, Math.round(180000 / 12));
   await send(m, "/billing/change-plan", {
     plan_id: "agents",
     seats:15,
@@ -1306,4 +1306,19 @@ test('Workspace ZIP export preserves attachment bytes, isolates tenants and excl
  assert.ok(![...files.keys()].some(k=>/session|token|connector|mfa/.test(k)));
  await pool.query("UPDATE users SET role='agent',role_id=NULL WHERE id=$1",[w.user.id]);
  await w.agent.get('/api/workspace/backup.zip').expect(403);
+});
+
+test('Quarterly and semiannual setup fees become settled only after a matching paid Stripe checkout',async()=>{
+ for(const[months,fee,subtotal]of[[3,9900,14895],[6,4900,14350]]){
+  const w=await register('Setup '+months);await pool.query('UPDATE users SET email_verified_at=now() WHERE id=$1',[w.user.id]);
+  await send(w,'/billing/checkout',{plan_id:'agents',seats:1,months,accepted_terms:true}).expect(200);
+  assert.equal(checkoutBody.metadata.activation_waived,'false');assert.equal(checkoutBody.line_items.length,2);assert.equal(createdPrices.get(checkoutBody.line_items[0].price).unit_amount,fee);
+  const recurring=createdPrices.get(checkoutBody.line_items[1].price);
+  const{rows:[stored]}=await pool.query('SELECT checkout_session_id,checkout_total_cents FROM tenants WHERE id=$1',[w.user.tenant_id]);assert.equal(stored.checkout_total_cents,subtotal);
+  subscription={id:'sub_setup_'+w.user.tenant_id,customer:'cus_fixture_'+w.user.tenant_id,metadata:{tenant_id:String(w.user.tenant_id),billing_model:'activation_usd_agents_v3'},status:'active',livemode:false,cancel_at_period_end:false,items:{data:[{id:'si_setup_'+w.user.tenant_id,quantity:1,price:recurring,current_period_end:1900000000}]}};
+  const object={id:stored.checkout_session_id,mode:'subscription',subscription:subscription.id,customer:subscription.customer,currency:'usd',amount_total:subtotal,metadata:checkoutBody.metadata,payment_status:'unpaid'};
+  await signed({id:'evt_fixture_'+randomUUID(),type:'checkout.session.completed',livemode:false,data:{object}}).expect(200);assert.equal((await w.agent.get('/api/billing')).body.activation_paid,false);
+  await signed({id:'evt_fixture_'+randomUUID(),type:'checkout.session.completed',livemode:false,data:{object:{...object,payment_status:'paid'}}}).expect(200);
+  const bill=(await w.agent.get('/api/billing')).body;assert.equal(bill.activation_paid,true);assert.equal(bill.activation_waived,false);assert.equal(bill.status,'active');
+ }
 });

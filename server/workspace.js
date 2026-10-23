@@ -248,7 +248,7 @@ export function customFields(values = {}, settings) {
   return result;
 }
 export async function seatCount(db, tenant) {
-  const agentsOnly = tenant.billing_model === BILLING_MODEL;
+  const agentsOnly = ["activation_usd_agents_v2", BILLING_MODEL].includes(tenant.billing_model);
   const {rows:[r]} = await db.query(
     "SELECT (SELECT count(*)::int FROM users WHERE tenant_id=$1 AND active AND (NOT $2::boolean OR role<>'client'))+(SELECT count(*)::int FROM invitations WHERE tenant_id=$1 AND accepted_at IS NULL AND expires_at>now() AND (NOT $2::boolean OR role<>'client')) AS total",
     [tenant.id, agentsOnly]);
@@ -257,7 +257,7 @@ export async function seatCount(db, tenant) {
 export async function seats(db, tenant, extra = 1, role = "agent") {
   const {rows:[current]} = await db.query("SELECT id,seat_limit,billing_model FROM tenants WHERE id=$1 FOR UPDATE",[tenant.id]);
   if (!current) throw fail(403, "Espacio no disponible");
-  if (current.billing_model === BILLING_MODEL && role === "client") return;
+  if (["activation_usd_agents_v2", BILLING_MODEL].includes(current.billing_model) && role === "client") return;
   if (await seatCount(db,current) + extra > current.seat_limit)
     throw fail(409, "Se alcanzó el límite de agentes. Cambia de plan en Suscripción.");
 }

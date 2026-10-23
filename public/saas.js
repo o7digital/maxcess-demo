@@ -43,7 +43,7 @@ const translations = {
     annual: "Anual",
     license: "Activación única",
     licenseDetail:
-      "99 USD HT de activación con pago mensual; gratis al pagar 3, 6 o 12 meses por adelantado.",
+      "Activación única: 149 USD con pago mensual, 99 USD con pago trimestral anticipado, 49 USD con pago semestral anticipado y gratis con pago anual anticipado. Importes sin impuestos.",
     trialStatus: "Tu prueba gratuita",
     readonly:
       "Tu espacio está en modo lectura. Tus datos se conservan. Activa tu suscripción para continuar.",
@@ -91,7 +91,7 @@ const translations = {
     annual: "Annual",
     license: "One-time activation",
     licenseDetail:
-      "99 USD activation excluding tax with monthly billing; waived when paying 3, 6 or 12 months in advance.",
+      "One-time setup: 149 USD with monthly billing, 99 USD with quarterly prepayment, 49 USD with six-month prepayment, and free with annual prepayment. Amounts exclude tax.",
     trialStatus: "Your free trial",
     readonly:
       "Your workspace is read only. Your data is retained. Activate your subscription to continue.",
@@ -285,7 +285,7 @@ export function createSaas({
           )
           .join(
             "",
-          )}</div><p class="notice">13.99 USD per internal agent per month, excluding tax. Customer requester accounts are not billed.</p><div id="public-plans" class="plan-grid"><p>${t("loading")}</p></div><p class="subtitle">${tr("Los clientes que registran solicitudes no ocupan plazas de pago. Agentes, responsables y administradores cuentan como agentes internos.", "Customer requesters do not use paid seats. Agents, managers and administrators count as internal agents.")} <a href="https://www.o7digital.com/">O7 Digital Group ↗</a></p></section>` +
+          )}</div><p class="notice">18 USD per internal agent per month, excluding tax. Customer requester accounts are not billed.</p><div id="public-plans" class="plan-grid"><p>${t("loading")}</p></div><p class="subtitle">${tr("Los clientes que registran solicitudes no ocupan plazas de pago. Agentes, responsables y administradores cuentan como agentes internos.", "Customer requesters do not use paid seats. Agents, managers and administrators count as internal agents.")} <a href="https://www.o7digital.com/">O7 Digital Group ↗</a></p></section>` +
         footer();
       bindLanguage(publicPage);
       const plansTarget = document.querySelector("#public-plans");
