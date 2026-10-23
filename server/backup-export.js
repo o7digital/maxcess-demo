@@ -18,7 +18,7 @@ export function installBackupExportRoutes(app){
   let db,archive,timer;
   try{
    db=await pool.connect();await db.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');
-   await db.query("SET LOCAL idle_in_transaction_session_timeout='120s'");
+   await db.query("SET LOCAL statement_timeout='60s'");
    const {rows:[workspace]}=await db.query('SELECT id,name,settings,created_at FROM tenants WHERE id=$1',[req.user.tenant_id]);
    archive=archiver('zip',{zlib:{level:6}});
    archive.on('error',e=>res.destroy(e));
