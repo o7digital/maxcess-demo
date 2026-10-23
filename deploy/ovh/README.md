@@ -77,17 +77,19 @@ configuration. Validate Checkout and webhook processing in test mode first.
 Never charge a customer as an infrastructure test. CLI credentials expire and
 must be replaced with a durable, appropriately scoped server credential.
 
-## Agent pricing (catalogue v2)
+## Agent pricing (billing model v3, price version 2)
 
-The `agents` offer is USD 13.99 per internal agent per month, excluding tax.
+The `agents` offer is USD 18 per internal agent per month, excluding tax.
 Admins and managers are staff seats; customer requester accounts and their
 invitations do not consume paid seats. Pending staff invitations reserve seats.
-Monthly activation is USD 99; first prepaid subscriptions for 3/6/12 months waive
-activation. Discounts remain 7.5%/12.5%/two free months respectively.
+One-time setup is USD 149 monthly, USD 99 with quarterly prepayment, USD 49
+with six-month prepayment, and free with annual prepayment. Discounts remain
+7.5%/12.5%/two free months respectively.
 Waiver is recorded only after a verified paid Checkout with the correct amount
 and metadata. Once settled, activation is not billed again.
 
-Migration 020 archives and retires the preceding catalogue. Existing Stripe
+Migration 022 archives the agent price and increments its version; untouched
+unpaid trials move to billing model v3. Migration 020 retains the older catalogue. Existing Stripe
 contracts and financially linked workspaces retain their original model,
 currency and activation terms. Only untouched unpaid trials migrate. Stripe
 prices are immutable and the new offer creates distinct price references.
