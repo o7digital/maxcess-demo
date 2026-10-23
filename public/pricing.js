@@ -1,12 +1,18 @@
 export const CURRENCY = "usd";
-export const ACTIVATION_CENTS = 14900;
+export const ACTIVATION_CENTS = 9900;
 export const ANNUAL_FREE_MONTHS = 2;
 export const PERIOD_DISCOUNTS = {1: 0, 3: 7.5, 6: 12.5, 12: 100 * ANNUAL_FREE_MONTHS / 12};
-export const BILLING_MODEL = "activation_usd_v1";
+export const BILLING_MODEL = "activation_usd_agents_v2";
 export const ACTIVATION_MODELS = {
  activation_mxn_v1: {currency:"mxn",activation_cents:299900},
- activation_usd_v1: {currency:CURRENCY,activation_cents:ACTIVATION_CENTS},
+ activation_usd_v1: {currency:CURRENCY,activation_cents:14900},
+ activation_usd_agents_v2: {currency:CURRENCY,activation_cents:ACTIVATION_CENTS},
 };
+export function activationFor(months, settled = false, model = BILLING_MODEL) {
+  if (settled) return 0;
+  if (model === BILLING_MODEL && [3,6,12].includes(months)) return 0;
+  return ACTIVATION_MODELS[model]?.activation_cents ?? ACTIVATION_CENTS;
+}
 export function withSeats(plan, seats = plan.seat_limit) {
   if (!plan.unit_cents) return plan;
   if (!Number.isSafeInteger(seats) || seats < plan.min_seats || seats > plan.max_seats)
@@ -36,6 +42,6 @@ export function periodQuote(plan, months) {
     users_period_cents,
     savings_cents: plan.monthly_cents * months - users_period_cents,
     monthly_equivalent_cents: Math.round(users_period_cents / months),
-    activation_cents: ACTIVATION_CENTS,
+    activation_cents: activationFor(months),
   };
 }

@@ -1,7 +1,5 @@
-import {ACTIVATION_CENTS,CURRENCY,PERIOD_DISCOUNTS} from '../public/pricing.js';
+import {ACTIVATION_CENTS,CURRENCY,PERIOD_DISCOUNTS,BILLING_MODEL} from '../public/pricing.js';
 export const BACKEND='https://olivia.o7digitalgroup.com/servicehub-backend';
-export const approvedUsdOffer=()=>({currency:CURRENCY,activation_cents:ACTIVATION_CENTS,trial_days:12,checkout_available:false,plans:[
- ['solo-2','1–2 usuarios',2,1,2,2900,40],['team-5','3–10 usuarios',5,3,10,2400,100],['team-15','11–20 usuarios',15,11,20,1900,300],['business-30','21+ usuarios',30,21,10000,1200,600]
-].map(([id,name,seat_limit,min_seats,max_seats,unit_cents,ai_limit])=>({id,name,seat_limit,min_seats,max_seats,unit_cents,ai_limit,monthly_cents:seat_limit*unit_cents,currency:CURRENCY,discounts:PERIOD_DISCOUNTS,active:true,version:5}))});
+export const approvedUsdOffer=()=>({currency:CURRENCY,billing_model:BILLING_MODEL,seat_basis:'agents',activation_cents:ACTIVATION_CENTS,trial_days:12,checkout_available:false,plans:[{id:'agents',name:'Service Hub',seat_limit:1,min_seats:1,max_seats:10000,unit_cents:1399,monthly_cents:1399,ai_limit:20,currency:CURRENCY,discounts:PERIOD_DISCOUNTS,active:true,version:1}]});
 export async function backendOffer(transport=fetch){const response=await transport(BACKEND+'/api/plans',{signal:AbortSignal.timeout(7000),cache:'no-store'});if(!response.ok)throw Error('Pricing service unavailable');return response.json();}
-export async function publishedOffer(transport=fetch){try{const offer=await backendOffer(transport);if(offer.currency===CURRENCY&&offer.plans?.every(p=>p.currency===CURRENCY))return offer;}catch{}return approvedUsdOffer();}
+export async function publishedOffer(transport=fetch){try{const offer=await backendOffer(transport);if(offer.currency===CURRENCY&&offer.billing_model===BILLING_MODEL&&offer.plans?.every(p=>p.currency===CURRENCY))return offer;}catch{}return approvedUsdOffer();}

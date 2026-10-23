@@ -76,3 +76,22 @@ Tax readiness and live webhook registration; back up the database and private
 configuration. Validate Checkout and webhook processing in test mode first.
 Never charge a customer as an infrastructure test. CLI credentials expire and
 must be replaced with a durable, appropriately scoped server credential.
+
+## Agent pricing (catalogue v2)
+
+The `agents` offer is USD 13.99 per internal agent per month, excluding tax.
+Admins and managers are staff seats; customer requester accounts and their
+invitations do not consume paid seats. Pending staff invitations reserve seats.
+Monthly activation is USD 99; first prepaid subscriptions for 3/6/12 months waive
+activation. Discounts remain 7.5%/12.5%/two free months respectively.
+Waiver is recorded only after a verified paid Checkout with the correct amount
+and metadata. Once settled, activation is not billed again.
+
+Migration 020 archives and retires the preceding catalogue. Existing Stripe
+contracts and financially linked workspaces retain their original model,
+currency and activation terms. Only untouched unpaid trials migrate. Stripe
+prices are immutable and the new offer creates distinct price references.
+Vercel accepts the backend catalogue only if its billing model matches, otherwise
+it displays the approved offer with checkout unavailable. After accepting any new
+payment, use a forward fix rather than restoring an image that cannot process
+this billing model; never rewrite existing invoices or Stripe contracts.

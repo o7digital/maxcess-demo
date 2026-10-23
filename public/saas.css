@@ -903,3 +903,8 @@
 #mx-demo .commercial .story-faq p {max-width:900px;margin:18px 0 0}
 @media(max-width:900px){#mx-demo .commercial .story-tour-grid{grid-template-columns:1fr}#mx-demo .commercial .story-tour-grid article{display:grid;grid-template-columns:1fr 1fr}#mx-demo .commercial .story-tour-grid img{height:100%;object-fit:contain;border-bottom:0}}
 @media(max-width:640px){#mx-demo .commercial .story-daily-grid,#mx-demo .commercial .story-tour-grid article{grid-template-columns:1fr}#mx-demo .commercial .story-tour-grid img{height:auto;border-bottom:1px solid var(--story-line)}#mx-demo .commercial .story-faq summary{font-size:1.04rem}}
+
+#mx-demo .plan-grid:has(> :only-child) {grid-template-columns:minmax(0,640px);justify-content:center}
+
+#mx-demo .commercial .plan-card .unit-price {display:flex;align-items:baseline;flex-wrap:wrap;gap:6px}
+#mx-demo .commercial .plan-card .unit-price b {font-size:1.75rem;color:#203c32;letter-spacing:-.025em}

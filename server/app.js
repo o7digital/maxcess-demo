@@ -767,7 +767,7 @@ export function createApp({ getStripe } = {}) {
     if (Buffer.byteLength(password) > 72)
       throw fail(400, "La contraseña supera 72 bytes");
     const created = await transaction(async (db) => {
-      await seats(db, req.tenant);
+      await seats(db, req.tenant, 1, role);
       if (
         (await db.query("SELECT 1 FROM users WHERE lower(email)=$1", [email]))
           .rowCount
@@ -825,7 +825,7 @@ export function createApp({ getStripe } = {}) {
             : ["agent", "client"];
       if (!allowed.includes(target.role))
         throw fail(403, "No puedes modificar esta cuenta");
-      if (req.body.active && !target.active) await seats(db, req.tenant);
+      if (req.body.active && !target.active) await seats(db, req.tenant, 1, target.role);
       await db.query("UPDATE users SET active=$1 WHERE id=$2", [
         req.body.active,
         target.id,

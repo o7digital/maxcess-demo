@@ -1,7 +1,7 @@
 import { productPage } from "./product-page.js";
 import { localizedHtml, translateText, ensureLocale } from "./localization.js";
 import { signupLegal, legalDocument, LEGAL_VERSION } from "./legal.js";
-import { BILLING_MODEL, CURRENCY, ACTIVATION_CENTS, periodQuote, withSeats, PERIOD_DISCOUNTS } from "./pricing.js";
+import { BILLING_MODEL, CURRENCY, ACTIVATION_CENTS, activationFor, periodQuote, withSeats, PERIOD_DISCOUNTS } from "./pricing.js";
 import { createStaffUI } from "./staff.js";
 import { countries, languages, countryName } from "./international.js";
 const translations = {
@@ -43,7 +43,7 @@ const translations = {
     annual: "Anual",
     license: "Activación única",
     licenseDetail:
-      "149 USD HT de activación en el primer pago, más el plan elegido. No se vuelve a cobrar en las renovaciones.",
+      "99 USD HT de activación con pago mensual; gratis al pagar 3, 6 o 12 meses por adelantado.",
     trialStatus: "Tu prueba gratuita",
     readonly:
       "Tu espacio está en modo lectura. Tus datos se conservan. Activa tu suscripción para continuar.",
@@ -91,7 +91,7 @@ const translations = {
     annual: "Annual",
     license: "One-time activation",
     licenseDetail:
-      "149 USD activation excluding tax with the first payment, plus your chosen plan. Not charged again on renewals.",
+      "99 USD activation excluding tax with monthly billing; waived when paying 3, 6 or 12 months in advance.",
     trialStatus: "Your free trial",
     readonly:
       "Your workspace is read only. Your data is retained. Activate your subscription to continue.",
@@ -164,7 +164,7 @@ export function createSaas({
   const selectedSeats = new Map();
   const chosenPlan = p => withSeats(p, selectedSeats.get(p.id) ?? p.seat_limit);
   function seatPicker(p) {
-    return p.unit_cents ? localizedHtml`<p class="unit-price"><b>${money(p.unit_cents)} ${tr("HT", "excl. tax")}</b> / ${tr("usuario / mes", "user / month")}</p><label for="seats-${e(p.id)}">${tr("Número de usuarios", "Number of users")}</label><input id="seats-${e(p.id)}" data-seats="${e(p.id)}" type="number" min="${p.min_seats}" max="${p.max_seats}" step="1" value="${p.seat_limit}">` : "";
+    return p.unit_cents ? localizedHtml`<p class="unit-price"><b>${money(p.unit_cents)} ${tr("HT", "excl. tax")}</b> / ${translateText("agent / month")}</p><label for="seats-${e(p.id)}">${translateText("Number of agents")}</label><input id="seats-${e(p.id)}" data-seats="${e(p.id)}" type="number" min="${p.min_seats}" max="${p.max_seats}" step="1" value="${p.seat_limit}">` : "";
   }
   function bindSeats(target, plans, getMonths, activationDue = ACTIVATION_CENTS) {
     target.querySelectorAll("[data-seats]").forEach(input => {
@@ -173,15 +173,16 @@ export function createSaas({
         selectedSeats.set(input.dataset.seats, Number(input.value));
         const p = chosenPlan(plans.find(p => p.id === input.dataset.seats));
         const card = input.closest("article");
-        card.querySelector("h3").innerHTML = localizedHtml`${p.seat_limit} <small>${tr("usuarios", "users")}</small>`;
+        card.querySelector("h3").innerHTML = localizedHtml`${p.seat_limit} <small>${translateText("agents")}</small>`;
         card.querySelector("[data-price-breakdown]").innerHTML = priceBreakdown(p, getMonths(), activationDue);
         card.querySelector("[data-ai-limit]").textContent = p.ai_limit;
       };
     });
   }
   function priceBreakdown(plan, months, activationDue = ACTIVATION_CENTS) {
+    activationDue = activationFor(months, activationDue === 0);
     const q = periodQuote(plan, months);
-    return localizedHtml`<div class="plan-price">${money(q.users_period_cents)} <small>${tr("HT", "excl. tax")}</small></div><p>${tr("cada", "every")} ${months} ${tr("mes(es), por adelantado", "month(s), in advance")}</p>${months > 1 ? localizedHtml`<p>${money(q.monthly_equivalent_cents)} / ${tr("mes equivalente", "month equivalent")}</p><div class="pricing-saving saving-period-${months}" role="status"><strong>${tr("Ahorras", "You save")} ${money(q.savings_cents)} · ${new Intl.NumberFormat(lang, {maximumFractionDigits: 2}).format(q.discount)}%</strong>${q.free_months ? localizedHtml`<span class="annual-free-months"><b>${tr("2 meses gratis", "2 months free")}</b> · ${tr("12 meses al precio de 10", "12 months for the price of 10")}</span>` : ""}<span>${tr("frente al pago mensual durante el mismo periodo", "compared with monthly payments over the same period")}</span><span>${tr("Precio sin descuento", "Price before discount")}: <s>${money(plan.monthly_cents * months)}</s></span></div>` : localizedHtml`<p class="pricing-saving saving-period-1">${tr("Pago mensual · sin descuento por periodo", "Monthly payment · no period discount")}</p>`}<p>${activationDue ? "+ " + money(activationDue) + " · " + tr("activación única", "one-time activation") : tr("Activación ya pagada", "Activation already paid")}</p><small>${tr("Total inicial", "Initial total")}: ${money(q.users_period_cents + activationDue)} ${tr("HT", "excl. tax")}</small><p class="tax-notice">${tr("Impuestos aplicables calculados en el pago según tus datos de facturación.", "Applicable taxes calculated at checkout from your billing details.")}</p>`;
+    return localizedHtml`<div class="plan-price">${money(q.users_period_cents)} <small>${tr("HT", "excl. tax")}</small></div><p>${tr("cada", "every")} ${months} ${tr("mes(es), por adelantado", "month(s), in advance")}</p>${months > 1 ? localizedHtml`<p>${money(q.monthly_equivalent_cents)} / ${tr("mes equivalente", "month equivalent")}</p><div class="pricing-saving saving-period-${months}" role="status"><strong>${tr("Ahorras", "You save")} ${money(q.savings_cents)} · ${new Intl.NumberFormat(lang, {maximumFractionDigits: 2}).format(q.discount)}%</strong>${q.free_months ? localizedHtml`<span class="annual-free-months"><b>${tr("2 meses gratis", "2 months free")}</b> · ${tr("12 meses al precio de 10", "12 months for the price of 10")}</span>` : ""}<span>${tr("frente al pago mensual durante el mismo periodo", "compared with monthly payments over the same period")}</span><span>${tr("Precio sin descuento", "Price before discount")}: <s>${money(plan.monthly_cents * months)}</s></span></div>` : localizedHtml`<p class="pricing-saving saving-period-1">${tr("Pago mensual · sin descuento por periodo", "Monthly payment · no period discount")}</p>`}<p>${activationDue ? "+ " + money(activationDue) + " · " + tr("activación única", "one-time activation") : translateText("Activation included or already settled")}</p><small>${tr("Total inicial", "Initial total")}: ${money(q.users_period_cents + activationDue)} ${tr("HT", "excl. tax")}</small><p class="tax-notice">${tr("Impuestos aplicables calculados en el pago según tus datos de facturación.", "Applicable taxes calculated at checkout from your billing details.")}</p>`;
   }
   const periodOptions = () => [
     [1, t("monthly")],
@@ -284,7 +285,7 @@ export function createSaas({
           )
           .join(
             "",
-          )}</div><div id="public-plans" class="plan-grid"><p>${t("loading")}</p></div><p class="subtitle">${tr("El precio por usuario depende del total de usuarios contratados.", "The per-user price depends on the total number of subscribed users.")} <a href="https://www.o7digital.com/">O7 Digital Group ↗</a></p></section>` +
+          )}</div><p class="notice">13.99 USD per internal agent per month, excluding tax. Customer requester accounts are not billed.</p><div id="public-plans" class="plan-grid"><p>${t("loading")}</p></div><p class="subtitle">${tr("Los clientes que registran solicitudes no ocupan plazas de pago. Agentes, responsables y administradores cuentan como agentes internos.", "Customer requesters do not use paid seats. Agents, managers and administrators count as internal agents.")} <a href="https://www.o7digital.com/">O7 Digital Group ↗</a></p></section>` +
         footer();
       bindLanguage(publicPage);
       const plansTarget = document.querySelector("#public-plans");
@@ -296,7 +297,7 @@ export function createSaas({
             .map(
               (base) => {
                 const p = chosenPlan(base);
-                return localizedHtml`<article class="panel plan-card" data-public-plan="${e(p.id)}"><span class="eyebrow">${p.unit_cents ? `${p.min_seats}${p.max_seats === 10000 ? "+" : "–" + p.max_seats} ${tr("usuarios", "users")}` : e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, period)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><a class="btn ${p.seat_limit === 5 ? "primary" : ""}" href="/signup">${t("trial")} ↗</a></article>`;
+                return localizedHtml`<article class="panel plan-card" data-public-plan="${e(p.id)}"><span class="eyebrow">${p.unit_cents ? `${p.min_seats}${p.max_seats === 10000 ? "+" : "–" + p.max_seats} ${translateText("agents")}` : e(p.name)}</span><h3>${p.seat_limit} <small>${translateText("agents")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, period)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><a class="btn ${p.seat_limit === 5 ? "primary" : ""}" href="/signup">${t("trial")} ↗</a></article>`;
               },
             )
             .join("");
@@ -860,7 +861,7 @@ export function createSaas({
   async function billing(el) {
     const [b, { plans }] = await Promise.all([api("/billing"), api("/plans")]);
     let months = 1;
-    el.innerHTML = localizedHtml`<div class="eyebrow">${tr("CRECE SIN PERDER EL RITMO", "GROW WITHOUT MISSING A BEAT")}</div><h1>${t("billing")}</h1><div class="subscription-summary panel"><div><span class="eyebrow">${e({ trialing: tr("Prueba gratuita", "Free trial"), active: tr("Suscripción activa", "Active subscription"), past_due: tr("Pago pendiente", "Payment pending"), suspended: tr("Suspendido", "Suspended"), canceled: tr("Cancelado", "Canceled") }[b.status] || b.status)}</span><h2>${b.status === "trialing" ? t("trialStatus") : tr("Tu espacio Service Hub", "Your Service Hub workspace")}</h2><p>${tr("Fin de prueba", "Trial ends")}: ${new Date(b.trial_ends_at).toLocaleString(lang)} · ${b.seat_limit} ${tr("usuarios", "users")}</p>${b.next_billing_at ? localizedHtml`<p>${tr("Próxima facturación", "Next billing")}: ${new Date(b.next_billing_at).toLocaleDateString(lang)}</p>` : ""}${b.cancel_at_period_end ? localizedHtml`<p>${tr("Cancelación al final del periodo", "Cancellation at period end")}</p>` : ""}</div>${b.plan_id ? localizedHtml`<button class="btn" id="billing-portal">${t("manage")} ↗</button>` : ""}</div><div class="license-note"><b>${t("license")}</b><p>${t("licenseDetail")}</p></div><div class="billing-periods">${[
+    el.innerHTML = localizedHtml`<div class="eyebrow">${tr("CRECE SIN PERDER EL RITMO", "GROW WITHOUT MISSING A BEAT")}</div><h1>${t("billing")}</h1><div class="subscription-summary panel"><div><span class="eyebrow">${e({ trialing: tr("Prueba gratuita", "Free trial"), active: tr("Suscripción activa", "Active subscription"), past_due: tr("Pago pendiente", "Payment pending"), suspended: tr("Suspendido", "Suspended"), canceled: tr("Cancelado", "Canceled") }[b.status] || b.status)}</span><h2>${b.status === "trialing" ? t("trialStatus") : tr("Tu espacio Service Hub", "Your Service Hub workspace")}</h2><p>${tr("Fin de prueba", "Trial ends")}: ${new Date(b.trial_ends_at).toLocaleString(lang)} · ${b.seat_limit} ${translateText("agents")}</p>${b.next_billing_at ? localizedHtml`<p>${tr("Próxima facturación", "Next billing")}: ${new Date(b.next_billing_at).toLocaleDateString(lang)}</p>` : ""}${b.cancel_at_period_end ? localizedHtml`<p>${tr("Cancelación al final del periodo", "Cancellation at period end")}</p>` : ""}</div>${b.plan_id ? localizedHtml`<button class="btn" id="billing-portal">${t("manage")} ↗</button>` : ""}</div><div class="license-note"><b>${t("license")}</b><p>${t("licenseDetail")}</p></div><div class="billing-periods">${[
       [1, "monthly"],
       [3, "quarterly"],
       [6, "semester"],
@@ -877,11 +878,11 @@ export function createSaas({
       el.querySelector("#billing-plans").innerHTML = plans
         .map((base) => {
           const p = chosenPlan(base);
-          const activationDue = b.activation_paid ? 0 : ACTIVATION_CENTS;
-          return localizedHtml`<article class="panel plan-card" data-billing-plan="${e(p.id)}"><span class="eyebrow">${p.unit_cents ? `${p.min_seats}${p.max_seats === 10000 ? "+" : "–" + p.max_seats} ${tr("usuarios", "users")}` : e(p.name)}</span><h3>${p.seat_limit} <small>${tr("usuarios", "users")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, months, activationDue)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><p class="plan-payment-status">${!b.configured ? tr("Pago en línea aún no disponible: Stripe está pendiente de conexión. Puedes comparar los planes.", "Online payment is not available yet: Stripe connection is pending. You can compare plans.") : tr("Continuar al pago seguro con Stripe", "Continue to secure payment with Stripe")}</p><button class="btn primary" data-plan="${e(p.id)}" >${b.plan_id && b.status !== "canceled" ? tr("Cambiar plan", "Change plan") : t("choose")} ↗</button></article>`;
+          const activationDue = b.activation_paid || b.activation_waived ? 0 : ACTIVATION_CENTS;
+          return localizedHtml`<article class="panel plan-card" data-billing-plan="${e(p.id)}"><span class="eyebrow">${p.unit_cents ? `${p.min_seats}${p.max_seats === 10000 ? "+" : "–" + p.max_seats} ${translateText("agents")}` : e(p.name)}</span><h3>${p.seat_limit} <small>${translateText("agents")}</small></h3>${seatPicker(p)}<div data-price-breakdown>${priceBreakdown(p, months, activationDue)}</div><p>✦ <span data-ai-limit>${p.ai_limit}</span> ${tr("consultas IA / mes", "AI requests / month")}</p><p class="plan-payment-status">${!b.configured ? tr("Pago en línea aún no disponible: Stripe está pendiente de conexión. Puedes comparar los planes.", "Online payment is not available yet: Stripe connection is pending. You can compare plans.") : tr("Continuar al pago seguro con Stripe", "Continue to secure payment with Stripe")}</p><button class="btn primary" data-plan="${e(p.id)}" >${b.plan_id && b.status !== "canceled" ? tr("Cambiar plan", "Change plan") : t("choose")} ↗</button></article>`;
         })
         .join("");
-      bindSeats(el.querySelector("#billing-plans"), plans, () => months, b.activation_paid ? 0 : ACTIVATION_CENTS);
+      bindSeats(el.querySelector("#billing-plans"), plans, () => months, b.activation_paid || b.activation_waived ? 0 : ACTIVATION_CENTS);
       el.querySelectorAll("[data-plan]").forEach(
         (button) =>
           (button.onclick = safe(async () => {
@@ -942,7 +943,7 @@ export function createSaas({
       )
       .join(
         "",
-      )}</div><section class="panel"><h2>${tr("Organizaciones suscritas", "Subscriber companies")}</h2><div class="table-wrap"><table><thead><tr>${["Empresa", "Estado", "Usuarios", "Prueba", "Plan", "Acceso"].map((x) => localizedHtml`<th>${x}</th>`).join("")}</tr></thead><tbody>${data.tenants.map((w) => localizedHtml`<tr><td>${e(w.name)}${w.is_demo ? localizedHtml("<small>Espacio ilustrativo privado</small>") : ""}</td><td>${e(w.status)}</td><td>${w.users} / ${w.seat_limit}</td><td>${new Date(w.trial_ends_at).toLocaleDateString(lang)}</td><td>${e(w.billing_plan_id || "—")}</td><td>${!w.is_demo ? localizedHtml`<button class="btn" data-tenant="${w.id}" data-status="${w.status === "suspended" ? "trialing" : "suspended"}">${w.status === "suspended" ? tr("Reactivar", "Reactivate") : tr("Suspender", "Suspend")}</button>` : ""}</td></tr>`).join("")}</tbody></table></div></section><h2>${tr("Catálogo de precios", "Pricing catalog")}</h2><p class="subtitle">${tr("USD. Los cambios se aplican a nuevas suscripciones o cambios de plan explícitos.", "USD. Changes apply to new subscriptions or explicit plan changes.").replaceAll("USD",data.revenue.currency.toUpperCase())}</p><div class="settings-grid">${data.plans.map((p) => localizedHtml`<form class="panel plan-form" data-plan-edit="${e(p.id)}"><h3>${e(p.name)} · ${p.seat_limit} ${tr("usuarios", "users")}</h3><label>${tr("Nombre", "Name")}<input name="name" value="${e(p.name)}" required></label><label>${tr("Precio mensual en USD por usuario (planes por rango)", "Monthly USD price per user (volume tiers)").replaceAll("USD",p.currency.toUpperCase())}<input name="price" type="number" min="1" step="0.01" value="${(p.unit_cents || p.monthly_cents) ? (p.unit_cents || p.monthly_cents) / 100 : ""}" required></label>${[3, 6].map((m) => localizedHtml`<label>${tr("Descuento", "Discount")} ${m} ${tr("meses", "months")} (%)<input name="discount-${m}" type="number" min="0" max="80" step="0.1" value="${p.discounts[m] || 0}"></label>`).join("")}<p>${tr("Anual: 12 meses de acceso por el precio de 10", "Annual: 12 months of access for the price of 10")}</p><label>IA / ${tr("mes", "month")}<input name="ai_limit" type="number" min="0" value="${p.ai_limit}"></label><label class="check"><input name="active" type="checkbox" ${p.active ? "checked" : ""}>${tr("Disponible", "Available")}</label><button class="btn primary">${t("save")}</button></form>`).join("")}</div>`;
+      )}</div><section class="panel"><h2>${tr("Organizaciones suscritas", "Subscriber companies")}</h2><div class="table-wrap"><table><thead><tr>${["Empresa", "Estado", "Usuarios", "Prueba", "Plan", "Acceso"].map((x) => localizedHtml`<th>${x}</th>`).join("")}</tr></thead><tbody>${data.tenants.map((w) => localizedHtml`<tr><td>${e(w.name)}${w.is_demo ? localizedHtml("<small>Espacio ilustrativo privado</small>") : ""}</td><td>${e(w.status)}</td><td>${w.users} / ${w.seat_limit}</td><td>${new Date(w.trial_ends_at).toLocaleDateString(lang)}</td><td>${e(w.billing_plan_id || "—")}</td><td>${!w.is_demo ? localizedHtml`<button class="btn" data-tenant="${w.id}" data-status="${w.status === "suspended" ? "trialing" : "suspended"}">${w.status === "suspended" ? tr("Reactivar", "Reactivate") : tr("Suspender", "Suspend")}</button>` : ""}</td></tr>`).join("")}</tbody></table></div></section><h2>${tr("Catálogo de precios", "Pricing catalog")}</h2><p class="subtitle">${tr("USD. Los cambios se aplican a nuevas suscripciones o cambios de plan explícitos.", "USD. Changes apply to new subscriptions or explicit plan changes.").replaceAll("USD",data.revenue.currency.toUpperCase())}</p><div class="settings-grid">${data.plans.map((p) => localizedHtml`<form class="panel plan-form" data-plan-edit="${e(p.id)}"><h3>${e(p.name)} · ${p.seat_limit} ${translateText("agents")}</h3><label>${tr("Nombre", "Name")}<input name="name" value="${e(p.name)}" required></label><label>${tr("Precio mensual en USD por usuario (planes por rango)", "Monthly USD price per user (volume tiers)").replaceAll("USD",p.currency.toUpperCase())}<input name="price" type="number" min="1" step="0.01" value="${(p.unit_cents || p.monthly_cents) ? (p.unit_cents || p.monthly_cents) / 100 : ""}" required></label>${[3, 6].map((m) => localizedHtml`<label>${tr("Descuento", "Discount")} ${m} ${tr("meses", "months")} (%)<input name="discount-${m}" type="number" min="0" max="80" step="0.1" value="${p.discounts[m] || 0}"></label>`).join("")}<p>${tr("Anual: 12 meses de acceso por el precio de 10", "Annual: 12 months of access for the price of 10")}</p><label>IA / ${tr("mes", "month")}<input name="ai_limit" type="number" min="0" value="${p.ai_limit}"></label><label class="check"><input name="active" type="checkbox" ${p.active ? "checked" : ""}>${tr("Disponible", "Available")}</label><button class="btn primary">${t("save")}</button></form>`).join("")}</div>`;
     el.insertAdjacentHTML(
       "beforeend",
       localizedHtml`<h2>${tr("Modelos de configuración", "Configuration templates")}</h2><div class="settings-grid">${data.templates.map((template) => localizedHtml`<form class="panel" data-template-edit="${e(template.id)}"><label>${tr("Nombre", "Name")}<input name="name" value="${e(template.name)}" required></label><label>${tr("Servicios (uno por línea)", "Services (one per line)")}<textarea name="categories" rows="4" required>${e((template.settings.categories || []).join("\n"))}</textarea></label><label>${tr("Departamentos", "Departments")}<textarea name="departments" rows="2">${e((template.settings.departments || []).join("\n"))}</textarea></label><label class="check"><input name="active" type="checkbox" ${template.active ? "checked" : ""}>${tr("Disponible", "Available")}</label><button class="btn primary">${t("save")}</button></form>`).join("")}</div>`,

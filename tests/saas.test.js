@@ -890,23 +890,23 @@ test("Checkout consents to a one-time USD activation and a recurring user plan",
   ]);
   const {
     rows: [old],
-  } = await pool.query("SELECT * FROM billing_plans WHERE id='team-5'");
+  } = await pool.query("SELECT * FROM billing_plans WHERE id='agents'");
   try {
     await pool.query(
       "UPDATE billing_plans SET monthly_cents=2500,unit_cents=500,discounts='{" +
         '"1":0,"3":5,"6":10,"12":15' +
-        "}' WHERE id='team-5'",
+        "}' WHERE id='agents'",
     );
     await send(b, "/billing/checkout", {
-      plan_id: "team-5",
-      months: 3,
+      plan_id: "agents",
+      months: 1,
       accepted_terms: false,
     }).expect(400);
-    await send(b, "/billing/checkout", {plan_id:"team-5",seats:2,months:3,accepted_terms:true}).expect(400);
+    await send(b, "/billing/checkout", {plan_id:"agents",seats:0,months:3,accepted_terms:true}).expect(400);
     await send(b, "/billing/checkout", {
-      plan_id: "team-5",
+      plan_id: "agents",
       seats: 7,
-      months: 3,
+      months: 1,
       accepted_terms: true,
     }).expect(200);
     assert.equal(checkoutBody.mode, "subscription");
@@ -919,18 +919,18 @@ test("Checkout consents to a one-time USD activation and a recurring user plan",
     assert.equal(checkoutBody.subscription_data.trial_end, undefined);
     assert.ok(
       checkoutBody.custom_text.submit.message.includes(
-        "Activación: 149 USD HT una sola vez",
+        "Activación: 99 USD HT una sola vez",
       ),
     );
     const activation = createdPrices.get(checkoutBody.line_items[0].price),
       users = createdPrices.get(checkoutBody.line_items[1].price);
     assert.equal(activation.currency, "usd");
-    assert.equal(activation.unit_amount, 14900);
+    assert.equal(activation.unit_amount, 9900);
     assert.equal(activation.recurring, undefined);
     assert.equal(users.currency, "usd");
-    assert.equal(users.unit_amount, 9975);
+    assert.equal(users.unit_amount, 3500);
     assert.equal(users.metadata.seat_limit, "7");
-    assert.equal(users.recurring.interval_count, 3);
+    assert.equal(users.recurring.interval_count, 1);
     assert.equal(users.tax_behavior, "exclusive");
     assert.equal(activation.tax_behavior, "exclusive");
     assert.equal(checkoutBody.automatic_tax.enabled, true);
@@ -961,15 +961,14 @@ test("USD activation requires verified paid checkout, is idempotent and is never
     m.user.id,
   ]);
   await send(m, "/billing/checkout", {
-    plan_id: "team-5",
+    plan_id: "agents",
     seats: 10,
     months: 12,
     accepted_terms: true,
   }).expect(200);
-  const invoiceUsers = createdPrices.get(checkoutBody.line_items[1].price),
-    activation = createdPrices.get(checkoutBody.line_items[0].price);
-  assert.equal(activation.recurring, undefined);
-  assert.equal(invoiceUsers.unit_amount, 240000);
+  const invoiceUsers = createdPrices.get(checkoutBody.line_items[0].price);
+  assert.equal(checkoutBody.line_items.length,1);
+  assert.equal(invoiceUsers.unit_amount,139900);
   const stored = (
     await pool.query(
       "SELECT checkout_session_id,checkout_total_cents FROM tenants WHERE id=$1",
@@ -981,7 +980,7 @@ test("USD activation requires verified paid checkout, is idempotent and is never
     customer: "cus_fixture_" + m.user.tenant_id,
     metadata: {
       tenant_id: String(m.user.tenant_id),
-      billing_model: "activation_usd_v1",
+      billing_model: "activation_usd_agents_v2",
     },
     status: "active",
     livemode: false,
@@ -1018,6 +1017,7 @@ test("USD activation requires verified paid checkout, is idempotent and is never
         customer: subscription.customer,
         currency: "usd",
         amount_total: stored.checkout_total_cents,
+        metadata: checkoutBody.metadata,
         payment_status: "unpaid",
       },
     },
@@ -1048,10 +1048,12 @@ test("USD activation requires verified paid checkout, is idempotent and is never
   };
   await signed({...paid,id:"evt_fixture_"+randomUUID(),data:{object:{...paid.data.object,amount_total:1}}}).expect(200);
   assert.equal((await m.agent.get("/api/billing")).body.activation_paid,false);
+  await signed({...paid,id:"evt_wrong_waiver_"+randomUUID(),data:{object:{...paid.data.object,metadata:{...paid.data.object.metadata,activation_waived:"false"}}}}).expect(200);
+  assert.equal((await m.agent.get("/api/billing")).body.activation_waived,false);
   await signed(paid).expect(200);
   await signed(paid).expect(200);
   const bill = (await m.agent.get("/api/billing")).body;
-  assert.equal(bill.activation_paid, true);
+  assert.equal(bill.activation_waived, true);
   assert.equal(bill.status, "active");
   assert.equal(bill.seat_limit, 10);
   const recurring = (
@@ -1060,9 +1062,10 @@ test("USD activation requires verified paid checkout, is idempotent and is never
       [m.user.tenant_id],
     )
   ).rows[0].monthly_recurring_cents;
-  assert.equal(recurring, Math.round(240000 / 12));
+  assert.equal(recurring, Math.round(139900 / 12));
   await send(m, "/billing/change-plan", {
-    plan_id: "team-15",
+    plan_id: "agents",
+    seats:15,
     months: 12,
     accepted_terms: true,
   }).expect(200);
@@ -1077,7 +1080,8 @@ test("USD activation requires verified paid checkout, is idempotent and is never
     id: "evt_fixture_" + randomUUID(),
   }).expect(200);
   await send(m, "/billing/checkout", {
-    plan_id: "team-5",
+    plan_id: "agents",
+    seats:10,
     months: 1,
     accepted_terms: true,
   }).expect(200);
@@ -1136,7 +1140,7 @@ test("Signed webhooks sync current Stripe state, reject forged/live events and h
             recurring: { interval: "month", interval_count: 3 },
             metadata: {
               kind: "users",
-              plan_id: "team-5",
+              plan_id: "agents",
               seat_limit: "5",
               ai_limit: "100",
             },
@@ -1182,7 +1186,7 @@ test("Signed webhooks sync current Stripe state, reject forged/live events and h
   assert.equal(Number(count.count), 1);
   const billing = (await b.agent.get("/api/billing")).body;
   assert.equal(billing.status, "active");
-  assert.equal(billing.plan_id, "team-5");
+  assert.equal(billing.plan_id, "agents");
   assert.equal(billing.months, 3);
   subscription.status = "past_due";
   await signed({ ...event, id: "evt_fixture_" + randomUUID() }).expect(200);
@@ -1257,4 +1261,26 @@ test('USD default preserves existing MXN subscription amounts, currency and acti
  const bill=(await old.agent.get('/api/billing')).body;
  assert.equal(bill.currency,'mxn');assert.equal(bill.offer_currency,'usd');assert.equal(bill.activation_paid,true);assert.equal(bill.status,'active');assert.equal(bill.migration_required,true);assert.equal(bill.activation_cents,299900);
  const {rows:[stored]}=await pool.query('SELECT monthly_recurring_cents FROM tenants WHERE id=$1',[old.user.tenant_id]);assert.equal(stored.monthly_recurring_cents,199500);
+});
+
+
+test("Customer requesters and invitations do not consume agent seats; promoting a client does",async()=>{
+ const w=await register('Agent seat limits');
+ await pool.query('UPDATE tenants SET seat_limit=1 WHERE id=$1',[w.user.tenant_id]);
+ const company=(await w.agent.get('/api/companies')).body.companies[0];
+ const client=await send(w,'/users',{name:'Requester',email:'requester-'+randomUUID()+'@example.test',password:'Requester-password-2026!',role:'client',company_id:company.id}).expect(201);
+ await send(w,'/invitations',{name:'Client invite',email:'invite-client-'+randomUUID()+'@example.test',role:'client',company_id:company.id}).expect(201);
+ await send(w,'/invitations',{name:'Staff invite',email:'invite-staff-'+randomUUID()+'@example.test',role:'agent'}).expect(409);
+ await send(w,'/users/'+client.body.user.id+'/permissions',{role:'agent'},'put').expect(409);
+ const billing=(await w.agent.get('/api/billing')).body;assert.equal(billing.billable_seats,1);
+ await pool.query('UPDATE tenants SET seat_limit=2 WHERE id=$1',[w.user.tenant_id]);
+ await send(w,'/users/'+client.body.user.id+'/permissions',{role:'agent'},'put').expect(200);
+ assert.equal((await w.agent.get('/api/billing')).body.billable_seats,2);
+});
+
+test("Existing paid USD contracts retain their activation and are not switched to the new offer",async()=>{
+ const w=await register('Previous USD contract');
+ await pool.query("UPDATE tenants SET billing_model='activation_usd_v1',activation_paid_at=now(),status='active',stripe_customer_id=$2,stripe_subscription_id=$3 WHERE id=$1",[w.user.tenant_id,'cus_previous_'+w.user.tenant_id,'sub_previous_'+w.user.tenant_id]);
+ const bill=(await w.agent.get('/api/billing')).body;assert.equal(bill.activation_cents,14900);assert.equal(bill.migration_required,true);
+ await send(w,'/billing/change-plan',{plan_id:'agents',seats:1,months:1,accepted_terms:true}).expect(409);
 });

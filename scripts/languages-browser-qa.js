@@ -18,7 +18,7 @@ try{
   assert.ok(preserved.includes('Reports'));
   await page.reload();await page.waitForFunction(code=>document.documentElement.lang===code,code);
   await page.goto(base+'/pricing');await page.locator('[data-public-plan]').first().waitFor();
-  assert.equal(await page.locator('[data-public-plan]').count(),4);
+  assert.equal(await page.locator('[data-public-plan]').count(),1);
   await page.locator('[data-public-months="12"]').click();
   assert.ok(!/__MX_SLOT_|MXKEEP/.test(await page.locator('body').innerText()));
   await page.setViewportSize({width:390,height:844});

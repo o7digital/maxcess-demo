@@ -1,7 +1,7 @@
 import { localizedEmail } from "./localization.js";
 import { countries, languages } from "../public/international.js";
 import { LEGAL_VERSION } from "../public/legal.js";
-import { ACTIVATION_CENTS, CURRENCY } from "../public/pricing.js";
+import { ACTIVATION_CENTS, CURRENCY, BILLING_MODEL } from "../public/pricing.js";
 import { resolveStaff, seedRoles } from "./roles.js";
 import { randomBytes, createHash, randomUUID } from "node:crypto";
 import { pool, transaction } from "./db.js";
@@ -247,24 +247,19 @@ export function customFields(values = {}, settings) {
   }
   return result;
 }
-export async function seats(db, tenant, extra = 1) {
-  const {
-    rows: [current],
-  } = await db.query("SELECT seat_limit FROM tenants WHERE id=$1 FOR UPDATE", [
-    tenant.id,
-  ]);
+export async function seatCount(db, tenant) {
+  const agentsOnly = tenant.billing_model === BILLING_MODEL;
+  const {rows:[r]} = await db.query(
+    "SELECT (SELECT count(*)::int FROM users WHERE tenant_id=$1 AND active AND (NOT $2::boolean OR role<>'client'))+(SELECT count(*)::int FROM invitations WHERE tenant_id=$1 AND accepted_at IS NULL AND expires_at>now() AND (NOT $2::boolean OR role<>'client')) AS total",
+    [tenant.id, agentsOnly]);
+  return Number(r.total);
+}
+export async function seats(db, tenant, extra = 1, role = "agent") {
+  const {rows:[current]} = await db.query("SELECT id,seat_limit,billing_model FROM tenants WHERE id=$1 FOR UPDATE",[tenant.id]);
   if (!current) throw fail(403, "Espacio no disponible");
-  const {
-    rows: [counts],
-  } = await db.query(
-    "SELECT (SELECT count(*)::int FROM users WHERE tenant_id=$1 AND active)+(SELECT count(*)::int FROM invitations WHERE tenant_id=$1 AND accepted_at IS NULL AND expires_at>now()) AS total",
-    [tenant.id],
-  );
-  if (Number(counts.total) + extra > current.seat_limit)
-    throw fail(
-      409,
-      "Se alcanzó el límite de usuarios. Cambia de plan en Suscripción.",
-    );
+  if (current.billing_model === BILLING_MODEL && role === "client") return;
+  if (await seatCount(db,current) + extra > current.seat_limit)
+    throw fail(409, "Se alcanzó el límite de agentes. Cambia de plan en Suscripción.");
 }
 export function owner(req) {
   if (!["admin", "platform_admin"].includes(req.user.role))
@@ -320,6 +315,8 @@ export function installPublicWorkspaceRoutes(app, limit) {
   app.get("/api/plans", async (req, res) =>
     res.json({
       activation_cents: ACTIVATION_CENTS,
+      billing_model: BILLING_MODEL,
+      seat_basis: "agents",
       currency: CURRENCY,
       trial_days: 12,
       plans: (
@@ -435,7 +432,7 @@ export function installPublicWorkspaceRoutes(app, limit) {
       ]);
       if (accessState(tenant) !== "full")
         throw fail(402, "El espacio requiere una suscripción activa");
-      await seats(db, tenant, 0);
+      await seats(db, tenant, 0, i.role);
       if (
         (
           await db.query("SELECT id FROM users WHERE lower(email)=$1", [
@@ -521,6 +518,7 @@ export function installWorkspaceRoutes(app) {
           ).rowCount)
       )
         throw fail(400, "Equipo no válido");
+      if (user.active && user.role === "client" && staff.role !== "client") await seats(db, req.tenant, 1, staff.role);
       await db.query(
         "UPDATE users SET role=$1,company_id=$2,team_id=$5,role_id=$6,department_id=$7,specialty=$8 WHERE tenant_id=$3 AND id=$4",
         [
@@ -703,8 +701,8 @@ export function installWorkspaceRoutes(app) {
     const token = randomBytes(32).toString("hex"),
       origin = publicOrigin();
     await transaction(async (db) => {
-      await seats(db, req.tenant);
       const staff = await resolveStaff(db, req.tenant.id, b);
+      await seats(db, req.tenant, 1, staff.role);
       if (staff.role === "platform_admin")
         throw fail(400, "Rol reservado a O7 Digital Group");
       const company = staff.role === "client" ? Number(b.company_id) : null,

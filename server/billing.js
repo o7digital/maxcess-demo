@@ -2,6 +2,7 @@ import { LEGAL_VERSION } from "../public/legal.js";
 import {
   CURRENCY,
   ACTIVATION_CENTS,
+  activationFor,
   BILLING_MODEL,
   ACTIVATION_MODELS,
   periodQuote,
@@ -18,6 +19,7 @@ import {
   audit,
   queueEmail,
   accessState,
+  seatCount,
 } from "./workspace.js";
 const LEGACY_LICENSE = 39900;
 export function stripeMode() {
@@ -80,7 +82,7 @@ async function prices(stripe, plan, months, db) {
         tax_behavior: "exclusive",
         metadata: { kind: "activation" },
       },
-      { idempotencyKey: "servicehub-usd-activation-price-149-tax-v3" },
+      { idempotencyKey: "servicehub-usd-activation-price-99-agents-v2-tax-v1" },
     );
   });
   const users = await cached(
@@ -183,6 +185,7 @@ async function syncSubscription(db, stripe, id) {
   if (
     activationModel &&
     !t.activation_paid_at &&
+    !t.activation_waived_at &&
     !["canceled", "incomplete_expired"].includes(subscription.status)
   ) {
     // A subscription status alone never proves the one-time activation was paid.
@@ -279,18 +282,20 @@ export function installBillingPublic(app, getStripe = stripeClient) {
           const validTaxTotal = o.automatic_tax?.enabled === true
             ? o.automatic_tax.status === "complete" && Number.isSafeInteger(tax) && tax >= 0 && Number.isSafeInteger(o.amount_subtotal) && o.amount_total === o.amount_subtotal + tax && !o.total_details?.amount_discount && !o.total_details?.amount_shipping
             : true;
-          const paidTerms=Object.entries(ACTIVATION_MODELS).find(([,terms])=>terms.currency===o.currency);
-          if (o.payment_status === "paid" && paidTerms && validTaxTotal) {
-            await db.query(
-              "UPDATE tenants SET activation_paid_at=COALESCE(activation_paid_at,now()) WHERE checkout_session_id=$1 AND stripe_customer_id=$2 AND checkout_activation_cents=$3 AND checkout_total_cents=$4 AND billing_model=$5 AND NOT is_demo",
-              [
-                o.id,
-                typeof o.customer === "string" ? o.customer : o.customer?.id,
-                paidTerms[1].activation_cents,
-                o.automatic_tax?.enabled ? o.amount_subtotal : o.amount_total,
-                paidTerms[0],
-              ],
-            );
+          if (o.payment_status === "paid" && validTaxTotal) {
+            const customer = typeof o.customer === "string" ? o.customer : o.customer?.id;
+            const {rows:[pending]} = await db.query("SELECT * FROM tenants WHERE checkout_session_id=$1 AND stripe_customer_id=$2 AND NOT is_demo FOR UPDATE",[o.id,customer]);
+            const terms = pending && ACTIVATION_MODELS[pending.billing_model];
+            const amount = o.automatic_tax?.enabled ? o.amount_subtotal : o.amount_total;
+            if (terms && terms.currency === o.currency && pending.checkout_total_cents === amount) {
+              if (pending.checkout_activation_cents === terms.activation_cents) {
+                await db.query("UPDATE tenants SET activation_paid_at=COALESCE(activation_paid_at,now()) WHERE id=$1",[pending.id]);
+              } else if (pending.billing_model === BILLING_MODEL && pending.checkout_activation_cents === 0 &&
+                o.metadata?.billing_model === BILLING_MODEL && o.metadata?.activation_waived === "true" &&
+                [3,6,12].includes(Number(o.metadata?.months))) {
+                await db.query("UPDATE tenants SET activation_waived_at=COALESCE(activation_waived_at,now()) WHERE id=$1",[pending.id]);
+              }
+            }
           }
           await syncSubscription(
             db,
@@ -374,6 +379,8 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       billing_model: req.tenant.billing_model,
       activation_cents: ACTIVATION_MODELS[req.tenant.billing_model]?.activation_cents ?? 0,
       activation_paid: Boolean(req.tenant.activation_paid_at),
+      activation_waived: Boolean(req.tenant.activation_waived_at),
+      billable_seats: await seatCount(pool,req.tenant),
       configured: Boolean(
         stripeConfigured() &&
         process.env.STRIPE_WEBHOOK_SECRET,
@@ -414,12 +421,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       try { plan = withSeats(basePlan, req.body.seats); }
       catch { throw fail(400, "Número de usuarios fuera del rango del plan"); }
       const q = quote(plan, req.body.months);
-      const {
-        rows: [count],
-      } = await db.query(
-        "SELECT (SELECT count(*) FROM users WHERE tenant_id=$1 AND active)+(SELECT count(*) FROM invitations WHERE tenant_id=$1 AND accepted_at IS NULL AND expires_at>now()) AS total",
-        [t.id],
-      );
+      const count = {total:await seatCount(db,t)};
       if (Number(count.total) > plan.seat_limit)
         throw fail(409, "Este plan no cubre tus usuarios e invitaciones");
       if (t.checkout_session_id && t.status !== "canceled") {
@@ -440,7 +442,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
           "UPDATE tenants SET retired_subscription_ids=array_append(retired_subscription_ids,stripe_subscription_id),stripe_subscription_id=NULL WHERE id=$1",
           [t.id],
         );
-      const activationDue = t.activation_paid_at ? 0 : ACTIVATION_CENTS;
+      const activationDue = activationFor(q.months, Boolean(t.activation_paid_at || t.activation_waived_at), t.billing_model);
       const p = await prices(stripe, plan, req.body.months, db);
       let customer = t.stripe_customer_id;
       if (!customer) {
@@ -462,6 +464,8 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       const metadata = {
         tenant_id: String(t.id),
         billing_model: BILLING_MODEL,
+        months: String(q.months),
+        activation_waived: String(!t.activation_paid_at && !t.activation_waived_at && q.months > 1),
       };
       const session = await stripe.checkout.sessions.create(
         {
@@ -547,12 +551,7 @@ export function installBillingRoutes(app, getStripe = stripeClient) {
       try { plan = withSeats(basePlan, req.body.seats); }
       catch { throw fail(400, "Número de usuarios fuera del rango del plan"); }
       quote(plan, req.body.months);
-      const {
-        rows: [c],
-      } = await db.query(
-        "SELECT (SELECT count(*) FROM users WHERE tenant_id=$1 AND active)+(SELECT count(*) FROM invitations WHERE tenant_id=$1 AND accepted_at IS NULL AND expires_at>now()) total",
-        [t.id],
-      );
+      const c = {total:await seatCount(db,t)};
       if (Number(c.total) > plan.seat_limit)
         throw fail(
           409,
