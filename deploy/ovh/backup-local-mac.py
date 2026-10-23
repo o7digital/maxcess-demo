@@ -2,7 +2,7 @@
 """Private Mac copy of the latest verified Service Hub ZIP (no server credentials embedded)."""
 import datetime,hashlib,json,os,pathlib,shlex,subprocess,tempfile,time,zipfile
 os.umask(0o077)
-root=pathlib.Path.home()/'Documents'/'ServiceHub Backups';root.mkdir(parents=True,mode=0o700,exist_ok=True);os.chmod(root,0o700)
+root=pathlib.Path.home()/'ServiceHub Backups';root.mkdir(parents=True,mode=0o700,exist_ok=True);os.chmod(root,0o700)
 status=root/'sync-status.json'
 remote="""import pathlib,json,hashlib
 p=max(pathlib.Path('/srv/maxcess-backups').glob('maxcess-*.zip'),key=lambda p:p.stat().st_mtime)

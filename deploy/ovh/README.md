@@ -119,7 +119,7 @@ Status: `/srv/maxcess-backups/restore-test-status.json`; failures are visible in
 
 The Mac script uses existing SSH authentication to pull the latest ZIP directly
 from VPS2 every hour while the user session is running and the Mac is awake.
-Destination: `~/Documents/ServiceHub Backups` (0700, archives 0600), same retention.
+Destination: `~/ServiceHub Backups` (0700, archives 0600), same retention.
 It verifies SHA256/ZIP CRC and rejects remote copies older than three hours.
 LaunchAgent: `com.o7digital.servicehub-backup`. State: `sync-status.json` in the
 backup folder; logs under `~/Library/Application Support/O7 Service Hub/`.
