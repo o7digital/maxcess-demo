@@ -1,3 +1,4 @@
+import { productPage } from "./product-page.js";
 import { localizedHtml, translateText, ensureLocale } from "./localization.js";
 import { signupLegal, legalDocument, LEGAL_VERSION } from "./legal.js";
 import { BILLING_MODEL, CURRENCY, ACTIVATION_CENTS, periodQuote, withSeats, PERIOD_DISCOUNTS } from "./pricing.js";
@@ -120,7 +121,7 @@ export function createSaas({
     localizedHtml`<select id="language" aria-label="Language">${Object.entries(languages)
       .map(
         ([code, label]) =>
-          localizedHtml`<option value="${code}" ${lang === code ? "selected" : ""}>${label}</option>`,
+          `<option value="${code}"${lang === code ? " selected" : ""}>${label}</option>`,
       )
       .join("")}</select>`;
   const bindLanguage = (render) => {
@@ -137,7 +138,7 @@ export function createSaas({
   const header = () =>
     localizedHtml`<header class="commercial-header"><a class="commercial-brand" href="/">Service Hub<span>↗</span><small>O7 Digital Group</small></a><nav><a href="/pricing">${t("pricing")}</a><a href="/login">${t("login")}</a>${language()}<a class="btn primary" href="/signup">${t("trial")} ↗</a></nav></header>`;
   const footer = () =>
-    localizedHtml`<footer class="commercial-footer"><span>© ${new Date().getFullYear()} O7 Digital Group · Service Hub</span><a href="/terms">${tr("Condiciones", "Terms")}</a><a href="/privacy">${tr("Privacidad", "Privacy")}</a><a href="https://www.o7digitalgroup.com/" target="_blank" rel="noopener noreferrer">O7 Digital Group ↗</a></footer>`;
+    localizedHtml`<footer class="commercial-footer"><span>© ${new Date().getFullYear()} O7 Digital Group · Service Hub</span><a href="/terms">${translateText("Terms of use")}</a><a href="/privacy">${translateText("Privacy policy")}</a><a href="https://www.o7digital.com/" target="_blank" rel="noopener noreferrer">O7 Digital Group ↗</a></footer>`;
   const input = (key, label, type = "text", value = "", required = true) =>
     localizedHtml`<label for="${key}">${label}</label><input id="${key}" name="${key}" type="${type}" value="${e(value)}" ${required ? "required" : ""} ${type === "password" ? 'minlength="12" autocomplete="new-password"' : 'maxlength="160"'}>`;
   const safe = (fn) => async (event) => {
@@ -198,7 +199,7 @@ export function createSaas({
         invitation = path === "/invitation";
       app.innerHTML =
         header() +
-        localizedHtml`<div class="auth-layout"><section class="auth-copy"><span class="eyebrow">${t("tag")}</span><h1>${signup ? t("configure") : invitation ? tr("Tu equipo te espera.", "Your team is waiting.") : t("welcome")}</h1><p>${signup ? tr("Cinco minutos para dar forma a tu operación. Un solo espacio para trabajar mejor.", "Five minutes to shape your operation. One workspace to work better.") : t("signin")}</p><div class="auth-feature">◫ ${tr("Solicitudes, equipos e indicadores. Conectados.", "Requests, teams and insights. Connected.")}</div><div class="auth-feature">✦ ${tr("Olivia prepara. Tu equipo decide.", "Olivia prepares. Your team decides.")}</div><span class="auth-note">${t("nocard")}</span></section><section class="panel auth-panel"><div class="eyebrow">SERVICE HUB</div><h2>${signup ? t("signup") : invitation ? tr("Aceptar invitación", "Accept invitation") : t("login")}</h2><form id="auth-form">${signup ? signupLegal() : ""}${signup ? input("first_name", translateText("First name")) + input("last_name", translateText("Last name")) + input("birth_date", translateText("Date of birth"), "date") + input("phone", translateText("Phone number (international format)"), "tel") + input("company", translateText("Legal company name")) + input("address", translateText("Company address")) + localizedHtml`<label>${translateText("Country")}<select name="country" required><option value="">—</option>${countries.map(code=>localizedHtml`<option value="${code}">${e(new Intl.DisplayNames([lang], {type:"region"}).of(code))}</option>`).join("")}</select></label>` + input("tax_id", translateText("Tax ID")) : ""}${!invitation ? input("email", t("email"), "email") : ""}${input("password", t("password"), "password")}${signup ? localizedHtml`<small>${t("passwordHint")}</small><label class="check"><input name="accepted_terms" type="checkbox" required><span>I accept the <a href="/terms" target="_blank" rel="noopener">Service Terms</a> and acknowledge the <a href="/privacy" target="_blank" rel="noopener">Privacy and Cookie Notice</a> (English, ${LEGAL_VERSION}).</span></label>` : ""}<p id="login-error" role="alert"></p><button class="btn primary">${signup ? t("create") : invitation ? tr("Unirme al equipo ↗", "Join workspace ↗") : t("enter")}</button></form><p class="subtitle">${signup ? localizedHtml`<a href="/login">${t("login")} ↗</a>` : localizedHtml`<a href="/signup">${t("trial")} ↗</a> · <a href="/forgot-password">${tr("Recuperar contraseña", "Forgot password")}</a>`}</p></section></div>` +
+        localizedHtml`<div class="auth-layout"><section class="auth-copy"><span class="eyebrow">${t("tag")}</span><h1>${signup ? t("configure") : invitation ? tr("Tu equipo te espera.", "Your team is waiting.") : t("welcome")}</h1><p>${signup ? tr("Cinco minutos para dar forma a tu operación. Un solo espacio para trabajar mejor.", "Five minutes to shape your operation. One workspace to work better.") : t("signin")}</p><div class="auth-feature">◫ ${tr("Solicitudes, equipos e indicadores. Conectados.", "Requests, teams and insights. Connected.")}</div><div class="auth-feature">✦ ${tr("Olivia prepara. Tu equipo decide.", "Olivia prepares. Your team decides.")}</div><span class="auth-note">${t("nocard")}</span></section><section class="panel auth-panel"><div class="eyebrow">SERVICE HUB</div><h2>${signup ? t("signup") : invitation ? tr("Aceptar invitación", "Accept invitation") : t("login")}</h2><form id="auth-form">${signup ? signupLegal() : ""}${signup ? input("first_name", translateText("First name")) + input("last_name", translateText("Last name")) + input("birth_date", translateText("Date of birth"), "date") + input("phone", translateText("Phone number (international format)"), "tel") + input("company", translateText("Legal company name")) + input("address", translateText("Company address")) + localizedHtml`<label>${translateText("Country")}<select name="country" required><option value="">—</option>${countries.map(code=>localizedHtml`<option value="${code}">${e(new Intl.DisplayNames([lang], {type:"region"}).of(code))}</option>`).join("")}</select></label>` + input("tax_id", translateText("Tax ID")) : ""}${!invitation ? input("email", t("email"), "email") : ""}${input("password", t("password"), "password")}${signup ? localizedHtml`<small>${t("passwordHint")}</small><label class="check"><input name="accepted_terms" type="checkbox" required><span>I accept the <a href="/terms" target="_blank" rel="noopener">Service Terms</a> and acknowledge the <a href="/privacy" target="_blank" rel="noopener">Privacy and Cookie Notice</a> (${LEGAL_VERSION}).</span></label>` : ""}<p id="login-error" role="alert"></p><button class="btn primary">${signup ? t("create") : invitation ? tr("Unirme al equipo ↗", "Join workspace ↗") : t("enter")}</button></form><p class="subtitle">${signup ? localizedHtml`<a href="/login">${t("login")} ↗</a>` : localizedHtml`<a href="/signup">${t("trial")} ↗</a> · <a href="/forgot-password">${tr("Recuperar contraseña", "Forgot password")}</a>`}</p></section></div>` +
         footer();
       const passwordInput = document.querySelector("#password");
       if (!signup && !invitation) {
@@ -244,7 +245,7 @@ export function createSaas({
       if (!verify && !reset && getConfig().recoveryAvailable === false) {
         app.innerHTML =
           header() +
-          localizedHtml`<section class="panel legal"><h1>${tr("Recuperar acceso", "Recover access")}</h1><p role="status">${tr("La recuperación por correo no está disponible temporalmente. Contacta con O7 Digital Group para recuperar tu acceso.", "Email recovery is temporarily unavailable. Contact O7 Digital Group to restore your access.")}</p><div class="actions"><a class="btn primary" href="https://www.o7digitalgroup.com/">${tr("Contactar a O7 Digital Group", "Contact O7 Digital Group")} ↗</a><a class="btn" href="/login">${t("login")} ↗</a></div></section>` +
+          localizedHtml`<section class="panel legal"><h1>${tr("Recuperar acceso", "Recover access")}</h1><p role="status">${tr("La recuperación por correo no está disponible temporalmente. Contacta con O7 Digital Group para recuperar tu acceso.", "Email recovery is temporarily unavailable. Contact O7 Digital Group to restore your access.")}</p><div class="actions"><a class="btn primary" href="https://www.o7digital.com/">${tr("Contactar a O7 Digital Group", "Contact O7 Digital Group")} ↗</a><a class="btn" href="/login">${t("login")} ↗</a></div></section>` +
           footer();
         bindLanguage(publicPage);
         return;
@@ -275,43 +276,15 @@ export function createSaas({
     } else {
       app.innerHTML =
         header() +
-        localizedHtml`<section class="commercial-hero"><div class="commercial-hero-copy"><div class="eyebrow"><span class="live-dot"></span> ${t("tag")}</div><h1>${t("headline")}</h1><p>${t("intro")}</p><div class="actions"><a class="btn lime" href="/signup">${t("trial")} ↗</a><a class="btn" href="/login">${t("login")}</a></div><small>${t("nocard")}</small></div><div class="product-map"><div class="product-map-header"><span class="mini-logo">S</span><div><b>Service Hub</b><small>${tr("Tu centro de operaciones", "Your operations center")}</small></div><span class="map-dot"></span></div><div class="map-ticket"><span class="eyebrow">01 · ${tr("CAPTURA", "CAPTURE")}</span><h3>${tr("Cada solicitud, con contexto.", "Every request, with context.")}</h3><p>${tr("Formularios propios · Clientes · Contactos", "Custom forms · Customers · Contacts")}</p></div><div class="map-connector">↓</div><div class="map-ticket"><span class="eyebrow">02 · ${tr("COORDINA", "COORDINATE")}</span><h3>${tr("El equipo correcto. El paso claro.", "The right team. A clear next step.")}</h3><p>Workflows · SLA · Olivia IA</p></div><div class="map-connector">↓</div><div class="map-ticket map-ticket-last"><span class="eyebrow">03 · ${tr("MEJORA", "IMPROVE")}</span><h3>${tr("Decisiones con perspectiva.", "Decisions with perspective.")}</h3><p>Dashboards · ${tr("Informes · Seguimiento", "Reports · Follow-up")}</p></div></div></section><section class="commercial-values">${[
-          [
-            tr("A tu manera.", "Your way."),
-            tr(
-              "Configura servicios, formularios y etapas desde tu espacio.",
-              "Configure services, forms and stages from your workspace.",
-            ),
-          ],
-          [
-            tr("Tu información, conectada.", "Your information, connected."),
-            tr(
-              "Solicitudes, clientes y equipo en un solo lugar.",
-              "Requests, customers and your team in one place.",
-            ),
-          ],
-          [
-            tr("Empieza con lo que tienes.", "Start with what you have."),
-            tr(
-              "Importa desde CSV o Excel y adopta el sistema a tu ritmo.",
-              "Import CSV or Excel and adopt the system at your pace.",
-            ),
-          ],
-        ]
-          .map(
-            ([a, b]) =>
-              localizedHtml`<article><span>↗</span><h3>${a}</h3><p>${b}</p></article>`,
-          )
-          .join(
-            "",
-          )}</section><section class="commercial-pricing" id="pricing"><div class="row"><div><span class="eyebrow">${tr("CRECE CON TU EQUIPO", "GROW WITH YOUR TEAM")}</span><h2>${t("pricing")}</h2></div><div class="license-note"><b>${t("license")}</b><p>${t("licenseDetail")}</p></div></div><div class="billing-periods" id="public-periods">${periodOptions()
+        productPage() +
+        localizedHtml`<section class="commercial-pricing" id="pricing"><div class="row"><div><span class="eyebrow">${tr("CRECE CON TU EQUIPO", "GROW WITH YOUR TEAM")}</span><h2>${t("pricing")}</h2></div><div class="license-note"><b>${t("license")}</b><p>${t("licenseDetail")}</p></div></div><div class="billing-periods" id="public-periods">${periodOptions()
           .map(
             ([months, label]) =>
               localizedHtml`<button class="btn period-option period-${months} ${months === 1 ? "primary" : ""}" data-public-months="${months}">${label}${months > 1 ? (months === 12 ? " · " + tr("2 meses gratis", "2 months free") : " · −" + PERIOD_DISCOUNTS[months] + "%") : ""}</button>`,
           )
           .join(
             "",
-          )}</div><div id="public-plans" class="plan-grid"><p>${t("loading")}</p></div><p class="subtitle">${tr("El precio por usuario depende del total de usuarios contratados.", "The per-user price depends on the total number of subscribed users.")} <a href="https://www.o7digitalgroup.com/">O7 Digital Group ↗</a></p></section>` +
+          )}</div><div id="public-plans" class="plan-grid"><p>${t("loading")}</p></div><p class="subtitle">${tr("El precio por usuario depende del total de usuarios contratados.", "The per-user price depends on the total number of subscribed users.")} <a href="https://www.o7digital.com/">O7 Digital Group ↗</a></p></section>` +
         footer();
       bindLanguage(publicPage);
       const plansTarget = document.querySelector("#public-plans");
