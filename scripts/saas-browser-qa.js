@@ -58,7 +58,7 @@ try {
   await page.locator("#password").fill(credentials.password);
   await page.locator("[name=accepted_terms]").check();
   await page
-    .getByRole("button", { name: "Crear espacio · 12 días gratis" })
+    .getByRole("button", { name: "Crear espacio · 14 días gratis" })
     .click();
   await page.getByRole("heading", { name: "Hazlo tuyo." }).waitFor();
   console.log("Registered; onboarding");

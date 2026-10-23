@@ -154,12 +154,12 @@ test("Registration creates an empty workspace with exactly twelve calendar trial
   assert.equal(ws.seat_limit, 5);
   assert.equal(ws.onboarding_completed, false);
   const trial = (await pool.query("SELECT created_at,trial_ends_at FROM tenants WHERE id=$1",[a.user.tenant_id])).rows[0];
-  assert.equal(trial.trial_ends_at-trial.created_at,12*86400000);
-  assert.equal((await a.agent.get("/api/plans")).body.trial_days,12);
+  assert.equal(trial.trial_ends_at-trial.created_at,14*86400000);
+  assert.equal((await a.agent.get("/api/plans")).body.trial_days,14);
   const welcome = (await pool.query("SELECT body FROM notification_outbox WHERE tenant_id=$1 AND dedupe_key=$2",[a.user.tenant_id,`welcome:${a.user.tenant_id}`])).rows[0];
-  assert.ok(welcome.body.includes("12 días naturales"));
+  assert.ok(welcome.body.includes("14 días naturales"));
   assert.ok(
-    Math.abs(Date.parse(ws.trial_ends_at) - Date.now() - 12 * 86400000) < 10000,
+    Math.abs(Date.parse(ws.trial_ends_at) - Date.now() - 14 * 86400000) < 10000,
   );
   const companies = (await a.agent.get("/api/companies").expect(200)).body
     .companies;

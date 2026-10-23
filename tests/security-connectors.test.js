@@ -70,7 +70,7 @@ after(async () => {
   }
   await pool.end();
 });
-test("Registration validates personal and company details, stores them privately and grants exactly twelve days", async () => {
+test("Registration validates personal and company details, stores them privately and grants exactly fourteen days", async () => {
   const u = await register();
   const {
     rows: [profile],
@@ -89,7 +89,7 @@ test("Registration validates personal and company details, stores them privately
   );
   assert.equal(company.billing_country, "MX");
   assert.equal(company.tax_id, "TEST123");
-  assert.equal(Number(company.days), 12);
+  assert.equal(Number(company.days), 14);
   for (const change of [
     { phone: "12345" },
     { birth_date: "2026-02-31" },

@@ -9,7 +9,7 @@ export const mailMessages = {
   resetSubject: 'Reset your password',
   accountBody: 'Open this link within one hour: __MX_SLOT_0__\nIf you did not request this action, you can ignore this message.',
   welcomeSubject: 'Welcome to Service Hub',
-  welcomeBody: 'Your workspace __MX_SLOT_0__ is ready. Your 12-calendar-day trial ends on __MX_SLOT_1__. No payment will be taken without your explicit subscription.',
+  welcomeBody: 'Your workspace __MX_SLOT_0__ is ready. Your 14-calendar-day trial ends on __MX_SLOT_1__. No payment will be taken without your explicit subscription.',
   inviteSubject: 'Invitation to __MX_SLOT_0__',
   inviteBody: 'You are invited to join __MX_SLOT_0__. Create your password within 72 hours: __MX_SLOT_1__',
   trialReminderSubject: 'Your trial ends soon',
