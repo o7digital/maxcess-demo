@@ -1,10 +1,11 @@
+import { reportType } from "./report-types.js";
 import {connectorsDialog} from "./connectors.js";
 import {securityDialog} from "./security.js";
 import { localizedHtml, translateText, ensureLocale } from "./localization.js";
 import { attachmentInput, readAttachments, downloadAttachment } from "./attachments.js";
 import { installLegacyTranslations } from "./i18n.js";
 import { createSaas } from "./saas.js";
-import { metricCards, charts, reportDocument, reportingDetails, reportCsvRows } from "./analytics.js";
+import { metricCards, charts, reportDocument, reportCsvRows, reportBody, reportCatalogue } from "./analytics.js";
 const resetChat = () => document.querySelector("#olivia-widget")?.remove();
 const clientPortal = /^\/cliente\/?$/.test(location.pathname);
 const app = document.querySelector("#app"),
@@ -804,6 +805,7 @@ try {
     localizedHtml('<p class="empty">No fue posible cargar la plataforma. Actualiza la página.</p>');
   notify(err.message);
 }
+let activeReportType = "executive";
 let analyticsData = null,
   reportList = [];
 async function renderDashboard(el, reporting) {
@@ -811,14 +813,14 @@ async function renderDashboard(el, reporting) {
   el.innerHTML = localizedHtml('<p class="empty">Preparando tus indicadores…</p>');
   try {
     const [data, integration, saved] = await Promise.all([
-      api("/analytics"),
+      api("/analytics" + (reporting ? "?report_type=" + activeReportType : "")),
       api("/integrations"),
       reporting ? api("/reports") : Promise.resolve({ reports: [] }),
     ]);
     if (!el.isConnected || view !== activeView) return;
     analyticsData = data;
     reportList = saved.reports;
-    el.innerHTML = localizedHtml`<div class="row page-heading"><div><div class="eyebrow">${reporting ? translateText("INTELIGENCIA DE SERVICIO") : user.role === "client" ? translateText("TU PANEL CLIENTE") : translateText("CONTROL DE OPERACIONES")}</div><h1>${reporting ? translateText("Informes con perspectiva.") : translateText("Hello, __MX_SLOT_0__.").replace("__MX_SLOT_0__", esc(user.name.split(" ")[0]))}</h1><p class="subtitle">${reporting ? translateText("Datos guardados, lectura clara y decisiones documentadas.") : user.role === "client" ? `La atención de ${esc(companies[0]?.name)}. Todo tu seguimiento en un solo espacio.` : translateText("Tu operación, en una sola mirada. Del volumen al siguiente paso.")}</p></div><div class="actions">${!reporting && user.role !== "agent" ? localizedHtml('<button class="btn primary" data-action="new">+ Nueva solicitud</button>') : ""}<button class="btn" id="export-analytics">Exportar indicadores ↗</button></div></div>${!reporting ? localizedHtml`<div class="hero premium-hero"><div class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> ${user.role === "client" ? translateText("SERVICIO CON CONTINUIDAD") : translateText("LA PERSPECTIVA COMPLETA")}</div><h2>Más claridad.<br>Mejores <em>decisiones.</em></h2><p>Una visión del servicio que conecta a tu equipo, tus solicitudes y cada compromiso de atención.</p><button class="btn lime" data-view="${user.role === "client" ? "tickets" : "reports"}">${user.role === "client" ? translateText("Ver mis solicitudes") : translateText("Explorar informes")} ↗</button></div><div class="hero-art"><div class="hero-orbit"></div><div class="orb">✦</div><span class="orbit-tag">Olivia IA · V3.5</span></div></div>` : ""}<form class="report-filters" id="report-filters"><div><label for="report-start">Desde</label><input type="date" id="report-start" name="start" value="${data.filters.start}" required></div><div><label for="report-end">Hasta</label><input type="date" id="report-end" name="end" value="${data.filters.end}" required></div>${isGlobal() ? localizedHtml`<div><label for="report-company">Cliente</label><select id="report-company" name="company_id"><option value="">Todos los clientes</option>${companies.map((c) => localizedHtml`<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div>` : ""}<button class="btn primary">Aplicar periodo</button><span class="period-caption">Alcance ${esc(data.scope)} · ${esc(data.timezone || workspace.settings.timezone)}</span></form><div id="analytics-data">${metricCards(data)}${charts(data)}${reporting ? reportingDetails(data) : ""}</div>${reporting ? localizedHtml`<div class="panel report-actions"><div><div class="eyebrow">TU REPORTE EJECUTIVO</div><h2>Guarda una fotografía del servicio.</h2><p class="subtitle">El informe conserva los indicadores de este periodo, incluso cuando los tickets cambien.</p></div><div class="actions"><button class="btn primary" id="save-report">Guardar informe</button><button class="btn" id="ai-report" ${integration.huggingface.configured ? "" : "disabled"}>Síntesis con Hugging Face ✦</button><button class="btn" id="print-report">Imprimir / PDF ↗</button></div><p class="integration-note">${integration.huggingface.configured ? translateText("Hugging Face configurado · síntesis bajo demanda con datos agregados autorizados.") : translateText("Hugging Face pendiente de API y modelo. Los gráficos, la exportación y los informes de datos están disponibles.")}</p></div><div class="panel saved-reports"><div class="panel-head"><h2>Mis informes guardados</h2><span class="subtitle" id="report-count">${reportList.length} informes</span></div><div id="saved-report-list"></div></div><div id="saved-report-preview"></div>` : localizedHtml`<div class="panel recent-panel"><div class="panel-head"><div><div class="eyebrow">EL SIGUIENTE PASO</div><h2>Solicitudes recientes</h2></div><button class="small-link" data-view="tickets">Ver todas ↗</button></div>${table(tickets.slice(0, 5))}</div>`}`;
+    el.innerHTML = localizedHtml`<div class="row page-heading"><div><div class="eyebrow">${reporting ? translateText("INTELIGENCIA DE SERVICIO") : user.role === "client" ? translateText("TU PANEL CLIENTE") : translateText("CONTROL DE OPERACIONES")}</div><h1>${reporting ? translateText("Informes con perspectiva.") : translateText("Hello, __MX_SLOT_0__.").replace("__MX_SLOT_0__", esc(user.name.split(" ")[0]))}</h1><p class="subtitle">${reporting ? translateText("Datos guardados, lectura clara y decisiones documentadas.") : user.role === "client" ? `La atención de ${esc(companies[0]?.name)}. Todo tu seguimiento en un solo espacio.` : translateText("Tu operación, en una sola mirada. Del volumen al siguiente paso.")}</p></div><div class="actions">${!reporting && user.role !== "agent" ? localizedHtml('<button class="btn primary" data-action="new">+ Nueva solicitud</button>') : ""}<button class="btn" id="export-analytics">Exportar indicadores ↗</button></div></div>${reporting ? reportCatalogue(data.filters.report_type) : ""}${!reporting ? localizedHtml`<div class="hero premium-hero"><div class="hero-copy"><div class="eyebrow"><span class="live-dot"></span> ${user.role === "client" ? translateText("SERVICIO CON CONTINUIDAD") : translateText("LA PERSPECTIVA COMPLETA")}</div><h2>Más claridad.<br>Mejores <em>decisiones.</em></h2><p>Una visión del servicio que conecta a tu equipo, tus solicitudes y cada compromiso de atención.</p><button class="btn lime" data-view="${user.role === "client" ? "tickets" : "reports"}">${user.role === "client" ? translateText("Ver mis solicitudes") : translateText("Explorar informes")} ↗</button></div><div class="hero-art"><div class="hero-orbit"></div><div class="orb">✦</div><span class="orbit-tag">Olivia IA · V3.5</span></div></div>` : ""}<form class="report-filters" id="report-filters"><input type="hidden" name="report_type" id="report-type" value="${data.filters.report_type || 'executive'}"><div><label for="report-start">Desde</label><input type="date" id="report-start" name="start" value="${data.filters.start}" required></div><div><label for="report-end">Hasta</label><input type="date" id="report-end" name="end" value="${data.filters.end}" required></div>${isGlobal() ? localizedHtml`<div><label for="report-company">Cliente</label><select id="report-company" name="company_id"><option value="">Todos los clientes</option>${companies.map((c) => localizedHtml`<option value="${c.id}">${esc(c.name)}</option>`).join("")}</select></div>` : ""}<button class="btn primary">Aplicar periodo</button><span class="period-caption">Alcance ${esc(data.scope)} · ${esc(data.timezone || workspace.settings.timezone)}</span></form><div id="analytics-data">${reporting ? reportBody(data) : metricCards(data)+charts(data)}</div>${reporting ? localizedHtml`<div class="panel report-actions"><div><div class="eyebrow">TU REPORTE EJECUTIVO</div><h2>Guarda una fotografía del servicio.</h2><p class="subtitle">El informe conserva los indicadores de este periodo, incluso cuando los tickets cambien.</p></div><div class="actions"><button class="btn primary" id="save-report">Guardar informe</button><button class="btn" id="ai-report" ${integration.huggingface.configured ? "" : "disabled"}>Síntesis con Hugging Face ✦</button><button class="btn" id="print-report">Imprimir / PDF ↗</button></div><p class="integration-note">${integration.huggingface.configured ? translateText("Hugging Face configurado · síntesis bajo demanda con datos agregados autorizados.") : translateText("Hugging Face pendiente de API y modelo. Los gráficos, la exportación y los informes de datos están disponibles.")}</p></div><div class="panel saved-reports"><div class="panel-head"><h2>Mis informes guardados</h2><span class="subtitle" id="report-count">${reportList.length} informes</span></div><div id="saved-report-list"></div></div><div id="saved-report-preview"></div>` : localizedHtml`<div class="panel recent-panel"><div class="panel-head"><div><div class="eyebrow">EL SIGUIENTE PASO</div><h2>Solicitudes recientes</h2></div><button class="small-link" data-view="tickets">Ver todas ↗</button></div>${table(tickets.slice(0, 5))}</div>`}`;
     $("#report-filters").addEventListener("submit", async (evt) => {
       evt.preventDefault();
       evt.submitter.disabled = true;
@@ -829,7 +831,9 @@ async function renderDashboard(el, reporting) {
         const next = await api("/analytics?" + params);
         if (view !== activeView) return;
         analyticsData = next;
-        $("#analytics-data").innerHTML = metricCards(next) + charts(next) + (reporting ? reportingDetails(next) : "");
+        activeReportType=next.filters.report_type;
+        el.querySelectorAll('.report-type-card').forEach(button=>{const selected=button.dataset.reportType===activeReportType;button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected));});
+        $("#analytics-data").innerHTML = reporting ? reportBody(next) : metricCards(next) + charts(next);
         notify("Indicadores actualizados");
       } catch (err) {
         notify(err.message);
@@ -837,6 +841,7 @@ async function renderDashboard(el, reporting) {
         evt.submitter.disabled = false;
       }
     });
+    el.querySelectorAll('.report-type-card').forEach(button=>button.onclick=()=>{el.querySelector('#report-type').value=button.dataset.reportType;el.querySelector('#report-filters').requestSubmit(el.querySelector('#report-filters button'));});
     $("#export-analytics").onclick = () => {
       downloadCSV("service-hub-report.csv",reportCsvRows(analyticsData));
     };
@@ -880,7 +885,7 @@ function drawSavedReports() {
     ? reportList
         .map(
           (r) =>
-            localizedHtml`<button class="report-entry" data-report-id="${r.id}"><span><b>${r.filters.start} — ${r.filters.end}</b><small>${new Date(r.created_at).toLocaleString(document.documentElement.lang || "es")} · ${r.snapshot.metrics.total} solicitudes</small></span><span>${r.provider === "huggingface" ? translateText("Síntesis IA") : translateText("Informe de datos")} ↗</span></button>`,
+            localizedHtml`<button class="report-entry" data-report-id="${r.id}"><span><b>${translateText(reportType(r.filters.report_type || "executive").title)} · ${r.filters.start} — ${r.filters.end}</b><small>${new Date(r.created_at).toLocaleString(document.documentElement.lang || "es")} · ${r.snapshot.metrics.total} solicitudes</small></span><span>${r.provider === "huggingface" ? translateText("Síntesis IA") : translateText("Informe de datos")} ↗</span></button>`,
         )
         .join("")
     : localizedHtml('<p class="subtitle">Guarda tu primer informe para consultarlo después.</p>');

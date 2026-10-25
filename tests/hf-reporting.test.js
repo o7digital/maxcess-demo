@@ -42,6 +42,10 @@ test("Hugging Face reports use the chosen language and aggregate data with anony
       await hfNarrative({metrics:{total:0},companies:[]},language);
       assert.ok(sent.messages[0].content.includes(name));
     }
+    const {REPORT_TYPES}=await import('../public/report-types.js');
+    for(const type of REPORT_TYPES){await hfNarrative({filters:{report_type:type.id},metrics:{total:2},business:{type:type.id,metrics:[],limitations:[],tables:[{key:'private',columns:[],rows:[{label:'Private site name',company:'Private company name',total:2}]}]}},'fr');assert.ok(sent.messages[0].content.includes(type.focus));assert.equal(JSON.parse(sent.messages[1].content).report_type,type.id);assert.ok(!JSON.stringify(sent).includes('Private site name'));assert.ok(!JSON.stringify(sent).includes('Private company name'));}
+    await hfNarrative({filters:{report_type:'engineering'},business:{type:'engineering',metrics:[],limitations:[],tables:[{key:'many',columns:[],rows:Array.from({length:35},(_,i)=>({site:'Private '+i,total:i}))}]}},'fr');
+    const evidence=JSON.parse(sent.messages[1].content).business.tables[0];assert.equal(evidence.rows_total,35);assert.equal(evidence.rows_truncated,true);assert.equal(evidence.rows.length,25);
     globalThis.fetch = async () =>
       new Response("invalid-json", { status: 200 });
     await assert.rejects(hfNarrative({ companies: [] }, "en"), { status: 502 });

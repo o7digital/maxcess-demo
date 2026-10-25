@@ -222,3 +222,10 @@ test('Reports include older scoped backlog, exact previous period and public sta
  const r=await reportData(user,{start:'2026-01-15',end:'2026-01-15'},db);assert.equal(r.metrics.total,3);assert.equal(r.metrics.resolved,2);assert.equal(r.metrics.sla_samples,1);assert.equal(r.metrics.sla_percent,100);assert.equal(r.metrics.average_resolution_hours,1);assert.equal(r.comparison.total,1);assert.equal(r.comparison.start,'2026-01-14');assert.equal(r.comparison.volume_change_percent,200);assert.equal(r.workload.total,2);assert.equal(r.workload.aging.reduce((s,b)=>s+b.count,0),2);assert.equal(r.first_response.answered,1);assert.equal(r.first_response.average_hours,1);assert.equal(r.performance.length,1);assert.equal(r.performance[0].total,3);
  }finally{await db.query('ROLLBACK');db.release();}
 });
+
+test('Every business report respects customer scope; type selection is validated and preserved in saved snapshots',async()=>{
+ const client=await login('cliente@example.test');await client.a.get('/api/analytics?report_type=unknown').expect(400);
+ const {REPORT_TYPES}=await import('../public/report-types.js');
+ for(const type of REPORT_TYPES){const r=(await client.a.get('/api/analytics?report_type='+type.id).expect(200)).body;assert.equal(r.filters.report_type,type.id);assert.equal(r.business.type,type.id);assert.equal(r.filters.company_id,client.user.company_id);assert.equal(r.metrics.total,(await client.a.get('/api/analytics')).body.metrics.total);}
+ const r=(await post(client,'/reports',{filters:{report_type:'quality'}}).expect(201)).body.report;try{assert.equal(r.filters.report_type,'quality');assert.equal(r.snapshot.business.type,'quality');assert.ok((await client.a.get('/api/reports')).body.reports.some(x=>x.id===r.id));}finally{await pool.query('DELETE FROM reports WHERE id=$1',[r.id]);}
+});

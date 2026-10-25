@@ -16,3 +16,35 @@ Sources : [jetons et accès Inference Providers](https://huggingface.co/docs/inf
 Le 24 octobre 2026, le token existant de l’infrastructure O7 a été retrouvé et testé sans afficher sa valeur. Le modèle de reporting validé est `meta-llama/Llama-3.3-70B-Instruct:cheapest` via le routeur HF. La configuration du CRM et les autres services ne sont pas modifiés. Une synthèse effective doit être testée via Service Hub après déploiement ; la simple présence des variables ne valide pas les permissions ou les crédits futurs.
 
 Les rapports v4 ajoutent la période précédente de même durée, les demandes actuellement ouvertes de toutes dates, leur ancienneté, les demandes sans responsable et les résultats par agent. Le premier délai de réponse utilise la première réponse publique d’un utilisateur interne ; les notes et réponses clients sont exclues. Les dates de résolution manquantes ne comptent pas comme un SLA réussi ni comme une durée nulle. Le relevé provient d’un instantané PostgreSQL cohérent. Les noms des agents, des clients et les catégories personnalisées sont anonymisés avant HF ; aucun texte de demande ni pièce jointe n’est envoyé. Les exports CSV/PDF et rapports enregistrés restent disponibles sans HF.
+
+## Eight business reports
+
+`public/report-types.js` is the shared, validated catalogue. The UI selects a type
+and sends `filters.report_type` when saving; `GET /api/analytics?report_type=...`
+previews it. The JSON snapshot stores the type, its metrics, tables and caveats,
+so saved reports and PDF exports preserve the selected purpose. Missing types in
+older snapshots default to `executive`. Unknown types return HTTP 400.
+
+- `executive`: direction-level service review and previous-period comparison.
+- `support`: incoming requests, all scoped closures in the period (including older
+  requests), first responses, p90 and daily flow.
+- `sla`: dated-resolution compliance plus current breaches, unassigned breaches,
+  critical open requests and commitments due within 24 hours.
+- `capacity`: current queues, assigned agents, unassigned work and concentration;
+  this does not measure attendance, FTE availability or staff utilization.
+- `engineering`: customer/site/category breakdown, durations, attachments and
+  documented resolutions; equipment reliability, repair hours and costs are not
+  available from the current schema.
+- `recurring`: repeated customer/site/category groups as investigation leads,
+  without claiming a verified root cause.
+- `quality`: documentation coverage, missing resolution dates, public staff
+  replies and knowledge-capture opportunities, without fabricated FCR or CSAT.
+- `customer`: service review within the user's authorized customer scope.
+
+HF receives a specific analysis brief for the selected type and its numeric
+aggregates. Table text values are anonymized; at most 25 evidence rows per table
+are transmitted, with full row counts and truncation flags. The model is told not
+to extrapolate omitted rows. Full tables remain available in authorized CSV/PDF
+exports. All types use the same workspace/company/assignment/department scope
+and the same read-only repeatable PostgreSQL snapshot. No schema migration or
+client data conversion is required.

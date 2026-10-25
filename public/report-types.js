@@ -1,0 +1,16 @@
+// Shared catalogue: selection, saved snapshots and HF all use the same validated IDs.
+export const REPORT_TYPES=[
+ {id:'executive',title:'Executive service review',description:'Decide priorities from service trends, open commitments and the previous period.',focus:'Act as a service director. Separate decisions, measurable service risks and the next actions. Do not infer revenue, savings or satisfaction.'},
+ {id:'support',title:'Support center operations',description:'Track arrivals, completed work, first responses and the daily service flow.',focus:'Act as a support center operations manager. Analyze incoming versus completed work, first-response coverage, tail latency and handover priorities. Do not infer staffing requirements without availability data.'},
+ {id:'sla',title:'SLA commitments and exposure',description:'Identify overdue commitments, deadlines in the next 24 hours and response risks.',focus:'Act as a service-level manager. Prioritize current breaches and commitments due within 24 hours. Distinguish current exposure from measured compliance of dated resolutions. Do not invent contractual response targets or penalties.'},
+ {id:'capacity',title:'Team workload and dispatch',description:'Rebalance visible queues using assigned work, unassigned requests and queue age.',focus:'Act as a dispatch coordinator. Discuss load distribution and unassigned work. Recorded queue size is not utilization, productivity or proof of individual underperformance. No staffing forecast without working hours and attendance.'},
+ {id:'engineering',title:'Engineering and field interventions',description:'Review sites, technical categories, resolution durations and supporting evidence.',focus:'Act as an engineering service lead. Compare recorded interventions by site and category, duration and documentation. Do not infer equipment failures, actual repair hours, MTBF or intervention profitability without asset, labor and cost records.'},
+ {id:'recurring',title:'Recurring issues and prevention',description:'Find repeated combinations of customer, site and category for investigation.',focus:'Act as a problem-management lead. Repeated customer/site/category combinations are screening signals, not verified repeated failures or proven root causes. Propose investigations and preventive checks, marking hypotheses explicitly.'},
+ {id:'quality',title:'Resolution quality and knowledge',description:'Find missing resolution notes, missing dates and opportunities to document knowledge.',focus:'Act as a support quality lead. Analyze documentation coverage, missing timestamps and recorded public replies. Notes do not prove correctness. Do not invent first-contact resolution, reopen rate, NPS or CSAT when they are not measured.'},
+ {id:'customer',title:'Customer service review',description:'Prepare a client review with service volumes, commitments, response times and open actions.',focus:'Act as a customer service account manager. Present a factual client review: period, service results, current commitments and next actions. Avoid blaming staff, promising dates or inferring customer satisfaction or contract values.'},
+];
+export function reportType(id='executive'){
+ const type=REPORT_TYPES.find(t=>t.id===id);
+ if(!type)throw Object.assign(new Error('Invalid report type'),{status:400});
+ return type;
+}
