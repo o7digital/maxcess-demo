@@ -48,3 +48,32 @@ to extrapolate omitted rows. Full tables remain available in authorized CSV/PDF
 exports. All types use the same workspace/company/assignment/department scope
 and the same read-only repeatable PostgreSQL snapshot. No schema migration or
 client data conversion is required.
+
+## Printing, PDF and Excel
+
+Current and saved reports expose Preview, Print, PDF, Excel (.xlsx) and CSV.
+Printing uses an isolated same-origin sandboxed preview frame (no scripts), with
+its own report-only document and print stylesheet. Print/PDF open the browser and
+OS dialog, where the user chooses a printer or Save as PDF. The site does not
+enumerate local printers or silently select a PDF destination. The print control
+waits for document/fonts to be ready. Physical printer operation requires the
+user's device and is not exercised by automated tests.
+
+`public/report-chart-data.js` is the shared numerical chart model for SVG and
+Excel; charting uses the report's own metrics/tables, preserves zeros versus
+missing measurements and aggregates long time series without dropping totals.
+The full tables remain available even when a chart shows only the top ten groups.
+
+Excel export is an actual XLSX workbook, not a renamed CSV. Seven localized
+sheets contain overview, indicators, full details, native editable charts, chart
+source data, methodology and the saved HF analysis when present. ExcelJS creates
+the workbook, then native OOXML chart and drawing relationships are added; no
+raster screenshot is used. The generated packages are independently read with
+openpyxl in QA, in addition to the Node tests.
+
+`GET /api/reports/export.xlsx` exports fresh data for the current filters.
+`GET /api/reports/:reportId/export.xlsx` exports the stored snapshot, including its
+saved HF text. Saved exports require the same user, tenant, current access scope
+and, for customer accounts, company. Exports are read-only, not cached and
+rate/concurrency bounded; more than 200,000 cells requires narrower filters.
+No new runtime dependency, PDF server or printer service is installed.

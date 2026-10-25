@@ -1,0 +1,20 @@
+body.report-preview-document {background:#edf0e9;margin:0;padding:20px;color:#1c302e;}
+.report-preview-document #mx-demo {max-width:980px;margin:0 auto;background:white;min-height:100vh;box-shadow:0 6px 30px #16351e16;}
+.report-preview-document #mx-demo .report-print-body {padding:30px;}
+.report-preview-document .report-delivery-toolbar {display:none!important;}
+@media print {
+ @page{margin:12mm;}
+ body.report-preview-document {background:#fff;padding:0;margin:0;}
+ .report-preview-document #mx-demo {max-width:none;box-shadow:none;min-height:0;}
+ .report-preview-document #mx-demo .report-print-body {padding:0;}
+ .report-preview-document #mx-demo .panel {box-shadow:none;border-color:#d6ddce;}
+ .report-preview-document #mx-demo .report-graphs {grid-template-columns:1fr;}
+ .report-preview-document #mx-demo .report-graph-card {break-inside:avoid;page-break-inside:avoid;}
+ .report-preview-document #mx-demo .report-graph-card svg {max-height:125mm;}
+ .report-preview-document #mx-demo .business-table {break-inside:auto;}
+ .report-preview-document #mx-demo .business-table table {min-width:0;width:100%;font-size:8pt;}
+ .report-preview-document #mx-demo .table-wrap {overflow:visible;}
+ .report-preview-document #mx-demo thead {display:table-header-group;}
+ .report-preview-document #mx-demo tr {break-inside:avoid;}
+ .report-preview-document #mx-demo * {-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}

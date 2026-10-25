@@ -229,3 +229,11 @@ test('Every business report respects customer scope; type selection is validated
  for(const type of REPORT_TYPES){const r=(await client.a.get('/api/analytics?report_type='+type.id).expect(200)).body;assert.equal(r.filters.report_type,type.id);assert.equal(r.business.type,type.id);assert.equal(r.filters.company_id,client.user.company_id);assert.equal(r.metrics.total,(await client.a.get('/api/analytics')).body.metrics.total);}
  const r=(await post(client,'/reports',{filters:{report_type:'quality'}}).expect(201)).body.report;try{assert.equal(r.filters.report_type,'quality');assert.equal(r.snapshot.business.type,'quality');assert.ok((await client.a.get('/api/reports')).body.reports.some(x=>x.id===r.id));}finally{await pool.query('DELETE FROM reports WHERE id=$1',[r.id]);}
 });
+
+test('Excel exports preserve saved snapshots and reject other users, companies and malformed report IDs',async()=>{
+ const client=await login('cliente@example.test'),other=await login('cliente2@example.test');const r=(await post(client,'/reports',{filters:{report_type:'engineering'}}).expect(201)).body.report;
+ const binary=(res,callback)=>{const chunks=[];res.on('data',c=>chunks.push(c));res.on('end',()=>callback(null,Buffer.concat(chunks)));};
+ try{await other.a.get('/api/reports/'+r.id+'/export.xlsx').expect(404);await client.a.get('/api/reports/------------------------------------/export.xlsx').expect(404);await client.a.get('/api/reports/export.xlsx?company_id='+other.user.company_id).expect(403);await client.a.get('/api/reports/export.xlsx?report_type=unknown').expect(400);
+ const response=await client.a.get('/api/reports/'+r.id+'/export.xlsx').buffer(true).parse(binary).expect(200);assert.match(response.headers['content-type'],/spreadsheetml/);assert.match(response.headers['cache-control'],/no-store/);const{default:ExcelJS}=await import('exceljs');const w=new ExcelJS.Workbook();await w.xlsx.load(response.body);assert.equal(w.worksheets[0].getCell('B7').value,r.snapshot.business.metrics[0].value);
+ }finally{await pool.query('DELETE FROM reports WHERE id=$1',[r.id]);}
+});
