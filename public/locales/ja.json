@@ -1254,5 +1254,6 @@
   "Chart display": "グラフの表示",
   "Series": "データ系列",
   "Other groups": "その他のグループ",
-  "No positive values to display as shares.": "割合で表示できる正の値がありません。"
+  "No positive values to display as shares.": "割合で表示できる正の値がありません。",
+  "User guide": "ユーザーガイド"
 }

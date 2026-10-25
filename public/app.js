@@ -1,3 +1,4 @@
+import {renderGuide} from "./user-guide.js";
 import {reportChartData} from "./report-chart-data.js";
 import {reportToolbar,openReportPreview,excelUrl,downloadReportExcel} from "./report-delivery.js";
 import { reportType } from "./report-types.js";
@@ -28,8 +29,7 @@ let overviewMetrics,
   view = "overview",
   mode = "list",
   selected = null,
-  lastFocus,
-  guide = false;
+  lastFocus;
 const statuses = ["Abierto", "En curso", "Resuelto", "Cerrado"],
   priorities = ["Baja", "Media", "Alta", "Crítica"];
 let categories = [
@@ -212,6 +212,7 @@ function shell() {
         ]
       : []),
     ["reports", "▧", "Informes"],
+    ["help", "?", translateText("User guide")],
     ...(["admin", "platform_admin"].includes(user.role)
       ? [
           ["settings", "⚙", saas.t("settings")],
@@ -254,6 +255,11 @@ function table(list) {
 }
 function render() {
   const el = $("#content");
+  if (el && view === "help") {
+    el.replaceChildren(document.createElement("div"));
+    renderGuide(el.firstElementChild, {role:user.role});
+    return;
+  }
   if (!el) return;
   const routes = {
     settings: saas.settings,
@@ -677,9 +683,7 @@ document.addEventListener("click", async (e) => {
     }
     switch (b.dataset.action) {
       case "guide":
-        guide = true;
-        $("#guide").hidden = false;
-        $("#guide").scrollIntoView({ behavior: "smooth" });
+        if (user) { view = "help"; shell(); } else location.href = "/help";
         break;
       case "try":
         $("#email").focus();
@@ -765,43 +769,47 @@ document.addEventListener("keydown", (e) => {
   }
 });
 try {
-  await bootstrap();
-  try {
-    user = (await api("/me")).user;
-  } catch {}
-  if (
-    [
-      "/verify-email",
-      "/reset-password",
-      "/forgot-password",
-      "/invitation",
-      "/terms",
-      "/privacy",
-      "/pricing",
-    ].includes(location.pathname)
-  ) {
-    await saas.publicPage();
-  } else if (user) {
-    await load();
-    const pathViews = {
-      "/settings": "settings",
-      "/subscription": "subscription",
-      "/admin": "platform",
-      "/onboarding": "onboarding",
-    };
-    view =
-      !workspace.onboarding_completed &&
-      ["admin", "platform_admin"].includes(user.role)
-        ? "onboarding"
-        : pathViews[location.pathname] || "overview";
-    shell();
-  } else if (
-    clientPortal &&
-    config.clientDemo &&
-    new URLSearchParams(location.search).get("preview") === "1"
-  )
-    await enterClientDemo();
-  else welcome();
+  if (location.pathname.replace(/\/$/, "") === "/help") {
+    await renderGuide(app,{standalone:true,language:new URLSearchParams(location.search).get("lang")||localStorage.getItem("servicehub-language")||navigator.language.slice(0,2)});
+  } else {
+    await bootstrap();
+    try {
+      user = (await api("/me")).user;
+    } catch {}
+    if (
+      [
+        "/verify-email",
+        "/reset-password",
+        "/forgot-password",
+        "/invitation",
+        "/terms",
+        "/privacy",
+        "/pricing",
+      ].includes(location.pathname)
+    ) {
+      await saas.publicPage();
+    } else if (user) {
+      await load();
+      const pathViews = {
+        "/settings": "settings",
+        "/subscription": "subscription",
+        "/admin": "platform",
+        "/onboarding": "onboarding",
+      };
+      view =
+        !workspace.onboarding_completed &&
+        ["admin", "platform_admin"].includes(user.role)
+          ? "onboarding"
+          : pathViews[location.pathname] || "overview";
+      shell();
+    } else if (
+      clientPortal &&
+      config.clientDemo &&
+      new URLSearchParams(location.search).get("preview") === "1"
+    )
+      await enterClientDemo();
+    else welcome();
+  }
 } catch (err) {
   app.innerHTML =
     localizedHtml('<p class="empty">No fue posible cargar la plataforma. Actualiza la página.</p>');
@@ -977,6 +985,7 @@ function clientShell() {
     ["overview", "◫", "Inicio"],
     ["tickets", "▤", "Solicitudes"],
     ["reports", "▧", "Informes"],
+    ["help", "?", translateText("User guide")],
   ]
     .map(
       ([v, i, label]) =>

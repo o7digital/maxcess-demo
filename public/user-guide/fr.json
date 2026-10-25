@@ -1,0 +1,298 @@
+{
+  "title": "Guide utilisateur",
+  "intro": "Des instructions pratiques pour les clients, les agents et les administrateurs. Recherchez un sujet ou suivez les étapes d’un parcours complet.",
+  "search": "Rechercher dans le guide",
+  "all": "Tous les rôles",
+  "client": "Client",
+  "agent": "Agent / responsable",
+  "admin": "Administrateur",
+  "steps": "Comment procéder",
+  "note": "Important à savoir",
+  "example": "Exemple",
+  "empty": "Aucun article correspondant. Essayez un autre terme ou rôle.",
+  "back": "Retour au Service Hub",
+  "contents": "Sommaire",
+  "count": "articles",
+  "language": "Langue",
+  "articles": [
+    {
+      "id": "start",
+      "role": "all",
+      "title": "Bien démarrer : créer et suivre une demande",
+      "summary": "Service Hub connecte les demandes des clients, les personnes qui les traitent et l'historique du travail dans un seul espace de travail. Un ticket peut représenter un incident, une demande de service, une question technique ou une revue de document.",
+      "steps": [
+        "Choisissez votre langue préférée dans le sélecteur de langue.",
+        "Clients : ouvrez les Demandes et créez une demande pour votre entreprise. Agents : ouvrez votre file d'attente attribuée. Gestionnaires : examinez les activités et les priorités. Administrateurs : configurez l'espace de travail et invitez votre équipe.",
+        "Ouvrez un ticket pour lire sa conversation, ses fichiers, son responsable et son avancement. Utilisez les Rapports pour comprendre les activités couvertes par votre accès."
+      ],
+      "note": "La documentation décrit le produit ; votre rôle et votre abonnement déterminent les actions disponibles. La lecture d'un article ne vous accorde jamais de permissions supplémentaires.",
+      "example": "Une succursale signale un terminal cassé. L'agent demande une photo, enregistre l'intervention et explique la résolution dans le même ticket."
+    },
+    {
+      "id": "access",
+      "role": "all",
+      "title": "Se connecter, invitations et récupération de compte",
+      "summary": "Chaque personne doit utiliser un compte individuel. Cela permet de conserver l'accès et l'historique des actions attribuables à la bonne personne.",
+      "steps": [
+        "Ouvrez la page de connexion de votre espace de travail et entrez votre propre adresse e-mail et mot de passe. Les clients peuvent utiliser le portail client.",
+        "Pour une nouvelle invitation, suivez le lien dans l'e-mail d'invitation et complétez la configuration du compte. Les liens d'invitation expirent après 72 heures ; demandez à votre administrateur une nouvelle invitation si nécessaire.",
+        "Si vous avez oublié votre mot de passe, utilisez le lien de récupération et vérifiez les courriers indésirables. Confirmez votre adresse e-mail lorsque cela vous est demandé.",
+        "Si l’authentification multifacteur est activée, saisissez le code reçu par e-mail ou fourni par votre application d’authentification. Conservez vos codes de récupération en lieu sûr et déconnectez-vous des appareils partagés."
+      ],
+      "note": "Ne transmettez jamais de mots de passe, de clés API ou de codes de récupération dans un ticket. Si l’accès est refusé, demandez à un administrateur de vérifier l’état du compte, son entreprise de rattachement et son rôle.",
+      "example": "Un nouveau client reçoit une invitation, crée un mot de passe et voit ensuite les demandes appartenant à son entreprise attribuée."
+    },
+    {
+      "id": "customers",
+      "role": "admin",
+      "title": "Créer des entreprises clientes et y attacher leurs utilisateurs",
+      "summary": "Une entreprise cliente regroupe les demandes et les utilisateurs externes qui peuvent les consulter. Un enregistrement de contact seul ne crée pas un compte de connexion.",
+      "steps": [
+        "Dans Clients, créez l'entreprise avec un nom clair et les contacts ou informations de succursale pertinents.",
+        "Dans Administration / Utilisateurs et accès, créez un utilisateur avec le rôle Client et sélectionnez l'entreprise cliente existante. Alternativement, utilisez le processus d’invitation disponible.",
+        "Vérifiez l'adresse e-mail et l'entreprise avant de sauvegarder. Utilisez un compte séparé pour chaque personne.",
+        "Demandez au client de se connecter via le portail client et de confirmer l'entreprise affichée avant de partager des informations opérationnelles."
+      ],
+      "note": "Un compte client doit être attaché à la bonne entreprise. Il peut consulter les tickets autorisés de son entreprise et les rapports limités à son périmètre, jamais les données d'autres entreprises. N'utilisez pas un rôle d'agent interne pour un client externe.",
+      "example": "Créez « North Branches », puis attachez ses deux utilisateurs clients à cette entreprise. Les utilisateurs d'une autre entreprise cliente ne peuvent pas voir ces demandes."
+    },
+    {
+      "id": "new-ticket",
+      "role": "all",
+      "title": "Créer un ticket utile",
+      "summary": "Une demande précise réduit les allers-retours et aide l'équipe à évaluer l'urgence.",
+      "steps": [
+        "Ouvrez les Demandes, puis l'action de nouvelle demande. Entrez un titre court et spécifique.",
+        "Sélectionnez l'entreprise cliente si votre rôle le permet, le site ou la succursale, la catégorie et la priorité demandée.",
+        "Décrivez le résultat attendu, le problème observé, quand il a commencé, son impact sur l'activité et ce qui a déjà été tenté.",
+        "Ajoutez des fichiers pertinents, soumettez une fois, et conservez la référence du ticket pour le suivi."
+      ],
+      "note": "N’incluez pas d'informations personnelles ou sensibles inutiles. Une priorité demandée est une indication ; le personnel autorisé évalue et met à jour la priorité opérationnelle.",
+      "example": "Titre : « Succursale 24 — terminal de caisse ne peut pas se connecter ». Description : « Depuis 09:10, deux terminaux tombent en panne ; le troisième fonctionne. Redémarrage tenté. Les ventes sont retardées. »"
+    },
+    {
+      "id": "ticket-work",
+      "role": "agent",
+      "title": "Qualifier, attribuer et suivre le cycle de vie d’un ticket",
+      "summary": "Utilisez la propriété, la priorité et le statut ensemble pour que la prochaine action soit claire.",
+      "steps": [
+        "Ouvrez votre file d'attente, filtrez les demandes et examinez les éléments les plus anciens ou les plus urgents. Les agents travaillent sur leurs tickets attribués ; la visibilité des gestionnaires suit leur périmètre.",
+        "Examinez la catégorie, le site et l'impact. Le personnel autorisé attribue un propriétaire et ajuste la priorité.",
+        "Déplacez une demande acceptée de Ouverte à En cours pendant que le travail est en cours. Enregistrez l'action prise et la prochaine étape.",
+        "Lorsqu'il est résolu, expliquez la solution et marquez Résolu. Fermez après la confirmation appropriée selon le processus de votre équipe. Rouvrez si un travail supplémentaire est nécessaire."
+      ],
+      "note": "Un changement de statut n'est pas une preuve que le problème du client a été résolu. Enregistrez une explication utile. Les étiquettes peuvent différer selon la langue sélectionnée et la configuration de l'espace de travail.",
+      "example": "Attribuez un problème de connectivité à l'agent responsable, enregistrez les vérifications réseau, puis résolvez-le avec l'action corrective réelle."
+    },
+    {
+      "id": "conversation",
+      "role": "all",
+      "title": "Réponses publiques et notes internes",
+      "summary": "La conversation du ticket préserve le contexte. Les notes internes sont pour la collaboration du personnel ; les réponses publiques sont pour le client.",
+      "steps": [
+        "Ouvrez le ticket et lisez l'historique existant avant de répondre.",
+        "Utilisez une réponse publique pour demander des informations au client ou expliquer les progrès. Le personnel doit choisir l'option de note interne pour la coordination interne.",
+        "Avant d'envoyer, vérifiez le public et évitez de copier du contenu interne ou confidentiel dans une réponse publique.",
+        "Rendez la prochaine action explicite : ce qui est nécessaire, qui doit agir et quand l'équipe examinera à nouveau le ticket."
+      ],
+      "note": "Les clients ne voient pas les notes internes du personnel. Ne traitez pas une note interne comme une réponse au client : le rapport de temps de réponse utilise les réponses publiques du personnel.",
+      "example": "Réponse publique : « Pourriez-vous joindre la capture d'écran de l'erreur ? » Note interne : « Demandez à l'équipe réseau de vérifier le lien de cette succursale. »"
+    },
+    {
+      "id": "attachments",
+      "role": "all",
+      "title": "PDFs, images et pièces jointes",
+      "summary": "Attachez les preuves et documents nécessaires pour comprendre ou finaliser la demande.",
+      "steps": [
+        "Ouvrez un billet modifiable et utilisez son contrôle de pièce jointe. Les types pris en charge incluent PDF, Excel, Word, CSV, TXT, PNG et JPG.",
+        "Sélectionnez jusqu'à cinq fichiers par téléchargement, avec une taille combinée maximale de 2 Mo. Vérifiez les noms de fichiers avant de soumettre.",
+        "Ouvrez ou téléchargez la pièce jointe sauvegardée à partir du billet pour vérifier que le bon fichier a été téléchargé.",
+        "Si le billet est résolu ou fermé, rouvrez-le via le flux de travail autorisé avant d'ajouter de nouvelles pièces jointes."
+      ],
+      "note": "Il y a une limite de 20 pièces jointes par ticket et 200 Mo par espace de travail. Si un téléchargement échoue, vérifiez le format, la taille, l'espace de stockage restant et vos permissions d'édition. Une pièce jointe n'est pas un remplacement pour une description structurée.",
+      "example": "Attachez un petit rapport d'intervention PDF et une capture d'écran, puis vérifiez les deux à partir de l'historique du billet."
+    },
+    {
+      "id": "search",
+      "role": "all",
+      "title": "Trouver une demande et suivre son avancement",
+      "summary": "Utilisez la liste des demandes et ses filtres disponibles pour vous concentrer sur le travail pertinent pour vous.",
+      "steps": [
+        "Ouvrez les Demandes et recherchez par un titre ou une référence reconnaissable.",
+        "Combinez les filtres de statut, de priorité, de catégorie ou de client disponibles selon votre rôle. Effacez les filtres lorsque vous pensez qu'un billet manque.",
+        "Ouvrez le billet pour examiner la dernière réponse, le propriétaire, le statut et les pièces jointes.",
+        "Utilisez la vue d'ensemble pour identifier l'activité, puis ouvrez la demande détaillée avant de prendre des décisions opérationnelles."
+      ],
+      "note": "La recherche ne contourne pas les permissions. Les clients ne voient que leur entreprise assignée ; les agents et les gestionnaires voient l'étendue autorisée pour leur rôle. Les données manquantes peuvent résulter d'un filtre, d'une affectation ou d'un accès à l'entreprise.",
+      "example": "Un client filtre les demandes non résolues pour sa propre entreprise afin de préparer un suivi hebdomadaire avec l'équipe de support."
+    },
+    {
+      "id": "report-types",
+      "role": "all",
+      "title": "Choisir le bon rapport métier",
+      "summary": "Les rapports transforment l'activité que vous êtes autorisé à voir en indicateurs opérationnels. Choisissez un rapport qui répond à une question spécifique.",
+      "steps": [
+        "Exécutif : résumez la charge de travail et les performances du service. Opérations de support : examinez le travail entrant et les progrès. SLA : examinez l'exposition des réponses et des résolutions.",
+        "Capacité : examinez les files d'attente et la distribution de la charge de travail. Ingénierie : examinez les catégories techniques et les modèles d'intervention. Problèmes récurrents : identifiez les combinaisons répétées d'entreprise, de site et de catégorie.",
+        "Qualité : examinez les signaux de qualité de la finalisation et des données. Client : examinez l'activité et les résultats du service par client dans votre périmètre autorisé.",
+        "Sélectionnez la période pertinente et les filtres, inspectez les tableaux sous-jacents, et comparez-les avec la période précédente si elle est fournie."
+      ],
+      "note": "La récurrence est une piste d'investigation, pas une cause racine prouvée. Le système n'infère pas la satisfaction client, le coût du travail ou la fiabilité de l'équipement sans les données mesurées correspondantes.",
+      "example": "Pour une réunion de support lundi, utilisez Opérations de support pour le volume, SLA pour les risques, puis Problèmes récurrents pour choisir les investigations."
+    },
+    {
+      "id": "report-reading",
+      "role": "all",
+      "title": "Comprendre les périodes, les demandes en attente et les temps de réponse",
+      "summary": "L'interprétation correcte est aussi importante que le graphique lui-même.",
+      "steps": [
+        "Vérifiez la plage de dates du rapport, le client et les autres filtres avant de lire les chiffres.",
+        "Distinguez l'activité pendant la période sélectionnée du backlog actuel, qui peut inclure des tickets créés avant cette période.",
+        "La première réponse reflète une réponse publique du personnel ; les notes internes ne sont pas des réponses de clients. Les horodatages manquants sont exclus des moyennes de temps pertinents et des calculs de SLA.",
+        "Utilisez les tableaux détaillés pour enquêter sur les valeurs aberrantes. Le 90e percentile est la valeur à ou au-dessus de laquelle seulement environ un dixième des observations mesurées reste."
+      ],
+      "note": "Les moyennes peuvent masquer de longues attentes. Comparez la médiane ou le percentile lorsque c'est possible, examinez la taille de l'échantillon et évitez de comparer des rapports avec des portées différentes.",
+      "example": "Un backlog de 40 avec 12 nouveaux tickets cette semaine est possible : certains tickets non résolus ont été ouverts plus tôt."
+    },
+    {
+      "id": "charts",
+      "role": "all",
+      "title": "Modifier les graphiques : barres, colonnes, lignes et camemberts",
+      "summary": "Choisissez une représentation qui facilite la réponse à la question avant de sauvegarder le rapport.",
+      "steps": [
+        "Ouvrez les Rapports et trouvez le sélecteur de représentation du graphique. Choisissez des barres horizontales, des colonnes ou des lignes pour les ensembles de données disponibles.",
+        "Pour des distributions appropriées, choisissez un camembert ou un doughnut. Si plusieurs mesures sont disponibles, sélectionnez la série à représenter.",
+        "Les camemberts regroupent les catégories plus petites au-delà des neuf plus grandes dans Autres ; examinez le tableau pour leurs valeurs individuelles.",
+        "Choisissez vos styles de graphiques avant de sauvegarder. La réouverture d'un rapport sauvegardé préserve sa représentation enregistrée ; créez un nouveau rapport pour une vue différente."
+      ],
+      "note": "Les camemberts sont disponibles pour des distributions non superposées appropriées, pas pour des indicateurs de SLA superposés ou des mesures de durée/pourcentage. Une série ne contenant que des zéros ne peut pas produire un camembert significatif. Les valeurs manquantes ne doivent pas être lues comme des zéros.",
+      "example": "Utilisez des colonnes pour comparer les volumes de branches, une ligne pour une tendance et un doughnut pour la distribution des statuts actuels des tickets."
+    },
+    {
+      "id": "exports",
+      "role": "all",
+      "title": "Sauvegarder, imprimer et exporter des rapports",
+      "summary": "Utilisez le format adapté à la personne qui a besoin du résultat.",
+      "steps": [
+        "Générez le rapport, choisissez les graphiques et sauvegardez-le si vous avez besoin d'une version enregistrée. Les rapports sauvegardés sont personnels à l'utilisateur qui les a créés.",
+        "Choisissez Aperçu pour examiner le rapport complet avant de le partager.",
+        "Choisissez Imprimer ou PDF pour ouvrir la boîte de dialogue d'impression du navigateur. Sélectionnez une imprimante disponible ou Enregistrer sous PDF dans cette boîte de dialogue, puis vérifiez la pagination.",
+        "Choisissez Excel pour un classeur natif .xlsx avec des tableaux et des graphiques éditables, ou CSV pour l'échange de données tabulaires. L'exportation suit l'étendue autorisée du rapport et ses filtres."
+      ],
+      "note": "Il n'y a actuellement aucune action d'administrateur qui publie un rapport personnel sauvegardé à une entreprise cliente. Les clients peuvent générer leurs propres rapports dans l'étendue autorisée de leur entreprise. Les fichiers téléchargés doivent être partagés de manière responsable.",
+      "example": "Sauvegardez un rapport mensuel, examinez-le en Aperçu, puis exportez Excel pour l'analyse et PDF pour une réunion de gestion."
+    },
+    {
+      "id": "ai",
+      "role": "all",
+      "title": "Utiliser Olivia et Hugging Face de manière réfléchie",
+      "summary": "L'assistance par IA peut aider à rédiger ou interpréter des informations, tout en gardant les humains responsables des décisions.",
+      "steps": [
+        "Utilisez Olivia là où c'est disponible pour demander de l'aide avec le flux de travail supporté, comme un résumé ou une suggestion de formulation. Vérifiez chaque suggestion avant de l'utiliser.",
+        "Dans les Rapports, générez l'analyse IA disponible pour obtenir des commentaires sur les indicateurs agrégés.",
+        "Vérifiez les recommandations contre les chiffres réels et l'historique des tickets. Traitez les hypothèses comme des questions à investiguer.",
+        "Si l'IA n'est pas disponible, continuez d'utiliser les tickets, les tableaux, les graphiques et les exports ; vérifiez l'erreur ou le quota affiché avant de réessayer."
+      ],
+      "note": "Les fonctionnalités dépendent des paramètres de l'espace de travail, des autorisations, de la disponibilité du modèle et des quotas. L'analyse des rapports envoie des indicateurs agrégés et anonymisés au fournisseur configuré, pas les textes des tickets ou les pièces jointes. Cela peut prendre plusieurs secondes et ne résout pas les tickets de manière autonome.",
+      "example": "Demandez une explication de l'augmentation du backlog, puis vérifiez si l'augmentation provient du volume entrant, des anciennes demandes ou d'un changement dans les filtres du rapport."
+    },
+    {
+      "id": "team",
+      "role": "admin",
+      "title": "Gérer les rôles et les départements du personnel",
+      "summary": "Donnez à chaque personne l'accès nécessaire pour leur travail et révisez-le lorsque les responsabilités changent.",
+      "steps": [
+        "Ouvrez l'Administration / Utilisateurs et accès. Créez ou invitez chaque membre de l'équipe avec une adresse e-mail individuelle.",
+        "Choisissez le rôle approprié : administrateur pour l'administration de l'espace de travail, gestionnaire pour la supervision autorisée, agent pour le travail assigné, client pour l'accès externe à l'entreprise.",
+        "Configurez les départements et tout rôle ou permission personnalisé disponible selon votre organisation. Vérifiez la portée résultante en utilisant le rôle prévu.",
+        "Désactivez l'accès pour les personnes qui partent et réaffectez le travail opérationnel avant de supprimer une responsabilité."
+      ],
+      "note": "Un propriétaire de plateforme est différent d'un administrateur d'espace de travail. Les noms de rôles ne justifient pas un accès client large ; les affectations d'entreprise et de département sont également importantes. Ne partagez pas un compte d'administrateur.",
+      "example": "Un agent gère les demandes assignées ; un gestionnaire de département supervise ce département ; un client externe est rattaché à sa société cliente."
+    },
+    {
+      "id": "settings",
+      "role": "admin",
+      "title": "Configurer les catégories, les SLA et les règles d'exploitation",
+      "summary": "Adaptez le vocabulaire et le processus de service de l'espace de travail avant d'inviter l'équipe complète.",
+      "steps": [
+        "Ouvrez les Paramètres et examinez l'identité de l'espace de travail, le logo, la langue par défaut et le fuseau horaire.",
+        "Définissez des catégories pertinentes et examinez les paramètres de priorité et de SLA disponibles par rapport à vos engagements de service réels.",
+        "Examinez les paramètres de flux de travail, de routage, d'escalade et de notification disponibles. Gardez les règles compréhensibles pour l'équipe.",
+        "Testez les modifications en utilisant une demande de test clairement étiquetée et confirmez l'attribution, la visibilité et les notifications avant de vous y fier."
+      ],
+      "note": "Une règle configurée n'est pas une preuve que tous les tickets historiques ont été retraités. Validez le comportement réel et ne promettez pas des résultats contractuels de SLA uniquement à partir d'un écran de configuration.",
+      "example": "Créez des catégories pour l'accès, l'équipement et la facturation, puis vérifiez qu'une demande d'équipement d'échantillon atteint le personnel cible."
+    },
+    {
+      "id": "integrations",
+      "role": "admin",
+      "title": "Connectez Zendesk, ServiceNow et d'autres systèmes",
+      "summary": "Une intégration nécessite à la fois une connexion configurée et une portée de synchronisation convenue.",
+      "steps": [
+        "Ouvrez les contrôles d'intégration avec un compte autorisé. Sélectionnez le connecteur Zendesk ou ServiceNow disponible.",
+        "Entrez le point de terminaison et les identifiants requis de manière privée dans le formulaire de configuration, puis utilisez le test de connexion.",
+        "Utilisez les actions d'exportation manuelle ou de synchronisation disponibles du connecteur et examinez le résultat. Décidez quel système détient chaque enregistrement avant l'utilisation opérationnelle.",
+        "Pour GLPI ou une autre API, demandez une évaluation d'intégration couvrant l'authentification, la correspondance des champs, les autorisations et les règles de synchronisation."
+      ],
+      "note": "L'intégration GLPI est disponible sur demande en tant que projet ; ce n'est pas un connecteur natif déjà configuré. Un test de connexion réussi ne prouve pas une synchronisation bidirectionnelle non supervisée. Ne collez jamais les secrets d'intégration dans des tickets.",
+      "example": "Testez la connexion Zendesk sur un enregistrement contrôlé, vérifiez ses champs mappés et évitez de créer des enregistrements en double dans les deux systèmes."
+    },
+    {
+      "id": "import",
+      "role": "admin",
+      "title": "Importez des entreprises et des tickets en toute sécurité",
+      "summary": "Un aperçu aide à détecter les problèmes de correspondance avant la création des enregistrements.",
+      "steps": [
+        "Préparez un fichier CSV ou XLSX propre. Importez les entreprises clientes avant les tickets qui y font référence.",
+        "Ouvrez l'Importation, sélectionnez le fichier et examinez l'aperçu. La limite est de 500 lignes et 1 Mo par importation.",
+        "Mappez les colonnes aux champs attendus, vérifiez les valeurs requises et corrigez le fichier source si nécessaire.",
+        "Confirmez uniquement après avoir examiné l'aperçu, puis inspectez un échantillon des enregistrements créés et leurs affectations d'entreprise."
+      ],
+      "note": "Un import est une opération d'écriture, pas une restauration de sauvegarde. Testez avec un petit échantillon clairement étiqueté et ne supposez pas que la répétition du même fichier assurera la déduplication en toute sécurité de chaque enregistrement.",
+      "example": "Importez deux entreprises d'échantillon, vérifiez leurs noms, puis importez un petit fichier de tickets faisant référence à ces entreprises."
+    },
+    {
+      "id": "billing",
+      "role": "admin",
+      "title": "Essai, abonnement et accès en lecture seule",
+      "summary": "L'écran de facturation est la référence pour le plan actuel, le prix, le frais d'activation et l'intervalle de paiement.",
+      "steps": [
+        "Ouvrez l'Abonnement pour examiner l'état de l'essai ou de l'abonnement de l'espace de travail et le nombre d'agents internes.",
+        "L'essai dure 14 jours calendaires. Il ne nécessite pas de carte et ne vous facture pas automatiquement pendant l'essai.",
+        "Choisissez l'intervalle de facturation disponible et examinez le montant total du paiement, le frais d'activation, les réductions et les taxes applicables avant de confirmer le paiement.",
+        "À la fin de l'essai, un espace de travail sans abonnement actif devient en lecture seule. Activez l'abonnement via le flux de facturation disponible pour restaurer les écritures autorisées."
+      ],
+      "note": "Les comptes clients ne sont pas facturés en tant qu'agents internes selon le modèle actuel. Les autorisations de paiement et d'écriture de données restent appliquées par le serveur. N'utilisez pas ce guide comme détermination fiscale ; examinez le paiement et la facture.",
+      "example": "Un client peut examiner l'option annuelle proposée et ses conditions d'activation affichées avant de décider de souscrire."
+    },
+    {
+      "id": "backup",
+      "role": "admin",
+      "title": "Télécharger une sauvegarde de l'espace de travail et comprendre la récupération",
+      "summary": "Une exportation d'espace de travail donne à votre organisation une copie portable de ses propres données. Les sauvegardes des opérateurs fournissent une couche de récupération séparée.",
+      "steps": [
+        "Un administrateur autorisé ouvre les Paramètres et utilise l'action de téléchargement ZIP de l'espace de travail. Complétez la vérification par e-mail si nécessaire.",
+        "Enregistrez le ZIP dans un emplacement privé, contrôlé et vérifiez que le téléchargement est complet.",
+        "L'exportation contient les données de l'espace de travail, les fichiers et un manifeste ; elle exclut les mots de passe, les secrets d'authentification et les autres espaces de travail.",
+        "Pour la récupération, contactez l'opérateur du service et conservez le ZIP original. Il n'y a pas d'importation ZIP automatique dans le produit."
+      ],
+      "note": "Un ZIP téléchargé ne permet pas de basculer automatiquement le serveur et n'est pas une réplique en direct. Choisissez une fréquence d'exportation appropriée à vos propres besoins de continuité et protégez les informations clientes téléchargées.",
+      "example": "Avant une opération majeure de nettoyage des données, téléchargez un ZIP de l'espace de travail et conservez-le conformément à la politique de rétention de votre organisation."
+    },
+    {
+      "id": "troubleshooting",
+      "role": "all",
+      "title": "Dépannage et demande de support efficace",
+      "summary": "Commencez par des vérifications simples et fournissez des faits reproductibles sans exposer de secrets.",
+      "steps": [
+        "Ticket ou rapport manquant : effacez les filtres, vérifiez la plage de dates et confirmez votre entreprise, votre département, votre affectation et votre rôle de compte. Les rapports enregistrés sont personnels.",
+        "Impossible de créer ou de modifier : examinez le statut de l'abonnement ou de l'essai, les autorisations de compte et si le ticket doit être rouvert.",
+        "Erreur d'upload ou d'exportation : vérifiez les limites de fichiers, le stockage, les autorisations de téléchargement du navigateur et l'erreur affichée. Actualisez après avoir conservé le texte non envoyé.",
+        "Si le problème persiste, envoyez l'adresse de la page, l'heure locale et le fuseau horaire, la référence du ticket, le résultat attendu, le résultat observé et une capture d'écran redigée par le biais de votre canal de support habituel."
+      ],
+      "note": "N'incluez jamais un mot de passe, une clé API, un numéro de carte de paiement ou un code de récupération dans une capture d'écran. Évitez de soumettre répétitivement un paiement ou une importation tant que son résultat est incertain.",
+      "example": "« À 10:15, heure de Mexico, sur Demandes, SH-123, l'upload du PDF a montré une erreur de taille. Les fichiers combinés faisaient 3 Mo. » donne à l'équipe un point de départ concret."
+    }
+  ]
+}

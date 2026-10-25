@@ -1,0 +1,298 @@
+{
+  "title": "Guía del usuario",
+  "intro": "Instrucciones prácticas para clientes, agentes y administradores. Busque un tema o siga un flujo de trabajo completo.",
+  "search": "Buscar en la guía",
+  "all": "Todos los roles",
+  "client": "Cliente",
+  "agent": "Agente / gerente",
+  "admin": "Administrador",
+  "steps": "Cómo hacerlo",
+  "note": "Importante de saber",
+  "example": "Ejemplo",
+  "empty": "No hay artículos coincidentes. Intente otro término o rol.",
+  "back": "Volver al Service Hub",
+  "contents": "Contenidos",
+  "count": "artículos",
+  "language": "Idioma",
+  "articles": [
+    {
+      "id": "start",
+      "role": "all",
+      "title": "Comienza aquí: tu primera solicitud exitosa",
+      "summary": "Service Hub conecta las solicitudes de los clientes, las personas que las manejan y el historial del trabajo en un solo espacio de trabajo. Un ticket puede representar un incidente, una solicitud de servicio, una pregunta técnica o una revisión de documentos.",
+      "steps": [
+        "Elige tu idioma preferido desde el selector de idiomas.",
+        "Clientes: abre Solicitudes y crea una solicitud para tu empresa. Agentes: abre tu cola asignada. Gerentes: revisa la actividad y las prioridades. Administradores: configura el espacio de trabajo e invita a tu equipo.",
+        "Abre un ticket para leer su conversación, archivos, propietario y progreso. Usa Informes para entender la actividad cubierta por tu acceso."
+      ],
+      "note": "La documentación describe el producto; tu rol y suscripción determinan qué controles puedes usar. Leer un artículo nunca otorga permisos adicionales.",
+      "example": "Una sucursal informa un terminal roto. El agente solicita una foto, registra la intervención y explica la resolución en el mismo ticket."
+    },
+    {
+      "id": "access",
+      "role": "all",
+      "title": "Iniciar sesión, invitaciones y recuperación de cuenta",
+      "summary": "Cada persona debe usar una cuenta individual. Esto mantiene el acceso y el historial de acciones atribuibles a la persona correcta.",
+      "steps": [
+        "Abre la página de inicio de sesión de tu espacio de trabajo y escribe tu propia dirección de correo electrónico y contraseña. Los clientes pueden usar el portal de clientes.",
+        "Para una nueva invitación, sigue el enlace en el correo electrónico de invitación y completa la configuración de la cuenta. Los enlaces de invitación caducan después de 72 horas; solicita una nueva invitación a tu administrador si es necesario.",
+        "Si olvidas tu contraseña, usa el enlace de recuperación de contraseña y verifica la bandeja de spam. Completa la verificación de correo electrónico cuando se te solicite.",
+        "Si está habilitada la autenticación multifactor, ingresa el código de correo electrónico o del autenticador. Guarda los códigos de recuperación en un lugar privado. Cierra sesión en dispositivos compartidos."
+      ],
+      "note": "Nunca envíes contraseñas, claves API o códigos de recuperación en un ticket. Si el acceso es denegado, solicita a un administrador que verifique el estado de la cuenta, la asignación de la empresa y el rol.",
+      "example": "Un nuevo cliente recibe una invitación, crea una contraseña y luego ve las solicitudes que pertenecen a su empresa asignada."
+    },
+    {
+      "id": "customers",
+      "role": "admin",
+      "title": "Crear empresas de clientes y adjuntar sus usuarios",
+      "summary": "Una empresa de cliente agrupa solicitudes y los usuarios externos que pueden consultarlas. Un registro de contacto por sí solo no crea una cuenta de inicio de sesión.",
+      "steps": [
+        "En Clientes, crea la empresa con un nombre claro y la información relevante de los contactos o sucursales.",
+        "En Administración / Usuarios y acceso, crea un usuario con el rol de Cliente y selecciona la empresa de cliente existente. Alternativamente, usa el flujo de invitación disponible.",
+        "Verifica la dirección de correo electrónico y la empresa antes de guardar. Usa una cuenta separada para cada persona.",
+        "Pide al cliente que inicie sesión a través del portal de clientes y confirme la empresa mostrada antes de compartir información operativa."
+      ],
+      "note": "Una cuenta de cliente debe estar adjunta a la empresa correcta. Puede consultar los tickets permitidos de su empresa y los informes con ámbito, nunca los datos de otras empresas. No uses un rol de agente interno para un cliente externo.",
+      "example": "Crea “North Branches”, luego adjunta sus dos usuarios de cliente a esa empresa. Los usuarios de otra empresa de cliente no pueden ver esas solicitudes."
+    },
+    {
+      "id": "new-ticket",
+      "role": "all",
+      "title": "Crear un ticket útil",
+      "summary": "Una solicitud precisa reduce el intercambio de mensajes y ayuda al equipo a evaluar la urgencia.",
+      "steps": [
+        "Abra Solicitudes, luego la acción de nueva solicitud. Ingrese un título corto y específico.",
+        "Seleccione la empresa del cliente cuando su rol lo permita, el sitio o sucursal, la categoría y la prioridad solicitada.",
+        "Describa el resultado esperado, el problema observado, cuándo comenzó, su impacto en el negocio y qué se ha intentado.",
+        "Agregue archivos relevantes, envíe una vez y conserve la referencia del ticket para el seguimiento."
+      ],
+      "note": "No incluya información personal o sensible innecesaria. La prioridad solicitada es una indicación; el personal autorizado evalúa y actualiza la prioridad operativa.",
+      "example": "Título: “Sucursal 24 — terminal de caja no puede conectarse”. Descripción: “Desde las 09:10, dos terminales fallan; la tercera funciona. Se intentó reiniciar. Las ventas se retrasan.”"
+    },
+    {
+      "id": "ticket-work",
+      "role": "agent",
+      "title": "Triaje, asignación y ciclo de vida del ticket",
+      "summary": "Use la propiedad, la prioridad y el estado juntos para que la próxima acción sea clara.",
+      "steps": [
+        "Abra su cola, filtre las solicitudes y revise los elementos más antiguos o urgentes. Los agentes trabajan en sus tickets asignados; la visibilidad de los gerentes sigue su ámbito.",
+        "Revise la categoría, el sitio y el impacto. El personal autorizado asigna un propietario y ajusta la prioridad.",
+        "Mueva una solicitud aceptada de Abierto a En progreso mientras se realiza el trabajo. Registre la acción tomada y el siguiente paso.",
+        "Cuando se resuelva, explique la solución y márquelo como Resuelto. Cierre después de la confirmación adecuada según el proceso de su equipo. Reabra cuando se necesite más trabajo."
+      ],
+      "note": "Un cambio de estado no es prueba de que el problema del cliente haya sido resuelto. Registre una explicación útil. Las etiquetas pueden diferir según el idioma seleccionado y la configuración del espacio de trabajo.",
+      "example": "Asigne un problema de conectividad al agente responsable, registre las verificaciones de red, luego resuélvalo con la acción correctiva real."
+    },
+    {
+      "id": "conversation",
+      "role": "all",
+      "title": "Respuestas públicas y notas internas",
+      "summary": "La conversación del ticket preserva el contexto. Las notas internas son para la colaboración del personal; las respuestas públicas son para el cliente.",
+      "steps": [
+        "Abra el ticket y lea el historial existente antes de responder.",
+        "Use una respuesta pública para solicitar información al cliente o explicar el progreso. El personal debe elegir la opción de nota interna para la coordinación interna.",
+        "Antes de enviar, verifique el público y evite copiar contenido interno o confidencial en una respuesta pública.",
+        "Haga explícita la próxima acción: qué se necesita, quién debe actuar y cuándo el equipo revisará el ticket nuevamente."
+      ],
+      "note": "Los clientes no ven las notas internas del personal. No trate una nota interna como una respuesta al cliente: el informe de tiempo de respuesta utiliza las respuestas públicas del personal.",
+      "example": "Respuesta pública: “¿Podría adjuntar la captura de pantalla del error?” Nota interna: “Pida al equipo de red que revise el enlace de esta sucursal.”"
+    },
+    {
+      "id": "attachments",
+      "role": "all",
+      "title": "PDFs, imágenes y archivos adjuntos",
+      "summary": "Adjunte las pruebas y documentos necesarios para entender o completar la solicitud.",
+      "steps": [
+        "Abra un ticket editable y use su control de adjuntos. Los tipos soportados incluyen PDF, Excel, Word, CSV, TXT, PNG y JPG.",
+        "Seleccione hasta cinco archivos por carga, con un tamaño combinado de hasta 2 MiB. Verifique los nombres de los archivos antes de enviar.",
+        "Abra o descargue el archivo adjunto guardado del ticket para verificar que se haya cargado el archivo correcto.",
+        "Si el ticket está resuelto o cerrado, reábralo a través del flujo de trabajo autorizado antes de agregar nuevos adjuntos."
+      ],
+      "note": "Hay un límite de 20 adjuntos por ticket y 200 MiB por espacio de trabajo. Si una carga falla, verifique el formato, el tamaño, el almacenamiento restante y sus permisos de edición. Un adjunto no es un reemplazo para una descripción estructurada.",
+      "example": "Adjunte un pequeño informe de intervención en PDF y una captura de pantalla, luego verifique ambos desde el historial del ticket."
+    },
+    {
+      "id": "search",
+      "role": "all",
+      "title": "Encuentre una solicitud y siga su progreso",
+      "summary": "Use la lista de solicitudes y sus filtros disponibles para centrarse en el trabajo relevante para usted.",
+      "steps": [
+        "Abra Solicitudes y busque por un título o referencia reconocible.",
+        "Combine los filtros de estado, prioridad, categoría o cliente disponibles según su rol. Limite los filtros cuando un ticket parezca estar faltando.",
+        "Abra el ticket para revisar la última respuesta, el propietario, el estado y los adjuntos.",
+        "Use la vista general para identificar la actividad, luego abra la solicitud detallada antes de tomar decisiones operativas."
+      ],
+      "note": "La búsqueda no elude los permisos. Los clientes solo ven su empresa asignada; los agentes y gerentes ven el alcance autorizado para su rol. Los datos faltantes pueden resultar de un filtro, asignación o acceso a la empresa.",
+      "example": "Un cliente filtra las solicitudes no resueltas de su propia empresa para preparar un seguimiento semanal con el equipo de soporte."
+    },
+    {
+      "id": "report-types",
+      "role": "all",
+      "title": "Elija el informe de negocio correcto",
+      "summary": "Los informes convierten la actividad que está autorizado a ver en indicadores operativos. Elija un informe que responda a una pregunta específica.",
+      "steps": [
+        "Ejecutivo: resuma la carga de trabajo y el rendimiento del servicio. Operaciones de soporte: revise el trabajo entrante y el progreso. SLA: examine la exposición a la respuesta y resolución.",
+        "Capacidad: examine las colas y la distribución de la carga de trabajo. Ingeniería: revise las categorías técnicas y los patrones de intervención. Problemas recurrentes: identifique combinaciones repetidas de empresa, sitio y categoría.",
+        "Calidad: examine las señales de calidad de finalización y datos. Cliente: revise la actividad y los resultados del servicio por cliente dentro de su alcance permitido.",
+        "Seleccione el período y los filtros relevantes, inspeccione las tablas subyacentes y compare con el período anterior donde se proporcionen."
+      ],
+      "note": "La recurrencia es una pista para la investigación, no una causa raíz probada. El sistema no infiere la satisfacción del cliente, el costo laboral o la confiabilidad del equipo sin los datos medidos correspondientes.",
+      "example": "Para una reunión de soporte el lunes, use Operaciones de soporte para el volumen, SLA para los riesgos, luego Problemas recurrentes para elegir investigaciones."
+    },
+    {
+      "id": "report-reading",
+      "role": "all",
+      "title": "Entender períodos, backlogs y tiempos de respuesta",
+      "summary": "La interpretación correcta es tan importante como el gráfico en sí.",
+      "steps": [
+        "Verifique el rango de fechas del informe, el cliente y otros filtros antes de leer los números.",
+        "Distinga la actividad durante el período seleccionado del backlog actual, que puede incluir tickets creados antes de ese período.",
+        "La primera respuesta refleja una respuesta pública del personal; las notas internas no son respuestas de los clientes. Los tiempos de respuesta faltantes se excluyen de los promedios de tiempo relevantes y los cálculos de SLA.",
+        "Use las tablas detalladas para investigar valores atípicos. El percentil 90 es el valor en o por encima del cual solo aproximadamente una décima parte de las observaciones medidas permanecen."
+      ],
+      "note": "Los promedios pueden ocultar largas esperas. Compare la mediana o el percentil cuando estén disponibles, inspeccione el tamaño de la muestra y evite comparar informes con diferentes alcances.",
+      "example": "Un backlog de 40 con 12 nuevos tickets esta semana es posible: algunos tickets sin resolver se abrieron antes."
+    },
+    {
+      "id": "charts",
+      "role": "all",
+      "title": "Cambiar gráficos: barras, columnas, líneas y gráficos de pastel",
+      "summary": "Elija una representación que haga más fácil responder a la pregunta antes de guardar el informe.",
+      "steps": [
+        "Abra Informes y encuentre el selector de representación del gráfico. Elija barras horizontales, columnas o líneas para los conjuntos de datos disponibles.",
+        "Para distribuciones adecuadas, elija un gráfico de pastel o de rosquilla. Si hay varias medidas disponibles, seleccione la serie a representar.",
+        "Los gráficos de pastel agrupan las categorías más pequeñas más allá de las nueve más grandes en Otras; inspeccione la tabla para sus valores individuales.",
+        "Elija sus estilos de gráfico antes de guardar. Al volver a abrir un informe guardado, se conserva su representación registrada; cree un nuevo informe para una vista diferente."
+      ],
+      "note": "Los gráficos de pastel están disponibles para distribuciones adecuadas y no superpuestas, no para indicadores de SLA superpuestos o medidas de duración/porcentaje. Una serie solo con ceros no puede producir un gráfico de pastel significativo. Los valores faltantes no deben leerse como ceros.",
+      "example": "Use columnas para comparar volúmenes de ramas, una línea para una tendencia y una rosquilla para la distribución de los estados actuales de los tickets."
+    },
+    {
+      "id": "exports",
+      "role": "all",
+      "title": "Guardar, imprimir y exportar informes",
+      "summary": "Use el formato adecuado para la persona que necesita el resultado.",
+      "steps": [
+        "Genere el informe, elija los gráficos y guárdelo si necesita una versión registrada. Los informes guardados son personales para el usuario que los creó.",
+        "Elija Vista previa para revisar el informe completo antes de compartirlo.",
+        "Elija Imprimir o PDF para abrir el cuadro de diálogo de impresión del navegador. Seleccione una impresora disponible o Guarde como PDF en ese cuadro de diálogo, luego verifique la paginación.",
+        "Elija Excel para un libro de trabajo nativo .xlsx con tablas y gráficos editables, o CSV para el intercambio de datos tabulares. La exportación sigue el alcance y los filtros autorizados del informe."
+      ],
+      "note": "Actualmente no hay ninguna acción de administrador que publique un informe personal guardado a una empresa cliente. Los clientes pueden generar sus propios informes dentro del alcance autorizado de su empresa. Los archivos descargados deben compartirse de manera responsable.",
+      "example": "Guarde un informe mensual, revíselo en Vista previa, luego exporte Excel para el análisis y PDF para una reunión de gestión."
+    },
+    {
+      "id": "ai",
+      "role": "all",
+      "title": "Use Olivia y Hugging Face con consideración",
+      "summary": "La asistencia de IA puede ayudar a redactar o interpretar información, mientras que las personas siguen siendo responsables de las decisiones.",
+      "steps": [
+        "Use Olivia donde esté disponible para solicitar asistencia con el flujo de trabajo soportado, como un resumen o una sugerencia de redacción. Revise cada sugerencia antes de usarla.",
+        "En Informes, genere el análisis de IA disponible para obtener comentarios sobre los indicadores agregados.",
+        "Compare las recomendaciones con las cifras reales y el historial de tickets. Trate las hipótesis como preguntas para investigar.",
+        "Si la IA no está disponible, continúe usando tickets, tablas, gráficos y exportaciones; revise el error o cuota mostrados antes de volver a intentarlo."
+      ],
+      "note": "Las funciones dependen de la configuración del espacio de trabajo, permisos, disponibilidad del modelo y cuotas. El análisis de informes envía indicadores agregados y anonimizados al proveedor configurado, no los textos de los tickets ni los archivos adjuntos. Puede tardar varios segundos y no resuelve los tickets de forma autónoma.",
+      "example": "Solicite una explicación del aumento del backlog, luego verifique si el incremento proviene del volumen de entrada, solicitudes antiguas o un cambio en los filtros del informe."
+    },
+    {
+      "id": "team",
+      "role": "admin",
+      "title": "Administrar roles y departamentos del personal",
+      "summary": "Proporcione a cada persona el acceso necesario para su trabajo y revise este acceso cuando cambien las responsabilidades.",
+      "steps": [
+        "Abra Administración / Usuarios y acceso. Cree o invite a cada miembro del equipo con un correo electrónico individual.",
+        "Elija el rol apropiado: administrador para la administración del espacio de trabajo, supervisor para la supervisión autorizada, agente para el trabajo asignado, cliente para el acceso externo a la empresa.",
+        "Configure los departamentos y cualquier rol o permiso personalizado disponible según su organización. Verifique el alcance resultante usando el rol previsto.",
+        "Deshabilite el acceso para las personas que se vayan y reasigne el trabajo operativo antes de eliminar una responsabilidad."
+      ],
+      "note": "Un propietario de la plataforma es diferente de un administrador de espacio de trabajo. Los nombres de los roles no justifican un acceso amplio a los clientes; también importan las asignaciones de empresa y departamento. No comparta una cuenta de administrador.",
+      "example": "Un agente maneja las solicitudes asignadas; un supervisor de departamento supervisa ese departamento; un cliente externo está asociado a su empresa cliente."
+    },
+    {
+      "id": "settings",
+      "role": "admin",
+      "title": "Configurar categorías, SLA y reglas de operación",
+      "summary": "Adapte el vocabulario y el proceso de servicio del espacio de trabajo antes de invitar al equipo completo.",
+      "steps": [
+        "Abra Configuración y revise la identidad del espacio de trabajo, el logotipo, el idioma predeterminado y la zona horaria.",
+        "Defina categorías significativas y revise las configuraciones de prioridad y SLA disponibles contra sus compromisos de servicio reales.",
+        "Revise las configuraciones de flujo de trabajo, enrutamiento, escalado y notificación donde estén disponibles. Mantenga las reglas comprensibles para el equipo.",
+        "Pruebe los cambios usando una solicitud de prueba claramente etiquetada y confirme la asignación, visibilidad y notificaciones antes de confiar en ellas."
+      ],
+      "note": "Una regla configurada no es prueba de que todos los tickets históricos hayan sido reprocesados. Valide el comportamiento real y no prometa resultados contractuales de SLA solo a partir de una pantalla de configuración.",
+      "example": "Cree categorías para acceso, equipos y facturación, luego verifique que una solicitud de muestra de equipos llegue al personal previsto."
+    },
+    {
+      "id": "integrations",
+      "role": "admin",
+      "title": "Conectar Zendesk, ServiceNow y otros sistemas",
+      "summary": "Una integración requiere tanto una conexión configurada como un alcance de sincronización acordado.",
+      "steps": [
+        "Abra los controles de integración con una cuenta autorizada. Seleccione el conector de Zendesk o ServiceNow disponible.",
+        "Ingrese el punto final y las credenciales requeridas de forma privada en el formulario de configuración, luego use la prueba de conexión.",
+        "Utilice las acciones de exportación manual o sincronización disponibles del conector y revise el resultado. Decida qué sistema es el propietario de cada registro antes de su uso operativo.",
+        "Para GLPI u otra API, solicite una evaluación de integración que cubra la autenticación, el mapeo de campos, los permisos y las reglas de sincronización."
+      ],
+      "note": "La integración de GLPI está disponible como un proyecto a petición; no es un conector nativo ya configurado. Una prueba de conexión exitosa no prueba la sincronización bidireccional sin asistencia. Nunca pegue secretos de integración en tickets.",
+      "example": "Pruebe la conexión de Zendesk en un registro controlado, verifique sus campos mapeados y evite crear registros duplicados en ambos sistemas."
+    },
+    {
+      "id": "import",
+      "role": "admin",
+      "title": "Importar empresas y tickets de forma segura",
+      "summary": "Una vista previa ayuda a detectar problemas de mapeo antes de crear los registros.",
+      "steps": [
+        "Prepare un archivo CSV o XLSX limpio. Importe las empresas de clientes antes de los tickets que las mencionan.",
+        "Abra Importar, seleccione el archivo y revise la vista previa. El límite es de 500 filas y 1 MB por importación.",
+        "Asigne las columnas a los campos esperados, verifique los valores requeridos y corrija el archivo de origen si es necesario.",
+        "Confirme solo después de revisar la vista previa, luego inspeccione una muestra de los registros creados y sus asignaciones de empresa."
+      ],
+      "note": "Una importación es una operación de escritura, no una restauración de copia de seguridad. Pruebe con una muestra pequeña y claramente etiquetada y no asuma que repetir el mismo archivo deduplicará cada registro de forma segura.",
+      "example": "Importe dos empresas de muestra, verifique sus nombres, luego importe un archivo de tickets pequeño que haga referencia a esas empresas."
+    },
+    {
+      "id": "billing",
+      "role": "admin",
+      "title": "Prueba, suscripción y acceso de solo lectura",
+      "summary": "La pantalla de facturación es la referencia para el plan actual, el precio, la tarifa de activación y el intervalo de pago.",
+      "steps": [
+        "Abra Suscripción para revisar el estado de la prueba o suscripción del espacio de trabajo y el número de agentes internos.",
+        "La prueba dura 14 días calendario. No requiere una tarjeta ni te cobra automáticamente durante la prueba.",
+        "Elija el intervalo de facturación disponible y revise el monto total del checkout, la tarifa de activación, los descuentos y los impuestos aplicables antes de confirmar el pago.",
+        "Al final de la prueba, un espacio de trabajo sin una suscripción activa se convierte en de solo lectura. Active la suscripción a través del flujo de facturación disponible para restaurar los escritos autorizados."
+      ],
+      "note": "Las cuentas de clientes no se cobran como agentes internos según el modelo actual. Los permisos de pago y escritura de datos siguen siendo aplicados por el servidor. No use la guía como determinación fiscal; revise el checkout y la factura.",
+      "example": "Un cliente puede revisar la opción anual ofrecida y sus términos de activación mostrados antes de decidir suscribirse."
+    },
+    {
+      "id": "backup",
+      "role": "admin",
+      "title": "Descargar una copia de seguridad del espacio de trabajo y comprender la recuperación",
+      "summary": "Una exportación del espacio de trabajo proporciona a su organización una copia portable de sus propios datos. Las copias de seguridad del operador proporcionan una capa de recuperación separada.",
+      "steps": [
+        "Un administrador autorizado abre Configuración y utiliza la acción de descarga ZIP del espacio de trabajo. Complete la verificación por correo electrónico si se solicita.",
+        "Guarde el ZIP en un lugar privado y controlado y verifique que la descarga se haya completado.",
+        "La exportación contiene los datos del espacio de trabajo, archivos y un manifiesto; excluye contraseñas, secretos de autenticación y otros espacios de trabajo.",
+        "Para la recuperación, contacte al operador del servicio y preserve el ZIP original. No hay una importación automática de ZIP en el producto."
+      ],
+      "note": "Una descarga ZIP no habilita el failover automático del servidor y no es una réplica en vivo. Elija una frecuencia de exportación apropiada para sus propias necesidades de continuidad y proteja la información del cliente descargada.",
+      "example": "Antes de una operación de limpieza de datos importante, descargue un ZIP del espacio de trabajo y reténgalo de acuerdo con la política de retención de su organización."
+    },
+    {
+      "id": "troubleshooting",
+      "role": "all",
+      "title": "Solución de problemas y una solicitud de soporte efectiva",
+      "summary": "Comience con verificaciones simples y proporcione hechos reproducibles sin exponer secretos.",
+      "steps": [
+        "Falta un ticket o informe: limpie los filtros, verifique el rango de fechas y confirme su empresa, departamento, asignación y rol de cuenta. Los informes guardados son personales.",
+        "No puede crear o modificar: revise el estado de la suscripción o prueba, los permisos de la cuenta y si el ticket debe ser reabierto.",
+        "Error de carga o exportación: verifique los límites de archivo, el almacenamiento, los permisos de descarga del navegador y el error mostrado. Refresque después de preservar el texto no enviado.",
+        "Si el problema persiste, envíe la dirección de la página, la hora local y la zona horaria, la referencia del ticket, el resultado esperado, el resultado observado y una captura de pantalla redactada a través de su canal de soporte habitual."
+      ],
+      "note": "Nunca incluya una contraseña, clave API, tarjeta de pago o código de recuperación en una captura de pantalla. Evite enviar repetidamente un pago o importación mientras su resultado sea incierto.",
+      "example": "“A las 10:15 en la Ciudad de México, en Solicitudes, SH-123, la carga del PDF mostró un error de tamaño. Los archivos combinados eran de 3 MiB.” da al equipo un punto de partida concreto."
+    }
+  ]
+}

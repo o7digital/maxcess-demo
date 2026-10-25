@@ -1,0 +1,298 @@
+{
+  "title": "Benutzerhandbuch",
+  "intro": "Praktische Anweisungen für Kunden, Agenten und Administratoren. Suchen Sie ein Thema oder folgen Sie einem vollständigen Workflow.",
+  "search": "Suchen Sie im Handbuch",
+  "all": "Alle Rollen",
+  "client": "Kunde",
+  "agent": "Agent / Manager",
+  "admin": "Administrator",
+  "steps": "So geht es",
+  "note": "Wichtig zu wissen",
+  "example": "Beispiel",
+  "empty": "Keine passenden Artikel gefunden. Versuchen Sie einen anderen Suchbegriff oder eine andere Rolle.",
+  "back": "Zurück zum Service Hub",
+  "contents": "Inhaltsverzeichnis",
+  "count": "Artikel",
+  "language": "Sprache",
+  "articles": [
+    {
+      "id": "start",
+      "role": "all",
+      "title": "Hier beginnen: Ihre erste erfolgreiche Anfrage",
+      "summary": "Service Hub verbindet Kundenanfragen, die diese bearbeiten und die Geschichte der Arbeit in einem Arbeitsbereich. Ein Ticket kann ein Vorfall, eine Serviceanfrage, eine technische Frage oder eine Dokumentprüfung darstellen.",
+      "steps": [
+        "Wählen Sie Ihre bevorzugte Sprache aus dem Sprachauswahlmenü.",
+        "Kunden: Öffnen Sie Anfragen und erstellen Sie eine Anfrage für Ihr Unternehmen. Agenten: Öffnen Sie Ihre zugewiesene Warteschlange. Manager: Überprüfen Sie Aktivitäten und Prioritäten. Administratoren: Konfigurieren Sie den Arbeitsbereich und laden Sie Ihr Team ein.",
+        "Öffnen Sie ein Ticket, um die Konversation, Dateien, den Besitzer und den Fortschritt zu lesen. Verwenden Sie Berichte, um die von Ihrem Zugriff abgedeckte Aktivität zu verstehen."
+      ],
+      "note": "Die Dokumentation beschreibt das Produkt; Ihre Rolle und Ihr Abonnement bestimmen, welche Steuerelemente Sie verwenden können. Das Lesen eines Artikels gewährt niemals zusätzliche Berechtigungen.",
+      "example": "Eine Filiale meldet einen defekten Terminal. Der Agent bittet um ein Foto, dokumentiert das Eingreifen und erklärt die Lösung im selben Ticket."
+    },
+    {
+      "id": "access",
+      "role": "all",
+      "title": "Anmelden, Einladungen und Kontowiederherstellung",
+      "summary": "Jede Person sollte ein individuelles Konto verwenden. Dies hält den Zugriff und die Geschichte der Aktionen der richtigen Person zugeordnet.",
+      "steps": [
+        "Öffnen Sie die Anmeldeseite Ihres Arbeitsbereichs und geben Sie Ihre eigene E-Mail-Adresse und Ihr Passwort ein. Kunden können das Kundenportal verwenden.",
+        "Für eine neue Einladung folgen Sie dem Link in der Einladungsemail und führen Sie die Kontoeinrichtung durch. Einladungslinks verfallen nach 72 Stunden; bitten Sie bei Bedarf Ihren Administrator um eine neue Einladung.",
+        "Wenn Sie Ihr Passwort vergessen haben, verwenden Sie den Passwortwiederherstellungslink und überprüfen Sie den Spam-Ordner. Führen Sie die E-Mail-Verifizierung durch, wenn dies angefordert wird.",
+        "Wenn die mehrstufige Authentifizierung aktiviert ist, geben Sie den E-Mail- oder Authentifizierungscode ein. Bewahren Sie Wiederherstellungscodes an einem sicheren Ort auf. Melden Sie sich bei gemeinsam genutzten Geräten ab."
+      ],
+      "note": "Senden Sie niemals Passwörter, API-Schlüssel oder Wiederherstellungscodes in einem Ticket. Wenn der Zugriff verweigert wird, bitten Sie einen Administrator, den Kontostatus, die Firmenzuordnung und die Rolle zu überprüfen.",
+      "example": "Ein neuer Kunde erhält eine Einladung, erstellt ein Passwort und sieht dann die Anfragen, die seinem zugewiesenen Unternehmen gehören."
+    },
+    {
+      "id": "customers",
+      "role": "admin",
+      "title": "Erstellen von Kundengruppen und Anhängen ihrer Benutzer",
+      "summary": "Eine Kundengruppe ordnet Anfragen und externe Benutzer, die diese konsultieren dürfen. Ein Kontaktverzeichnis erstellt allein kein Anmeldekonto.",
+      "steps": [
+        "In Kunden erstellen Sie die Gruppe mit einem klaren Namen und den relevanten Kontakten oder Filialinformationen.",
+        "In Verwaltung / Benutzer und Zugriff erstellen Sie einen Benutzer mit der Rolle Kunde und wählen Sie die vorhandene Kundengruppe. Alternativ können Sie den verfügbaren Einladungsprozess verwenden.",
+        "Überprüfen Sie die E-Mail-Adresse und die Gruppe, bevor Sie speichern. Verwenden Sie ein separates Konto für jede Person.",
+        "Bitten Sie den Kunden, sich über das Kundenportal anzumelden und die angezeigte Gruppe zu bestätigen, bevor Sie betriebliche Informationen teilen."
+      ],
+      "note": "Ein Kundenkonto muss der richtigen Gruppe zugeordnet sein. Es kann die Anfragen und die berechtigten Berichte seiner Gruppe konsultieren, niemals Daten anderer Gruppen. Verwenden Sie keine interne Agentenrolle für einen externen Kunden.",
+      "example": "Erstellen Sie „Nordfilialen“, dann fügen Sie ihre beiden Kundenbenutzer dieser Gruppe hinzu. Benutzer anderer Kundengruppen können diese Anfragen nicht sehen."
+    },
+    {
+      "id": "new-ticket",
+      "role": "all",
+      "title": "Ein nützliches Ticket erstellen",
+      "summary": "Eine präzise Anfrage reduziert den Hin-und-her-Verkehr und hilft dem Team, die Dringlichkeit einzuschätzen.",
+      "steps": [
+        "Öffnen Sie Anfragen, dann die Aktion für neue Anfragen. Geben Sie einen kurzen, präzisen Titel ein.",
+        "Wählen Sie das Kundenunternehmen, wenn Ihre Rolle dies zulässt, den Standort oder die Filiale, die Kategorie und die gewünschte Priorität.",
+        "Beschreiben Sie das erwartete Ergebnis, das beobachtete Problem, wann es begonnen hat, den Geschäftsaufwand und was bereits versucht wurde.",
+        "Fügen Sie relevante Dateien hinzu, senden Sie die Anfrage ein und behalten Sie die Ticket-Referenz für die Weiterverfolgung."
+      ],
+      "note": "Fügen Sie keine unnötige persönliche oder sensible Informationen hinzu. Eine gewünschte Priorität ist eine Anhaltspunkt; autorisiertes Personal bewertet und aktualisiert die operative Priorität.",
+      "example": "Titel: „Filiale 24 — Kassenterminal kann keine Verbindung herstellen“. Beschreibung: „Seit 09:10 sind zwei Terminals ausgefallen; das dritte funktioniert. Neustart versucht. Verkäufe werden verzögert.“"
+    },
+    {
+      "id": "ticket-work",
+      "role": "agent",
+      "title": "Triage, Zuweisung und Ticketlebenszyklus",
+      "summary": "Verwenden Sie Besitzer, Priorität und Status zusammen, damit die nächste Aktion klar ist.",
+      "steps": [
+        "Öffnen Sie Ihre Warteschlange, filtern Sie die Anfragen und überprüfen Sie die ältesten oder dringendsten Einträge. Agenten arbeiten an ihren zugewiesenen Tickets; die Sichtbarkeit der Manager folgt ihrem Bereich.",
+        "Überprüfen Sie die Kategorie, den Standort und den Aufwand. Autorisiertes Personal weist einen Besitzer zu und passt die Priorität an.",
+        "Verschieben Sie eine akzeptierte Anfrage von Offen auf In Bearbeitung, während die Arbeit durchgeführt wird. Dokumentieren Sie die durchgeführte Aktion und den nächsten Schritt.",
+        "Wenn das Problem gelöst ist, erklären Sie die Lösung und markieren Sie es als Gelöst. Schließen Sie es nach der entsprechenden Bestätigung gemäß dem Prozess Ihres Teams. Öffnen Sie es erneut, wenn weitere Arbeit erforderlich ist."
+      ],
+      "note": "Eine Statusänderung ist kein Beweis dafür, dass das Problem des Kunden gelöst wurde. Dokumentieren Sie eine nützliche Erklärung. Bezeichnungen können je nach gewählter Sprache und Arbeitsplatzkonfiguration variieren.",
+      "example": "Weisen Sie ein Verbindungsproblem dem zuständigen Agenten zu, dokumentieren Sie die Netzwerküberprüfungen und lösen Sie es dann mit der tatsächlichen Korrekturmaßnahme."
+    },
+    {
+      "id": "conversation",
+      "role": "all",
+      "title": "Öffentliche Antworten und interne Notizen",
+      "summary": "Das Ticket-Gespräch bewahrt den Kontext. Interne Notizen dienen der Mitarbeiterkooperation; öffentliche Antworten sind für den Kunden.",
+      "steps": [
+        "Öffnen Sie das Ticket und lesen Sie die vorhandene Geschichte, bevor Sie antworten.",
+        "Verwenden Sie eine öffentliche Antwort, um den Kunden nach Informationen zu fragen oder den Fortschritt zu erklären. Mitarbeiter sollten die Option für interne Notizen für die interne Koordination wählen.",
+        "Bevor Sie senden, überprüfen Sie das Publikum und vermeiden Sie das Kopieren interner oder vertraulicher Inhalte in eine öffentliche Antwort.",
+        "Machen Sie die nächste Aktion explizit: Was benötigt wird, wer handeln sollte und wann das Team das Ticket erneut prüfen wird."
+      ],
+      "note": "Kunden sehen interne Mitarbeiternotizen nicht. Behandeln Sie eine interne Notiz nicht als Kundenantwort: Die Berichterstattung über Antwortzeiten verwendet öffentliche Mitarbeiterantworten.",
+      "example": "Öffentliche Antwort: „Könnten Sie das Fehlerbildschirmfoto anhängen?“ Interne Notiz: „Bitten Sie das Netzwerkteam, die Verbindung dieser Filiale zu überprüfen.“"
+    },
+    {
+      "id": "attachments",
+      "role": "all",
+      "title": "PDFs, Bilder und Anhänge",
+      "summary": "Fügen Sie die zur Verständigung oder Bearbeitung des Anliegens erforderlichen Beweise und Dokumente an.",
+      "steps": [
+        "Öffnen Sie ein bearbeitbares Ticket und verwenden Sie dessen Anhangsfunktion. Unterstützte Formate umfassen PDF, Excel, Word, CSV, TXT, PNG und JPG.",
+        "Wählen Sie bis zu fünf Dateien pro Hochladung aus, mit einer maximalen Gesamtgröße von 2 MiB. Überprüfen Sie die Dateinamen, bevor Sie sie hochladen.",
+        "Öffnen oder laden Sie den gespeicherten Anhang aus dem Ticket, um sicherzustellen, dass die richtige Datei hochgeladen wurde.",
+        "Wenn das Ticket als gelöst oder geschlossen markiert ist, öffnen Sie es über den autorisierten Workflow neu, bevor Sie neue Anhänge hinzufügen."
+      ],
+      "note": "Es gibt eine Obergrenze von 20 Anhängen pro Ticket und 200 MiB pro Arbeitsbereich. Bei einem fehlgeschlagenen Upload überprüfen Sie das Format, die Größe, den verbleibenden Speicherplatz und Ihre Bearbeitungsberechtigungen. Ein Anhang ersetzt keine strukturierte Beschreibung.",
+      "example": "Fügen Sie ein kleines PDF-Interventionsprotokoll und ein Screenshot an, dann überprüfen Sie beide im Ticketverlauf."
+    },
+    {
+      "id": "search",
+      "role": "all",
+      "title": "Suchen Sie ein Anliegen und verfolgen Sie dessen Fortschritt",
+      "summary": "Verwenden Sie die Anliegenliste und die verfügbaren Filter, um sich auf die für Sie relevanten Aufgaben zu konzentrieren.",
+      "steps": [
+        "Öffnen Sie Anliegen und suchen Sie nach einem erkennbaren Titel oder einer Referenz.",
+        "Kombinieren Sie die verfügbaren Status-, Prioritäts-, Kategorie- oder Kundenfilter gemäß Ihrer Rolle. Löschen Sie die Filter, wenn ein Ticket fehlt.",
+        "Öffnen Sie das Ticket, um die neueste Antwort, den Besitzer, den Status und die Anhänge zu überprüfen.",
+        "Verwenden Sie die Übersicht, um Aktivitäten zu identifizieren, und öffnen Sie dann das detaillierte Anliegen, bevor Sie operative Entscheidungen treffen."
+      ],
+      "note": "Die Suche umgeht keine Berechtigungen. Kunden sehen nur ihre zugewiesene Firma; Agenten und Manager sehen den für ihre Rolle autorisierten Bereich. Fehlende Daten können auf einen Filter, eine Zuordnung oder den Firmenzugriff zurückzuführen sein.",
+      "example": "Ein Kunde filtert offene Anliegen für seine eigene Firma, um eine wöchentliche Nachverfolgung mit dem Supportteam vorzubereiten."
+    },
+    {
+      "id": "report-types",
+      "role": "all",
+      "title": "Wählen Sie den richtigen Geschäftsbericht",
+      "summary": "Berichte wandeln die von Ihnen autorisierte Aktivität in operative Indikatoren um. Wählen Sie einen Bericht, der eine spezifische Frage beantwortet.",
+      "steps": [
+        "Executive: Zusammenfassung der Arbeitsbelastung und der Serviceleistung. Support-Operationen: Überprüfung der eingehenden Aufgaben und des Fortschritts. SLA: Prüfung der Antwort- und Lösungszeiten.",
+        "Kapazität: Prüfung der Warteschlangen und der Arbeitsbelastungsverteilung. Engineering: Überprüfung der technischen Kategorien und Interventionsmuster. Wiederkehrende Probleme: Identifizierung wiederkehrender Kombinationen von Firma, Standort und Kategorie.",
+        "Qualität: Prüfung der Abschluss- und Datenqualitätssignale. Kunde: Überprüfung der Aktivität und der Serviceergebnisse nach Kunde innerhalb Ihres zugelassenen Bereichs.",
+        "Wählen Sie den relevanten Zeitraum und die Filter, überprüfen Sie die zugrunde liegenden Tabellen und vergleichen Sie sie gegebenenfalls mit dem vorherigen Zeitraum."
+      ],
+      "note": "Wiederkehrende Vorfälle sind ein Hinweis auf eine Untersuchung, aber kein bewiesener Grund. Das System schließt ohne die entsprechenden Messdaten keine Rückschlüsse auf Kundenzufriedenheit, Arbeitskosten oder Gerätezuverlässigkeit.",
+      "example": "Für ein Montags-Supporttreffen verwenden Sie Support-Operationen für das Volumen, SLA für die Risiken und dann Wiederkehrende Probleme, um Untersuchungen auszuwählen."
+    },
+    {
+      "id": "report-reading",
+      "role": "all",
+      "title": "Verstehen von Zeiträumen, Backlog und Antwortzeiten",
+      "summary": "Eine korrekte Interpretation ist genauso wichtig wie das Diagramm selbst.",
+      "steps": [
+        "Überprüfen Sie den Datumsbereich, den Kunden und andere Filter, bevor Sie die Zahlen lesen.",
+        "Unterscheiden Sie Aktivitäten während des ausgewählten Zeitraums vom aktuellen Backlog, der Tickets beinhalten kann, die vor diesem Zeitraum erstellt wurden.",
+        "Die erste Antwort spiegelt eine öffentliche Antwort des Personals wider; interne Notizen sind keine Kundenantworten. Fehlende Zeitstempel werden von den relevanten Zeitdurchschnitten und SLA-Berechnungen ausgeschlossen.",
+        "Verwenden Sie die detaillierten Tabellen, um Ausreißer zu untersuchen. Das 90. Perzentil ist der Wert, bei oder über dem nur etwa ein Zehntel der gemessenen Beobachtungen verbleibt."
+      ],
+      "note": "Durchschnittswerte können lange Wartezeiten verbergen. Vergleichen Sie den Median oder das Perzentil, wenn verfügbar, prüfen Sie die Stichprobengröße und vermeiden Sie den Vergleich von Berichten mit unterschiedlichen Bereichen.",
+      "example": "Ein Backlog von 40 mit 12 neuen Tickets in dieser Woche ist möglich: Einige ungelöste Tickets wurden früher geöffnet."
+    },
+    {
+      "id": "charts",
+      "role": "all",
+      "title": "Ändern von Diagrammen: Balken, Säulen, Linien und Kreisdiagramme",
+      "summary": "Wählen Sie eine Darstellung, die die Frage einfacher beantwortet, bevor Sie den Bericht speichern.",
+      "steps": [
+        "Öffnen Sie Berichte und finden Sie den Darstellungsauswahler. Wählen Sie horizontale Balken, Säulen oder Linien für die verfügbaren Datensätze.",
+        "Für geeignete Verteilungen wählen Sie ein Kreis- oder Donut-Diagramm. Wenn mehrere Maße verfügbar sind, wählen Sie die zu darstellende Serie.",
+        "Kreisdiagramme gruppieren kleinere Kategorien über den neun größten in Andere; prüfen Sie die Tabelle für ihre individuellen Werte.",
+        "Wählen Sie Ihre Diagrammstile, bevor Sie speichern. Das erneute Öffnen eines gespeicherten Berichts behält seine aufgezeichnete Darstellung bei; erstellen Sie einen neuen Bericht für eine andere Ansicht."
+      ],
+      "note": "Kreisdiagramme sind für geeignete nicht überlappende Verteilungen verfügbar, nicht für überlappende SLA-Indikatoren oder Dauer-/Prozentmaße. Eine Serie mit nur Nullen kann kein sinnvolles Kreisdiagramm erzeugen. Fehlende Werte dürfen nicht als Null gelesen werden.",
+      "example": "Verwenden Sie Säulen, um Astvolumina zu vergleichen, eine Linie für eine Tendenz und ein Donut-Diagramm für die Verteilung der aktuellen Ticketstatus."
+    },
+    {
+      "id": "exports",
+      "role": "all",
+      "title": "Berichte speichern, drucken und exportieren",
+      "summary": "Verwenden Sie das Format, das für die Person geeignet ist, die das Ergebnis benötigt.",
+      "steps": [
+        "Erstellen Sie den Bericht, wählen Sie die Diagramme aus und speichern Sie ihn, wenn Sie eine aufgezeichnete Version benötigen. Gespeicherte Berichte sind persönlich für den Benutzer, der sie erstellt hat.",
+        "Wählen Sie Vorschau, um den vollständigen Bericht vor dem Teilen zu überprüfen.",
+        "Wählen Sie Drucken oder PDF, um das Druckdialogfeld des Browsers zu öffnen. Wählen Sie einen verfügbaren Drucker oder Speichern als PDF in diesem Dialogfeld, dann prüfen Sie die Paginierung.",
+        "Wählen Sie Excel für ein natives .xlsx-Arbeitsbuch mit Tabellen und bearbeitbaren Diagrammen oder CSV für den Austausch tabellarischer Daten. Der Export folgt dem autorisierten Bereich und den Filtern des Berichts."
+      ],
+      "note": "Derzeit gibt es keine Administratoraktion, die einen persönlichen gespeicherten Bericht an ein Kundenunternehmen veröffentlicht. Kunden können ihre eigenen Berichte innerhalb ihres autorisierten Unternehmensbereichs generieren. Heruntergeladene Dateien müssen verantwortungsvoll geteilt werden.",
+      "example": "Speichern Sie einen monatlichen Bericht, überprüfen Sie ihn in der Vorschau, dann exportieren Sie Excel für die Analyse und PDF für ein Management-Meeting."
+    },
+    {
+      "id": "ai",
+      "role": "all",
+      "title": "Olivia und Hugging Face sorgfältig einsetzen",
+      "summary": "Künstliche Intelligenz kann bei der Erstellung oder Interpretation von Informationen helfen, während Menschen weiterhin für Entscheidungen verantwortlich bleiben.",
+      "steps": [
+        "Nutzen Sie Olivia, wo verfügbar, um bei unterstützten Workflows, wie Zusammenfassungen oder vorgeschlagenen Formulierungen, um Unterstützung zu bitten. Überprüfen Sie jeden Vorschlag, bevor Sie ihn verwenden.",
+        "In Berichten generieren Sie die verfügbare KI-Analyse, um Kommentare zu den aggregierten Indikatoren zu erhalten.",
+        "Überprüfen Sie die Empfehlungen gegen die tatsächlichen Zahlen und die Ticketgeschichte. Behandeln Sie Hypothesen als Fragen zur Untersuchung.",
+        "Wenn KI nicht verfügbar ist, verwenden Sie weiterhin Tickets, Tabellen, Diagramme und Exporte; überprüfen Sie den angezeigten Fehler oder das Kontingent, bevor Sie es erneut versuchen."
+      ],
+      "note": "Funktionen hängen von Arbeitsbereichseinstellungen, Berechtigungen, Modellverfügbarkeit und Kontingenten ab. Die Berichtsanalyse sendet aggregierte, anonymisierte Indikatoren an den konfigurierten Anbieter, nicht Tickettexte oder Anhänge. Es kann einige Sekunden dauern und löst Tickets nicht autonom.",
+      "example": "Bitten Sie um eine Erklärung für den steigenden Backlog, dann überprüfen Sie, ob der Anstieg auf ein erhöhtes Anfragemenge, alte Anfragen oder eine Änderung der Berichtsfilter zurückzuführen ist."
+    },
+    {
+      "id": "team",
+      "role": "admin",
+      "title": "Personalrollen und Abteilungen verwalten",
+      "summary": "Geben Sie jeder Person den für ihre Arbeit benötigten Zugriff und überprüfen Sie ihn, wenn sich Verantwortlichkeiten ändern.",
+      "steps": [
+        "Öffnen Sie Verwaltung / Benutzer und Zugriff. Erstellen oder einladen Sie jedes Teammitglied mit einer individuellen E-Mail.",
+        "Wählen Sie die geeignete Rolle: Administrator für die Verwaltung des Arbeitsbereichs, Manager für autorisierte Aufsicht, Agent für zugewiesene Arbeit, Kunde für den externen Firmenzugriff.",
+        "Konfigurieren Sie Abteilungen und gegebenenfalls benutzerdefinierte Rollen oder Berechtigungen nach den Anforderungen Ihrer Organisation. Überprüfen Sie den resultierenden Umfang mit der gewünschten Rolle.",
+        "Deaktivieren Sie den Zugriff für Personen, die das Unternehmen verlassen, und übertragen Sie die operative Arbeit, bevor Sie eine Verantwortung entfernen."
+      ],
+      "note": "Ein Plattformbesitzer ist nicht dasselbe wie ein Arbeitsbereichsadministrator. Rollennamen rechtfertigen keinen umfassenden Kundenzugriff; Firmen- und Abteilungszuordnungen sind ebenfalls relevant. Teilen Sie kein Administratorkonto.",
+      "example": "Ein Agent bearbeitet zugewiesene Anfragen; ein Abteilungsleiter überwacht diese Abteilung; ein externer Kunde ist mit seiner Kundenfirma verknüpft."
+    },
+    {
+      "id": "settings",
+      "role": "admin",
+      "title": "Kategorien, SLA und Betriebsregeln konfigurieren",
+      "summary": "Passen Sie die Arbeitsbereichsvokabular und den Serviceprozess an, bevor Sie das gesamte Team einladen.",
+      "steps": [
+        "Öffnen Sie Einstellungen und überprüfen Sie die Arbeitsbereichsidentität, das Logo, die Standardsprache und die Zeitzone.",
+        "Definieren Sie sinnvolle Kategorien und überprüfen Sie die verfügbaren Prioritäts- und SLA-Einstellungen gegen Ihre tatsächlichen Serviceverpflichtungen.",
+        "Überprüfen Sie gegebenenfalls Workflow-, Routing-, Eskalations- und Benachrichtigungseinstellungen. Halten Sie die Regeln für das Team verständlich.",
+        "Testen Sie Änderungen mit einer klar gekennzeichneten Testanfrage und bestätigen Sie die Zuordnung, Sichtbarkeit und Benachrichtigungen, bevor Sie sich darauf verlassen."
+      ],
+      "note": "Eine konfigurierte Regel ist kein Beweis, dass alle historischen Tickets neu verarbeitet wurden. Überprüfen Sie das tatsächliche Verhalten und versprechen Sie keine vertraglichen SLA-Ergebnisse allein aufgrund einer Konfigurationsseite.",
+      "example": "Erstellen Sie Kategorien für Zugang, Ausrüstung und Abrechnung, dann überprüfen Sie, ob eine Beispielanfrage für Ausrüstung das vorgesehene Personal erreicht."
+    },
+    {
+      "id": "integrations",
+      "role": "admin",
+      "title": "Zendesk, ServiceNow und andere Systeme verbinden",
+      "summary": "Eine Integration erfordert sowohl eine konfigurierte Verbindung als auch einen vereinbarten Synchronisierungsbereich.",
+      "steps": [
+        "Öffnen Sie die Integrationssteuerung mit einem autorisierten Konto. Wählen Sie den verfügbaren Zendesk- oder ServiceNow-Connector.",
+        "Geben Sie die erforderlichen Endpunkt- und Anmeldeinformationen im Konfigurationsformular privat ein und führen Sie den Verbindungstest durch.",
+        "Verwenden Sie die manuellen Export- oder Synchronisierungsaktionen des Connectors und überprüfen Sie das Ergebnis. Entscheiden Sie vor der Betriebsnutzung, welches System jedes Datensatz besitzt.",
+        "Für GLPI oder eine andere API beantragen Sie eine Integrationsbewertung, die Authentifizierung, Feldzuordnung, Berechtigungen und Synchronisierungsregeln abdeckt."
+      ],
+      "note": "Die GLPI-Integration ist als Projekt auf Anfrage verfügbar; es ist kein bereits konfigurierter nativer Connector. Ein erfolgreicher Verbindungstest beweist nicht, dass eine unbeaufsichtigte bidirektionale Synchronisierung möglich ist. Fügen Sie niemals Integrationsgeheimnisse in Tickets ein.",
+      "example": "Testen Sie die Zendesk-Verbindung an einem kontrollierten Datensatz, überprüfen Sie die zugeordneten Felder und vermeiden Sie die Erstellung doppelter Datensätze in beiden Systemen."
+    },
+    {
+      "id": "import",
+      "role": "admin",
+      "title": "Unternehmen und Tickets sicher importieren",
+      "summary": "Eine Vorschau hilft, Abbildungsprobleme zu erkennen, bevor Datensätze erstellt werden.",
+      "steps": [
+        "Bereiten Sie eine saubere CSV- oder XLSX-Datei vor. Importieren Sie Kundenunternehmen, bevor Sie Tickets importieren, die auf diese verweisen.",
+        "Öffnen Sie den Import, wählen Sie die Datei aus und überprüfen Sie die Vorschau. Die Obergrenze beträgt 500 Zeilen und 1 MB pro Import.",
+        "Ordnen Sie die Spalten den erwarteten Feldern zu, überprüfen Sie die erforderlichen Werte und korrigieren Sie die Quelldatei, wenn nötig.",
+        "Bestätigen Sie erst nach Überprüfung der Vorschau, dann überprüfen Sie eine Stichprobe der erstellten Datensätze und deren Unternehmenszuordnungen."
+      ],
+      "note": "Ein Import ist eine Schreiboperation, kein Backup-Wiederherstellung. Testen Sie mit einer kleinen, klar gekennzeichneten Stichprobe und gehen Sie nicht davon aus, dass die Wiederholung der gleichen Datei jeden Datensatz sicher dedupliziert.",
+      "example": "Importieren Sie zwei Beispielunternehmen, überprüfen Sie ihre Namen, dann importieren Sie eine kleine Ticketdatei, die auf diese Unternehmen verweist."
+    },
+    {
+      "id": "billing",
+      "role": "admin",
+      "title": "Testversion, Abonnement und schreibgeschützter Zugriff",
+      "summary": "Der Abrechnungsbildschirm ist die Referenz für den aktuellen Plan, den Preis, die Aktivierungsgebühr und das Abrechnungsintervall.",
+      "steps": [
+        "Öffnen Sie das Abonnement, um den Arbeitsbereich-Test oder den Abonnementstatus sowie die Anzahl der internen Agenten zu überprüfen.",
+        "Die Testversion dauert 14 Kalendertage. Sie erfordert keine Karte und belastet Sie während der Testphase nicht automatisch.",
+        "Wählen Sie das verfügbare Abrechnungsintervall und überprüfen Sie den vollständigen Checkout-Betrag, die Aktivierungsgebühr, Rabatte und anwendbare Steuern, bevor Sie die Zahlung bestätigen.",
+        "Am Ende der Testversion wird ein Arbeitsbereich ohne aktives Abonnement schreibgeschützt. Aktivieren Sie das Abonnement durch den verfügbaren Abrechnungsworkflow, um autorisierte Schreibvorgänge wiederherzustellen."
+      ],
+      "note": "Kundenkonten werden unter dem aktuellen Modell nicht als interne Agenten abgerechnet. Zahlungs- und Daten-Schreibberechtigungen werden weiterhin vom Server erzwungen. Verwenden Sie die Anleitung nicht als Steuerbestimmung; überprüfen Sie den Checkout und die Rechnung.",
+      "example": "Ein Kunde kann die angebotene jährliche Option und die angezeigten Aktivierungskonditionen überprüfen, bevor er sich entscheidet, sich zu verpflichten."
+    },
+    {
+      "id": "backup",
+      "role": "admin",
+      "title": "Einen Arbeitsbereich-Backup herunterladen und das Wiederherstellen verstehen",
+      "summary": "Ein Arbeitsbereichs-Export gibt Ihrer Organisation eine portable Kopie ihrer eigenen Daten. Operator-Backups bieten eine separate Wiederherstellungsebene.",
+      "steps": [
+        "Ein autorisierter Administrator öffnet die Einstellungen und verwendet die Arbeitsbereichs-ZIP-Download-Aktion. Führen Sie die E-Mail-Verifizierung durch, wenn angefordert.",
+        "Speichern Sie die ZIP an einem privaten, zugriffsgeschützten Ort und überprüfen Sie, ob der Download abgeschlossen wurde.",
+        "Der Export enthält die Arbeitsbereichsdaten, Dateien und ein Manifest; er schließt Passwörter, Authentifizierungsschlüssel und andere Arbeitsbereiche aus.",
+        "Für die Wiederherstellung wenden Sie sich an den Dienstbetreiber und bewahren Sie die ursprüngliche ZIP-Datei auf. Es gibt keine automatische ZIP-Importfunktion im Produkt."
+      ],
+      "note": "Ein heruntergeladener ZIP-Ordner ermöglicht kein automatisches Server-Failover und ist kein Live-Replica. Wählen Sie eine Exportfrequenz, die Ihren eigenen Kontinuitätsanforderungen entspricht, und schützen Sie heruntergeladene Kundendaten.",
+      "example": "Vor einer umfangreichen Datenbereinigungsaktion laden Sie einen Arbeitsbereichs-ZIP-Ordner herunter und bewahren Sie ihn gemäß der Retentionspolitik Ihrer Organisation auf."
+    },
+    {
+      "id": "troubleshooting",
+      "role": "all",
+      "title": "Problembehandlung und eine wirksame Supportanfrage",
+      "summary": "Beginnen Sie mit einfachen Überprüfungen und geben Sie reproduzierbare Fakten ohne das Offenlegen von Geheimnissen.",
+      "steps": [
+        "Fehlendes Ticket oder Bericht: Filter löschen, Datumsbereich überprüfen und Ihre Firma, Abteilung, Zuweisung und Benutzerrolle verifizieren. Gespeicherte Berichte sind persönlich.",
+        "Kann nicht erstellen oder ändern: Überprüfen Sie den Abonnement- oder Teststatus, die Benutzerberechtigungen und ob das Ticket neu geöffnet werden muss.",
+        "Upload- oder Exportfehler: Überprüfen Sie die Dateigrößenbegrenzungen, den Speicherplatz, die Browser-Download-Berechtigungen und die angezeigte Fehlermeldung. Speichern Sie ungesendeten Text vor dem Neuladen.",
+        "Wenn das Problem weiterhin besteht, senden Sie die Seitenadresse, die lokale Uhrzeit und Zeitzone, das Ticket-Referenznummer, das erwartete Ergebnis, das beobachtete Ergebnis und ein redigiertes Screenshot über Ihren üblichen Supportkanal."
+      ],
+      "note": "Fügen Sie niemals ein Passwort, einen API-Schlüssel, eine Kreditkartennummer oder einen Wiederherstellungscodes in einem Screenshot ein. Vermeiden Sie das wiederholte Senden einer Zahlung oder eines Imports, während das Ergebnis ungewiss ist.",
+      "example": "„Um 10:15 Uhr Mexico City Zeit, bei Anfragen, SH-123, zeigte der PDF-Upload einen Größenfehler. Die kombinierten Dateien waren 3 MiB groß.“ gibt dem Team einen konkreten Ausgangspunkt."
+    }
+  ]
+}

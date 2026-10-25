@@ -1254,5 +1254,6 @@
   "Chart display": "Вид графика",
   "Series": "Ряд данных",
   "Other groups": "Другие группы",
-  "No positive values to display as shares.": "Нет положительных значений для отображения долей."
+  "No positive values to display as shares.": "Нет положительных значений для отображения долей.",
+  "User guide": "Руководство пользователя"
 }

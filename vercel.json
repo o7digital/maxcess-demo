@@ -83,6 +83,14 @@
     {
       "source": "/verify-email",
       "destination": "/index.html"
+    },
+    {
+      "source": "/help",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/help/",
+      "destination": "/index.html"
     }
   ],
   "headers": [

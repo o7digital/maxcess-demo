@@ -138,7 +138,7 @@ export function createSaas({
   const header = () =>
     localizedHtml`<header class="commercial-header"><a class="commercial-brand" href="/">Service Hub<span>↗</span><small>O7 Digital Group</small></a><nav><a href="/pricing">${t("pricing")}</a><a href="/login">${t("login")}</a>${language()}<a class="btn primary" href="/signup">${t("trial")} ↗</a></nav></header>`;
   const footer = () =>
-    localizedHtml`<footer class="commercial-footer"><span>© ${new Date().getFullYear()} O7 Digital Group · Service Hub</span><a href="/terms">${translateText("Terms of use")}</a><a href="/privacy">${translateText("Privacy policy")}</a><a href="https://www.o7digital.com/" target="_blank" rel="noopener noreferrer">O7 Digital Group ↗</a></footer>`;
+    localizedHtml`<footer class="commercial-footer"><span>© ${new Date().getFullYear()} O7 Digital Group · Service Hub</span><a href="/help">${translateText("User guide")}</a><a href="/terms">${translateText("Terms of use")}</a><a href="/privacy">${translateText("Privacy policy")}</a><a href="https://www.o7digital.com/" target="_blank" rel="noopener noreferrer">O7 Digital Group ↗</a></footer>`;
   const input = (key, label, type = "text", value = "", required = true) =>
     localizedHtml`<label for="${key}">${label}</label><input id="${key}" name="${key}" type="${type}" value="${e(value)}" ${required ? "required" : ""} ${type === "password" ? 'minlength="12" autocomplete="new-password"' : 'maxlength="160"'}>`;
   const safe = (fn) => async (event) => {

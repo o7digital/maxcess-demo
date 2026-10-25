@@ -1,0 +1,298 @@
+{
+  "title": "User guide",
+  "intro": "Practical instructions for customers, agents and administrators. Search a topic or follow a complete workflow.",
+  "search": "Search the guide",
+  "all": "All roles",
+  "client": "Customer",
+  "agent": "Agent / manager",
+  "admin": "Administrator",
+  "steps": "How to do it",
+  "note": "Important to know",
+  "example": "Example",
+  "empty": "No matching articles. Try another term or role.",
+  "back": "Back to Service Hub",
+  "contents": "Contents",
+  "count": "articles",
+  "language": "Language",
+  "articles": [
+    {
+      "id": "start",
+      "role": "all",
+      "title": "Start here: your first successful request",
+      "summary": "Service Hub connects customer requests, the people handling them and the history of the work in one workspace. A ticket can represent an incident, a service request, a technical question or a document review.",
+      "steps": [
+        "Choose your preferred language from the language selector.",
+        "Customers: open Requests and create a request for your company. Agents: open your assigned queue. Managers: review activity and priorities. Administrators: configure the workspace and invite your team.",
+        "Open a ticket to read its conversation, files, owner and progress. Use Reports to understand the activity covered by your access."
+      ],
+      "note": "The documentation describes the product; your role and subscription determine which controls you can use. Reading an article never grants additional permissions.",
+      "example": "A branch reports a broken terminal. The agent asks for a photo, records the intervention and explains the resolution in the same ticket."
+    },
+    {
+      "id": "access",
+      "role": "all",
+      "title": "Sign in, invitations and account recovery",
+      "summary": "Each person should use an individual account. This keeps access and the history of actions attributable to the right person.",
+      "steps": [
+        "Open your workspace sign-in page and enter your own email address and password. Customers can use the customer portal.",
+        "For a new invitation, follow the link in the invitation email and complete the account setup. Invitation links expire after 72 hours; ask your administrator for a new invitation if needed.",
+        "If you forget your password, use the password recovery link and check spam. Complete email verification when requested.",
+        "If multifactor authentication is enabled, enter the email or authenticator code. Keep recovery codes in a private place. Sign out on shared devices."
+      ],
+      "note": "Never send passwords, API keys or recovery codes in a ticket. If access is denied, ask an administrator to check the account status, company assignment and role.",
+      "example": "A new customer receives an invitation, creates a password and then sees the requests belonging to their assigned company."
+    },
+    {
+      "id": "customers",
+      "role": "admin",
+      "title": "Create customer companies and attach their users",
+      "summary": "A customer company groups requests and the external users who may consult them. A contact record alone does not create a sign-in account.",
+      "steps": [
+        "In Customers, create the company with a clear name and the relevant contacts or branch information.",
+        "In Administration / Users and access, create a user with the Customer role and select the existing customer company. Alternatively, use the available invitation flow.",
+        "Verify the email address and company before saving. Use a separate account for each person.",
+        "Ask the customer to sign in through the customer portal and confirm the company shown before sharing operational information."
+      ],
+      "note": "A customer account must be attached to the correct company. It can consult its company’s allowed tickets and scoped reports, never other companies’ data. Do not use an internal agent role for an external customer.",
+      "example": "Create “North Branches”, then attach its two customer users to that company. Users of another customer company cannot see those requests."
+    },
+    {
+      "id": "new-ticket",
+      "role": "all",
+      "title": "Create a useful ticket",
+      "summary": "A precise request reduces back-and-forth and helps the team assess urgency.",
+      "steps": [
+        "Open Requests, then the new request action. Enter a short, specific title.",
+        "Select the customer company when your role allows it, the site or branch, the category and the requested priority.",
+        "Describe the expected result, the observed problem, when it started, its business impact and what has already been tried.",
+        "Add relevant files, submit once, and keep the ticket reference for follow-up."
+      ],
+      "note": "Do not include unnecessary personal or sensitive information. A requested priority is an indication; authorized staff assess and update the operational priority.",
+      "example": "Title: “Branch 24 — checkout terminal cannot connect”. Description: “Since 09:10, two terminals fail; the third works. Restart attempted. Sales are delayed.”"
+    },
+    {
+      "id": "ticket-work",
+      "role": "agent",
+      "title": "Triage, assignment and ticket lifecycle",
+      "summary": "Use ownership, priority and status together so that the next action is clear.",
+      "steps": [
+        "Open your queue, filter the requests and review the oldest or most urgent items. Agents work on their assigned tickets; managers’ visibility follows their scope.",
+        "Review the category, site and impact. Authorized staff assign an owner and adjust priority.",
+        "Move an accepted request from Open to In progress while work is underway. Record the action taken and the next step.",
+        "When solved, explain the solution and mark Resolved. Close after the appropriate confirmation according to your team’s process. Reopen when further work is needed."
+      ],
+      "note": "A status change is not proof that the customer’s issue was solved. Record a useful explanation. Labels may differ with the selected language and workspace configuration.",
+      "example": "Assign a connectivity issue to the responsible agent, record the network checks, then resolve it with the actual corrective action."
+    },
+    {
+      "id": "conversation",
+      "role": "all",
+      "title": "Public replies and internal notes",
+      "summary": "The ticket conversation preserves context. Internal notes are for staff collaboration; public replies are for the customer.",
+      "steps": [
+        "Open the ticket and read the existing history before replying.",
+        "Use a public reply to ask a customer for information or explain progress. Staff should choose the internal-note option for internal coordination.",
+        "Before sending, check the audience and avoid copying internal or confidential content into a public reply.",
+        "Make the next action explicit: what is needed, who should act and when the team will review the ticket again."
+      ],
+      "note": "Customers do not see internal staff notes. Do not treat an internal note as a customer response: response-time reporting uses public staff replies.",
+      "example": "Public reply: “Could you attach the error screenshot?” Internal note: “Ask the network team to check this branch’s link.”"
+    },
+    {
+      "id": "attachments",
+      "role": "all",
+      "title": "PDFs, images and attachments",
+      "summary": "Attach the evidence and documents needed to understand or complete the request.",
+      "steps": [
+        "Open an editable ticket and use its attachment control. Supported types include PDF, Excel, Word, CSV, TXT, PNG and JPG.",
+        "Select up to five files per upload, with a combined size of at most 2 MiB. Check filenames before submitting.",
+        "Open or download the saved attachment from the ticket to verify the correct file was uploaded.",
+        "If the ticket is resolved or closed, reopen it through the authorized workflow before adding new attachments."
+      ],
+      "note": "There is a limit of 20 attachments per ticket and 200 MiB per workspace. If an upload fails, check the format, size, remaining storage and your edit permissions. An attachment is not a replacement for a structured description.",
+      "example": "Attach a small PDF intervention report and a screenshot, then verify both from the ticket history."
+    },
+    {
+      "id": "search",
+      "role": "all",
+      "title": "Find a request and follow its progress",
+      "summary": "Use the request list and its available filters to focus on the work relevant to you.",
+      "steps": [
+        "Open Requests and search by a recognizable title or reference.",
+        "Combine the available status, priority, category or customer filters according to your role. Clear filters when a ticket appears to be missing.",
+        "Open the ticket to review the latest reply, owner, status and attachments.",
+        "Use the overview to identify activity, then open the detailed request before making operational decisions."
+      ],
+      "note": "Search does not bypass permissions. Customers see only their assigned company; agents and managers see the scope authorized for their role. Missing data can result from a filter, assignment or company access.",
+      "example": "A customer filters unresolved requests for its own company to prepare a weekly follow-up with the support team."
+    },
+    {
+      "id": "report-types",
+      "role": "all",
+      "title": "Choose the right business report",
+      "summary": "Reports turn the activity you are authorized to see into operational indicators. Choose a report that answers a specific question.",
+      "steps": [
+        "Executive: summarize workload and service performance. Support operations: review incoming work and progress. SLA: examine response and resolution exposure.",
+        "Capacity: examine queues and workload distribution. Engineering: review technical categories and intervention patterns. Recurring issues: identify repeated company, site and category combinations.",
+        "Quality: examine completion and data quality signals. Customer: review activity and service outcomes by customer within your permitted scope.",
+        "Select the relevant period and filters, inspect the underlying tables, and compare with the previous period where provided."
+      ],
+      "note": "Recurrence is a lead for investigation, not a proven root cause. The system does not infer customer satisfaction, labor cost or equipment reliability without the corresponding measured data.",
+      "example": "For a Monday support meeting, use Support operations for volume, SLA for risks, then Recurring issues to choose investigations."
+    },
+    {
+      "id": "report-reading",
+      "role": "all",
+      "title": "Understand periods, backlog and response times",
+      "summary": "Correct interpretation matters as much as the chart itself.",
+      "steps": [
+        "Check the report’s date range, customer and other filters before reading the numbers.",
+        "Distinguish activity during the selected period from the current backlog, which can include tickets created before that period.",
+        "First response reflects a public staff reply; internal notes are not customer replies. Missing timestamps are excluded from the relevant time averages and SLA calculations.",
+        "Use the detailed tables to investigate outliers. The 90th percentile is the value at or above which only roughly one tenth of the measured observations remain."
+      ],
+      "note": "Averages can hide long waits. Compare the median or percentile when available, inspect the sample size and avoid comparing differently scoped reports.",
+      "example": "A backlog of 40 with 12 new tickets this week is possible: some unresolved tickets were opened earlier."
+    },
+    {
+      "id": "charts",
+      "role": "all",
+      "title": "Change charts: bars, columns, lines and pie charts",
+      "summary": "Choose a representation that makes the question easier to answer before saving the report.",
+      "steps": [
+        "Open Reports and find the chart’s representation selector. Choose horizontal bars, columns or lines for the available datasets.",
+        "For suitable distributions, choose a pie or doughnut chart. If several measures are available, select the series to represent.",
+        "Pie charts group smaller categories beyond the nine largest into Other; inspect the table for their individual values.",
+        "Choose your chart styles before saving. Reopening a saved report preserves its recorded representation; create a new report for a different view."
+      ],
+      "note": "Pie charts are available for suitable non-overlapping distributions, not overlapping SLA indicators or duration/percentage measures. A zero-only series cannot produce a meaningful pie. Missing values must not be read as zero.",
+      "example": "Use columns to compare branch volumes, a line for a trend and a doughnut for the distribution of current ticket statuses."
+    },
+    {
+      "id": "exports",
+      "role": "all",
+      "title": "Save, print and export reports",
+      "summary": "Use the format suited to the person who needs the result.",
+      "steps": [
+        "Generate the report, choose the charts and save it if you need a recorded version. Saved reports are personal to the user who created them.",
+        "Choose Preview to review the complete report before sharing.",
+        "Choose Print or PDF to open the browser’s print dialog. Select an available printer or Save as PDF in that dialog, then check pagination.",
+        "Choose Excel for a native .xlsx workbook with tables and editable charts, or CSV for tabular data exchange. The export follows the report’s authorized scope and filters."
+      ],
+      "note": "There is currently no administrator action that publishes a personal saved report to a customer company. Customers can generate their own reports within their authorized company scope. Downloaded files must be shared responsibly.",
+      "example": "Save a monthly report, review it in Preview, then export Excel for analysis and PDF for a management meeting."
+    },
+    {
+      "id": "ai",
+      "role": "all",
+      "title": "Use Olivia and Hugging Face thoughtfully",
+      "summary": "AI assistance can help draft or interpret information, while people remain responsible for decisions.",
+      "steps": [
+        "Use Olivia where available to ask for assistance with the supported workflow, such as a summary or suggested wording. Review every suggestion before using it.",
+        "In Reports, generate the available AI analysis to obtain commentary on the aggregated indicators.",
+        "Check recommendations against the actual figures and ticket history. Treat hypotheses as questions to investigate.",
+        "If AI is unavailable, continue using tickets, tables, charts and exports; check the displayed error or quota before retrying."
+      ],
+      "note": "Features depend on workspace settings, permissions, model availability and quotas. Report analysis sends aggregated, anonymized indicators to the configured provider, not ticket texts or attachments. It can take several seconds and does not autonomously resolve tickets.",
+      "example": "Ask for an explanation of rising backlog, then verify whether the increase comes from incoming volume, old requests or a change in the report filters."
+    },
+    {
+      "id": "team",
+      "role": "admin",
+      "title": "Manage staff roles and departments",
+      "summary": "Give each person the access needed for their work and review it when responsibilities change.",
+      "steps": [
+        "Open Administration / Users and access. Create or invite each team member with an individual email.",
+        "Choose the appropriate role: administrator for workspace administration, manager for authorized supervision, agent for assigned work, customer for external company access.",
+        "Configure departments and any available custom roles or permissions according to your organization. Verify the resulting scope using the intended role.",
+        "Disable access for people who leave and reassign operational work before removing a responsibility."
+      ],
+      "note": "A platform owner is different from a workspace administrator. Role names do not justify broad customer access; company and department assignments also matter. Do not share an administrator account.",
+      "example": "An agent handles assigned requests; a department manager supervises that department; an external customer is attached to its customer company."
+    },
+    {
+      "id": "settings",
+      "role": "admin",
+      "title": "Configure categories, SLA and operating rules",
+      "summary": "Adapt the workspace vocabulary and service process before inviting the full team.",
+      "steps": [
+        "Open Settings and review the workspace identity, logo, default language and timezone.",
+        "Define meaningful categories and review the available priority and SLA settings against your actual service commitments.",
+        "Review workflow, routing, escalation and notification settings where available. Keep the rules understandable to the team.",
+        "Try changes using a clearly labeled test request and confirm assignment, visibility and notifications before relying on them."
+      ],
+      "note": "A configured rule is not proof that every historical ticket was reprocessed. Validate the actual behavior and do not promise contractual SLA outcomes solely from a configuration screen.",
+      "example": "Create categories for access, equipment and billing, then check that a sample equipment request reaches the intended staff."
+    },
+    {
+      "id": "integrations",
+      "role": "admin",
+      "title": "Connect Zendesk, ServiceNow and other systems",
+      "summary": "An integration requires both a configured connection and an agreed synchronization scope.",
+      "steps": [
+        "Open the integrations controls with an authorized account. Select the available Zendesk or ServiceNow connector.",
+        "Enter the required endpoint and credentials privately in the configuration form, then use the connection test.",
+        "Use the connector’s available manual export or synchronization actions and review the outcome. Decide which system owns each record before operational use.",
+        "For GLPI or another API, request an integration assessment covering authentication, field mapping, permissions and synchronization rules."
+      ],
+      "note": "GLPI integration is available as a project on request; it is not an already configured native connector. A successful connection test does not prove unattended bidirectional synchronization. Never paste integration secrets into tickets.",
+      "example": "Test the Zendesk connection on a controlled record, check its mapped fields and avoid creating duplicate records in both systems."
+    },
+    {
+      "id": "import",
+      "role": "admin",
+      "title": "Import companies and tickets safely",
+      "summary": "A preview helps catch mapping problems before records are created.",
+      "steps": [
+        "Prepare a clean CSV or XLSX file. Import customer companies before tickets that reference them.",
+        "Open Import, select the file and review the preview. The limit is 500 rows and 1 MB per import.",
+        "Map the columns to the expected fields, check required values and correct the source file if needed.",
+        "Confirm only after reviewing the preview, then inspect a sample of the created records and their company assignments."
+      ],
+      "note": "An import is a write operation, not a backup restore. Test with a small, clearly labeled sample and do not assume that repeating the same file will safely deduplicate every record.",
+      "example": "Import two sample companies, verify their names, then import a small ticket file referencing those companies."
+    },
+    {
+      "id": "billing",
+      "role": "admin",
+      "title": "Trial, subscription and read-only access",
+      "summary": "The billing screen is the reference for the current plan, price, activation fee and payment interval.",
+      "steps": [
+        "Open Subscription to review the workspace trial or subscription state and the number of internal agents.",
+        "The trial lasts 14 calendar days. It does not require a card or automatically charge you during the trial.",
+        "Choose the available billing interval and review the full checkout amount, activation fee, discounts and applicable tax before confirming payment.",
+        "At the end of the trial, a workspace without an active subscription becomes read-only. Activate the subscription through the available billing workflow to restore authorized writes."
+      ],
+      "note": "Customer accounts are not charged as internal agents under the current model. Payment and data-write permissions remain enforced by the server. Do not use the guide as a tax determination; review the checkout and invoice.",
+      "example": "A customer can review the offered annual option and its displayed activation terms before deciding to subscribe."
+    },
+    {
+      "id": "backup",
+      "role": "admin",
+      "title": "Download a workspace backup and understand recovery",
+      "summary": "A workspace export gives your organization a portable copy of its own data. Operator backups provide a separate recovery layer.",
+      "steps": [
+        "An authorized administrator opens Settings and uses the workspace ZIP download action. Complete email verification if requested.",
+        "Save the ZIP in a private, access-controlled location and check that the download completed.",
+        "The export contains the workspace data, files and a manifest; it excludes passwords, authentication secrets and other workspaces.",
+        "For recovery, contact the service operator and preserve the original ZIP. There is no automatic ZIP import in the product."
+      ],
+      "note": "A downloaded ZIP does not enable automatic server failover and is not a live replica. Choose an export frequency appropriate to your own continuity needs, and protect downloaded customer information.",
+      "example": "Before a major data-cleanup operation, download a workspace ZIP and retain it according to your organization’s retention policy."
+    },
+    {
+      "id": "troubleshooting",
+      "role": "all",
+      "title": "Troubleshooting and an effective support request",
+      "summary": "Start with simple checks and provide reproducible facts without exposing secrets.",
+      "steps": [
+        "Missing ticket or report: clear filters, check the date range and verify your company, department, assignment and account role. Saved reports are personal.",
+        "Cannot create or modify: review the subscription or trial status, account permissions and whether the ticket must be reopened.",
+        "Upload or export error: check file limits, storage, browser download permissions and the displayed error. Refresh after preserving unsent text.",
+        "If the problem persists, send the page address, local time and timezone, ticket reference, expected result, observed result and a redacted screenshot through your usual support channel."
+      ],
+      "note": "Never include a password, API key, payment card or recovery code in a screenshot. Avoid repeatedly submitting a payment or import while its result is uncertain.",
+      "example": "“At 10:15 Mexico City time, on Requests, SH-123, the PDF upload showed a size error. The combined files were 3 MiB.” gives the team a concrete starting point."
+    }
+  ]
+}

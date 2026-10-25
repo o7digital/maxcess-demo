@@ -1,0 +1,298 @@
+{
+  "title": "Brugervejledning",
+  "intro": "Praktiske instruktioner for kunder, agenter og administratorer. Søg et emne eller følg en fuld proces.",
+  "search": "Søg i vejledningen",
+  "all": "Alle roller",
+  "client": "Kunde",
+  "agent": "Agent / chef",
+  "admin": "Administrator",
+  "steps": "Sådan gør du",
+  "note": "Vigtigt at vide",
+  "example": "Eksempel",
+  "empty": "Ingen tilsvarende artikler. Prøv et andet søgeord eller rolle.",
+  "back": "Tilbage til Service Hub",
+  "contents": "Indhold",
+  "count": "artikler",
+  "language": "Sprog",
+  "articles": [
+    {
+      "id": "start",
+      "role": "all",
+      "title": "Start her: din første succesfulde anmodning",
+      "summary": "Service Hub forbindes kundeanmodninger, de personer, der håndterer dem, og historikken af arbejdet i ét arbejdsområde. En sag kan repræsentere et incident, en serviceanmodning, et teknisk spørgsmål eller en dokumentgennemgang.",
+      "steps": [
+        "Vælg din foretrukne sprog fra sprogvælgeren.",
+        "Kunder: Åbn Anmodninger og opret en anmodning til dit firma. Agenter: Åbn din tildelte kø. Chefer: Gennemgå aktivitet og prioriteringer. Administratører: Konfigurer arbejdsområdet og inviter dit team.",
+        "Åbn en sag for at læse dens samtale, filer, ejer og fremskridt. Brug Rapporter for at forstå aktiviteten, der er dækket af din adgang."
+      ],
+      "note": "Dokumentationen beskriver produktet; din rolle og abonnement bestemmer, hvilke kontroller du kan bruge. At læse en artikel giver aldrig yderligere tilladelser.",
+      "example": "En filial rapporterer et defekt terminal. Agenten beder om et billede, registrerer interventionen og forklarer løsningen i samme sag."
+    },
+    {
+      "id": "access",
+      "role": "all",
+      "title": "Log ind, invitationer og kontorecovery",
+      "summary": "Hver person bør bruge et individuelt konto. Dette holder adgang og historikken over handlinger tilknyttet den rigtige person.",
+      "steps": [
+        "Åbn din arbejdsområdes logon-side og indtast din egen emailadresse og adgangskode. Kunder kan bruge kundeportalen.",
+        "For en ny invitation, følg linket i invitationsemailen og fuldfør kontopopuleringen. Invitationlinks udløber efter 72 timer; bed din administratør om en ny invitation, hvis det er nødvendigt.",
+        "Hvis du glemmer din adgangskode, brug adgangskodegenopbygningslinket og tjek spam. Fuldfør emailverifikation, når det anmodes om.",
+        "Hvis multifaktorautentificering er aktiveret, indtast email- eller autentificeringskode. Behold genopbygningskoder på et privat sted. Log ud på fælles enheder."
+      ],
+      "note": "Send aldrig adgangskoder, API-nøgler eller genopbygningskoder i en sag. Hvis adgang nægtes, bed en administratør om at tjekke kontostatus, virksomhedstilknytning og rolle.",
+      "example": "En ny kunde modtager en invitation, opretter en adgangskode og ser derefter anmodninger, der tilhører deres tildelte virksomhed."
+    },
+    {
+      "id": "customers",
+      "role": "admin",
+      "title": "Opret kundevirksomheder og tilknyt deres brugere",
+      "summary": "En kundevirksomhed grupperer anmodninger og de eksterne brugere, der kan konsultere dem. En kontaktregistrering opretter ikke en logon-konto.",
+      "steps": [
+        "I Kunder, opret virksomheden med et tydeligt navn og de relevante kontakter eller filialinformation.",
+        "I Administration / Brugere og adgang, opret en bruger med Kunderoollen og vælg den eksisterende kundevirksomhed. Alternativt brug den tilgængelige invitationflow.",
+        "Bekræft emailadresse og virksomhed, inden du gemmer. Brug en separat konto til hver person.",
+        "Bed kunden om at logge ind gennem kundeportalen og bekræft virksomheden, der vises, før du deler operationelle oplysninger."
+      ],
+      "note": "En kundekonto skal være tilknyttet den korrekte virksomhed. Den kan konsultere sin virksomheds tilladte sager og områdeafgrænsede rapporter, aldrig andre virksomheders data. Brug ikke en intern agentrolle til en ekstern kunde.",
+      "example": "Opret 'North Branches', tilføj derefter dets to kundebrugere til denne virksomhed. Brugere af en anden kundevirksomhed kan ikke se disse anmodninger."
+    },
+    {
+      "id": "new-ticket",
+      "role": "all",
+      "title": "Opret et nyttigt billet",
+      "summary": "En præcis anmodning mindsker udvekslingen af beskeder og hjælper teamet med at vurdere nødvendigheden.",
+      "steps": [
+        "Åbn Anmodninger, og derefter den nye anmodningshandling. Indtast en kort, præcis titel.",
+        "Vælg kundens virksomhed, hvis din rolle tillader det, stedet eller filialen, kategorien og den anmodede prioritet.",
+        "Beskriv det forventede resultat, det observerede problem, hvornår det startede, dets forretningspåvirkning og hvad der allerede er prøvet.",
+        "Tilføj relevante filer, indsend én gang, og behold billetreferencen til opfølgning."
+      ],
+      "note": "Inkluder ikke unødvendige personlige eller følsomme oplysninger. En anmodet prioritet er en indikation; autoriseret personale vurderer og opdaterer den operationelle prioritet.",
+      "example": "Titel: “Filiale 24 — kassen kan ikke forbinde”. Beskrivelse: “Siden 09:10 er to terminaler ned; den tredje fungerer. Genstart prøvet. Salg er forsinket.”"
+    },
+    {
+      "id": "ticket-work",
+      "role": "agent",
+      "title": "Triage, tildeling og billetlifecycle",
+      "summary": "Brug ejerskab, prioritet og status sammen, så den næste handling er klar.",
+      "steps": [
+        "Åbn din kø, filtrer anmodningerne og gennemgå de ældste eller mest urgente elementer. Agenter arbejder på deres tildelte billetter; leders synlighed følger deres område.",
+        "Gennemgå kategorien, stedet og påvirkningen. Autoriseret personale tildeler en ejer og justerer prioriteten.",
+        "Flyt en accepteret anmodning fra Åben til I gang, mens arbejdet er igang. Registrer den foretagne handling og den næste skridt.",
+        "Når løst, forklar løsningen og marker Løst. Luk efter den passende bekræftelse i overensstemmelse med dit teams proces. Genåbn, hvis yderligere arbejde er nødvendigt."
+      ],
+      "note": "En statusændring er ikke bevis for, at kundens problem blev løst. Registrer en nyttig forklaring. Mærkater kan forskel på den valgte sprog og arbejdspladskonfiguration.",
+      "example": "Tildel en forbindelsesrelateret sag til den ansvarlige agent, registrer netværkskontrollerne, og løs den med den faktiske korrektive handling."
+    },
+    {
+      "id": "conversation",
+      "role": "all",
+      "title": "Offentlige svar og interne noter",
+      "summary": "Billetkonversationen bevare kontekst. Interne noter er til medarbejderes samarbejde; offentlige svar er til kunden.",
+      "steps": [
+        "Åbn billetten og læs den eksisterende historik, før du svarer.",
+        "Brug et offentligt svar til at bede en kunde om information eller forklare fremskridt. Medarbejdere bør vælge intern-noteringsmuligheden til intern koordination.",
+        "Før du sender, tjek publikum og undgå at kopiere interne eller konfidensielle indhold i et offentligt svar.",
+        "Gør den næste handling tydelig: hvad der er nødvendigt, hvem der skal handle og hvornår teamet vil gennemgå billetten igen."
+      ],
+      "note": "Kunder ser ikke interne medarbejders noter. Behandle ikke en intern note som et kundesvar: svarstidrapportering bruger offentlige medarbejdersvar.",
+      "example": "Offentligt svar: “Kan du vedhæfte fejlmeddelelsens skærmbillede?” Intern note: “Bed netholdet om at tjekke denne filials forbindelse.”"
+    },
+    {
+      "id": "attachments",
+      "role": "all",
+      "title": "PDF'er, billeder og vedhæftede filer",
+      "summary": "Vedhæft beviser og dokumenter, der er nødvendige for at forstå eller afslutte anmodningen.",
+      "steps": [
+        "Åbn et redigerbart sagskort og brug dets vedhæftningskontrol. Understøttede typer inkluderer PDF, Excel, Word, CSV, TXT, PNG og JPG.",
+        "Vælg op til fem filer pr. upload med en kombineret størrelse på højest 2 MiB. Kontroller filnavne før indsendelse.",
+        "Åbn eller download den gemte vedhæftede fil fra sagskortet for at verificere, at den korrekte fil blev uploadet.",
+        "Hvis sagskortet er løst eller lukket, genåbn det gennem den autoriserede arbejdsgang, før du tilføjer nye vedhæftede filer."
+      ],
+      "note": "Der er en grænse på 20 vedhæftede filer pr. sagskort og 200 MiB pr. arbejdsområde. Hvis en upload fejler, tjek format, størrelse, tilbageværende lagring og dine redigeringsrettigheder. En vedhæftet fil er ikke en erstatning for en struktureret beskrivelse.",
+      "example": "Vedhæft et lille PDF-interventionsrapport og et skærmbillede, og verificer begge fra sagskortshistorikken."
+    },
+    {
+      "id": "search",
+      "role": "all",
+      "title": "Find en anmodning og fulgtes dens fremskridt",
+      "summary": "Brug anmodningslisten og dens tilgængelige filtre for at fokusere på det arbejde, der er relevant for dig.",
+      "steps": [
+        "Åbn Anmodninger og søg efter et genkendeligt titel eller reference.",
+        "Kombiner de tilgængelige status, prioritet, kategori eller kundefiltre efter din rolle. Ryd filtre, når et sagskort ser ud til at være savnet.",
+        "Åbn sagskortet for at gennemgå den seneste svar, ejer, status og vedhæftede filer.",
+        "Brug oversigten til at identificere aktivitet, og åbn derefter den detaljerede anmodning, før du træffer operationelle beslutninger."
+      ],
+      "note": "Søgning overgår ikke rettigheder. Kunder ser kun deres tildelte virksomhed; agenter og ledere ser området, der er autoriseret for deres rolle. Savnet data kan skyldes et filter, tildeling eller virksomhedsadgang.",
+      "example": "En kunde filtrerer uløste anmodninger for sin egen virksomhed for at forberede en ugentlig opfølgning med supportteamet."
+    },
+    {
+      "id": "report-types",
+      "role": "all",
+      "title": "Vælg den rigtige virksomhedsrapport",
+      "summary": "Rapporter omdanner aktiviteten, du er autoriseret til at se, til operationelle indikatorer. Vælg en rapport, der besvarer et specifikt spørgsmål.",
+      "steps": [
+        "Executive: summer arbejdsbelastning og serviceydeevne. Support operations: gennemgå indgående arbejde og fremskridt. SLA: undersøg respons- og løsningstid.",
+        "Capacity: undersøg køer og arbejdsbelastningsfordeling. Engineering: gennemgå tekniske kategorier og interventionsmønstre. Genværende problemer: identificer gentagne kombinationer af virksomhed, sted og kategori.",
+        "Quality: undersøg afslutnings- og datakvalitetsindikatorer. Customer: gennemgå aktivitet og serviceudkomne pr. kunde inden for din tilladte område.",
+        "Vælg den relevante periode og filtre, inspicer de underliggende tabeller, og sammenlign med den foregående periode, hvor det er tilgængeligt."
+      ],
+      "note": "Genvær er en ledetråd til undersøgelse, ikke en beviset rodårsag. Systemet infererer ikke kundetilfredsheden, arbejdsomkostninger eller udstyrs pålidelighed uden de tilsvarende målte data.",
+      "example": "For en mandagssupportmøde, brug Support operations til volume, SLA til risici, og derefter Genværende problemer til at vælge undersøgelser."
+    },
+    {
+      "id": "report-reading",
+      "role": "all",
+      "title": "Forstå perioder, backlog og svarstider",
+      "summary": "Korrekt fortolkning er lige så vigtig som diagrammet selv.",
+      "steps": [
+        "Kontroller rapportens datointerval, kunde og andre filtre, før du læser talene.",
+        "Skil mellem aktivitet under den valgte periode og den aktuelle backlog, som kan indeholde sager, der blev oprettet før den periode.",
+        "Første svar afspejler et offentligt medarbejder-svar; interne notater er ikke kundesvar. Manglende tidsstempler udelades fra de relevante tidsgennemsnit og SLA-beregninger.",
+        "Brug de detaljerede tabeller til at undersøge udbyggere. Det 90. percentil er værdien, der ligger på eller over, hvor kun cirka en tiendedel af de målte observationer forbliver."
+      ],
+      "note": "Gennemsnit kan skjule lange ventetider. Sammenlign medianen eller percentilen, hvis det er tilgængeligt, undersøg prøvestørrelsen og undgå sammenligning af rapporter med forskellige områder.",
+      "example": "En backlog på 40 med 12 nye sager denne uge er mulig: nogle uløste sager blev åbnet tidligere."
+    },
+    {
+      "id": "charts",
+      "role": "all",
+      "title": "Ændre diagrammer: stolper, søjler, linjer og cirkeldiagrammer",
+      "summary": "Vælg en repræsentation, der gør det lettere at svare på spørgsmålet, før du gemmer rapporten.",
+      "steps": [
+        "Åbn Rapporter og find diagrammets repræsentationsvælger. Vælg horisontale stolper, søjler eller linjer for de tilgængelige datasæt.",
+        "For passende fordelinger, vælg et cirkeldiagram eller et ringdiagram. Hvis flere mål er tilgængelige, vælg serien, der skal repræsentere.",
+        "Cirkeldiagrammer grupperer mindre kategorier uden for de ni største i Andet; undersøg tabellen for deres individuelle værdier.",
+        "Vælg dine diagramstilfelter før du gemmer. Ved at genåbne en gemt rapport bevares dens registrerede repræsentation; opret en ny rapport for en anden visning."
+      ],
+      "note": "Cirkeldiagrammer er tilgængelige for passende ikke-overlappende fordelinger, ikke overlappende SLA-indikatorer eller varighed/procent-mål. En serie med kun nul kan ikke producere et meningsfuldt cirkeldiagram. Manglende værdier må ikke læses som nul.",
+      "example": "Brug søjler til at sammenligne gren-områder, en linje til en tendens og et ringdiagram til fordelingen af nuværende sagsstatusser."
+    },
+    {
+      "id": "exports",
+      "role": "all",
+      "title": "Gem, udskriv og eksporter rapporter",
+      "summary": "Brug det format, der passer til den person, der har brug for resultatet.",
+      "steps": [
+        "Generer rapporten, vælg diagrammer og gem den, hvis du har brug for en registreret version. Gemte rapporter er personlige for brugeren, der har oprettet dem.",
+        "Vælg Forhåndsvisning for at gennemgå den fuldstændige rapport, før du deler den.",
+        "Vælg Udskriv eller PDF for at åbne browserens udskrivningsdialog. Vælg en tilgængelig printer eller Gem som PDF i dialogboksen, og tjek sideopsplitningen.",
+        "Vælg Excel for et nativt .xlsx-arbejdsbog med tabeller og redigerbare diagrammer, eller CSV for tabulær dataudveksling. Eksporten følger rapportens autoriserede omfang og filtre."
+      ],
+      "note": "Der er for tiden ingen administratorhandling, der publicerer en personlig gemt rapport til en kundefirma. Kunder kan generere deres egne rapporter inden for deres autoriserede firmaområde. Nedlastede filer skal deles ansvarligt.",
+      "example": "Gem en månedlig rapport, gennemgå den i Forhåndsvisning, og eksporter derefter Excel til analyse og PDF til et ledelsesmøde."
+    },
+    {
+      "id": "ai",
+      "role": "all",
+      "title": "Brug Olivia og Hugging Face ansvarsfuldt",
+      "summary": "AI-hjælp kan hjælpe med at udarbejde eller fortolke information, mens mennesker fortsat er ansvarlige for beslutninger.",
+      "steps": [
+        "Brug Olivia, hvor den er tilgængelig, til at anmode om hjælp med den understøttede arbejdsgang, som f.eks. en opsamling eller foreslået formulering. Gennemsyn hvert forslag, før du bruger det.",
+        "I Rapporter, generer den tilgængelige AI-analyse for at få kommentarer til de samlede indikatorer.",
+        "Kontroller anbefalingerne i forhold til de faktiske tal og billetshistorik. Behandle hypoteser som spørgsmål, der skal undersøges.",
+        "Hvis AI ikke er tilgængelig, fortsæt med at bruge billetter, tabeller, diagrammer og eksporter; tjek den viste fejl eller kvote, før du prøver igen."
+      ],
+      "note": "Funktioner afhænger af arbejdsområdeindstillinger, tilladelser, modeltilgængelighed og kvoter. Rapportanalyse sender samlede, anonymiserede indikatorer til den konfigurerede leverandør, ikke billettekster eller vedhæftede filer. Det kan tage flere sekunder og løser ikke billetter autonomt.",
+      "example": "Anmod om en forklaring på stigende backlogs, og verificer derefter, om øgningen kommer fra indgående mængde, gamle anmodninger eller en ændring i rapportfiltre."
+    },
+    {
+      "id": "team",
+      "role": "admin",
+      "title": "Administrer medarbejderroller og afdelinger",
+      "summary": "Giv hver person den adgang, de har brug for til deres arbejde, og gennemsyn det, når ansvarsområder ændres.",
+      "steps": [
+        "Åbn Administration / Brugere og adgang. Opret eller inviter hver teammedarbejder med en individuel e-mail.",
+        "Vælg den passende rolle: administrator til arbejdsområdeadministration, manager til autoriseret overvågning, agent til tildelt arbejde, kunde til ekstern selskabsadgang.",
+        "Konfigurer afdelinger og eventuelle tilgængelige brugerdefinerede roller eller tilladelser i overensstemmelse med din organisation. Verificer det resulterende omfang ved hjælp af den tilsyneladende rolle.",
+        "Deaktiver adgang for personer, der forlader, og omdel driftsrelateret arbejde, før du fjerner et ansvarsområde."
+      ],
+      "note": "En platformejer er forskellig fra en arbejdsområdeadministrator. Rollenavne retfærdiggør ikke bred kundeadgang; selskabs- og afdelingstildelinger er også vigtige. Del ikke en administrator-konto.",
+      "example": "En agent håndterer tildelte anmodninger; en afdelingschef overvåger den afdeling; en ekstern kunde er tilknyttet deres kundeselskab."
+    },
+    {
+      "id": "settings",
+      "role": "admin",
+      "title": "Konfigurer kategorier, SLA og driftsregler",
+      "summary": "Tilpas arbejdsområdets terminologi og serviceproces, før du inviterer hele teamet.",
+      "steps": [
+        "Åbn Indstillinger og gennemsyn arbejdsområdets identitet, logo, standard sprog og tidszone.",
+        "Definer meningsfulde kategorier og gennemsyn de tilgængelige prioriterings- og SLA-indstillinger i forhold til dine faktiske serviceforpligtelser.",
+        "Gennemsyn arbejdsgang, ruteplanlægning, eskalering og notifikationsindstillinger, hvor de er tilgængelige. Hold reglerne forståelige for teamet.",
+        "Prøv ændringer ved hjælp af en tydeligt mærket testanmodning og bekræft tildeling, synlighed og notifikationer, før du lærer af dem."
+      ],
+      "note": "En konfigureret regel er ikke bevis for, at alle historiske billetter er genbehandlet. Valider det faktiske opførsel og løfter ikke kontraktuelle SLA-resultater udelukkende fra en konfigurationsskærm.",
+      "example": "Opret kategorier for adgang, udstyr og fakturering, og tjek derefter, at en prøveanmodning om udstyr når den tilsyneladende medarbejder."
+    },
+    {
+      "id": "integrations",
+      "role": "admin",
+      "title": "Forbind Zendesk, ServiceNow og andre systemer",
+      "summary": "En integration kræver både en konfigureret forbindelse og en aftalt synkroniseringsomfang.",
+      "steps": [
+        "Åbn integrationskontrollerne med en autoriseret konto. Vælg den tilgængelige Zendesk- eller ServiceNow-connector.",
+        "Indtast de nødvendige endpoint og legitimationsoplysninger privat i konfigurationsformularen, og brug forbindelsesprøven.",
+        "Brug den tilgængelige manuelle eksport eller synkroniseringsaktioner og gennemgå resultatet. Bestem, hvilket system ejer hvert register, før operationel brug.",
+        "For GLPI eller en anden API, anmod om en integrationsvurdering, der dækker autentificering, feltmapping, tilladelser og synkroniseringsregler."
+      ],
+      "note": "GLPI-integration er tilgængelig som et projekt på anmodning; det er ikke en allerede konfigureret nativ connector. En vellykket forbindelsesprøvning beviser ikke ubemanned tovejs-synkronisering. Indsæt aldrig integrationshemmeligheder i sager.",
+      "example": "Test Zendesk-forbindelsen på et kontrolleret register, tjek dets mappede felter og undgå at oprette dublette i begge systemer."
+    },
+    {
+      "id": "import",
+      "role": "admin",
+      "title": "Importér virksomheder og sager sikkert",
+      "summary": "En preview hjælper med at opdage mappingproblemer, før posterne oprettes.",
+      "steps": [
+        "Forbered en ren CSV- eller XLSX-fil. Importér kundevirksomheder før sager, der refererer til dem.",
+        "Åbn Import, vælg filen og gennemgå preview'en. Grænsen er 500 rækker og 1 MB pr. import.",
+        "Map kolonnerne til de forventede felter, tjek påkrævede værdier og ret kildefilen, hvis det er nødvendigt.",
+        "Bekræft kun efter at have gennemgået preview'en, og inspicer derefter et uddrag af de oprettede poster og deres virksomhedsrelateringer."
+      ],
+      "note": "En import er en skriveoperation, ikke en backup-gendannelse. Test med et lille, tydeligt mærket uddrag, og antag ikke, at gentagelse af samme fil vil sikkert deduplikere hvert register.",
+      "example": "Importér to eksempelvirksomheder, verificer deres navne, og importér derefter en lille sag-fil, der refererer til disse virksomheder."
+    },
+    {
+      "id": "billing",
+      "role": "admin",
+      "title": "Prøveperiode, abonnement og skrivebeskyttet adgang",
+      "summary": "Betalingskærmen er reference for det aktuelle abonnement, pris, aktiveringsgebyr og betalingsinterval.",
+      "steps": [
+        "Åbn Abonnement for at gennemgå arbejdspladsens prøveperiode- eller abonnementsstatus og antallet af interne agenter.",
+        "Prøveperioden varer 14 kalendardage. Den kræver ingen kort og oplader dig ikke automatisk under prøveperioden.",
+        "Vælg det tilgængelige betalingsinterval og gennemgå det fulde checkout-beløb, aktiveringsgebyr, rabatter og tilbagevendende skat, før du bekræfter betalingen.",
+        "Ved slutningen af prøveperioden bliver en arbejdsplads uden et aktivt abonnement skrivebeskyttet. Aktivér abonnementet gennem det tilgængelige betalingsarbejdsgang for at gendanne autoriserede skrivninger."
+      ],
+      "note": "Kundekonti oplades ikke som interne agenter under det nuværende model. Betalings- og data-skriveadgangsretninger forbliver gennemtvunget af serveren. Brug ikke guiden som en skattebestemmelse; gennemgå checkout og faktura.",
+      "example": "En kunde kan gennemgå det tilbudte årlige valg og dets viste aktiveringsbetingelser, før de beslutter at abonnere."
+    },
+    {
+      "id": "backup",
+      "role": "admin",
+      "title": "Download et arbejdsområdebackup og forstå gendannelse",
+      "summary": "En arbejdsområdeseksport giver din organisation en flytbar kopi af dens egne data. Operatørbackups giver et separat gendannelseslag.",
+      "steps": [
+        "En autoriseret administrator åbner Indstillinger og bruger handlingen med at downloade arbejdsområdets ZIP-fil. Gennemfør e-mailverifikation, hvis det anmodes om.",
+        "Gem ZIP-filen på en privat, adgangskontrolleret placering og tjek, at downloaden er gennemført.",
+        "Eksporten indeholder arbejdsområdets data, filer og en manifest; den udelader adgangskoder, autentiseringshemmeligheder og andre arbejdsområder.",
+        "For gendannelse, kontakt serviceoperatøren og bevare den originale ZIP-fil. Der er ingen automatisk ZIP-import i produktet."
+      ],
+      "note": "En nedlastet ZIP-fil giver ikke automatisk serverovertagelse og er ikke en live-replika. Vælg en eksportfrekvens, der passer til dine egne kontinuitetsbehov, og beskyt nedlastet kundainformation.",
+      "example": "Før en stor datarensning, downloade et arbejdsområdets ZIP-fil og behold den i overensstemmelse med din organisations beholdningspolitik."
+    },
+    {
+      "id": "troubleshooting",
+      "role": "all",
+      "title": "Fejlfinding og en effektiv supportanmodning",
+      "summary": "Start med simple kontroller og lever reproducerbare fakta uden at afsløre hemmeligheder.",
+      "steps": [
+        "Manglende billet eller rapport: ryd filtre, tjek datointervallet og verificer dit firma, afdeling, tildeling og kontorolle. Gemte rapporter er personlige.",
+        "Kan ikke oprette eller ændre: gennemgå abonnements- eller prøveperiodestatus, kontopermissioner og om billetten skal genåbnes.",
+        "Upload- eller eksportfejl: tjek filgrænser, lagring, browserdownloadadgang og den viste fejl. Genindlæs efter at have bevaret usendt tekst.",
+        "Hvis problemet fortsætter, send sidenes adresse, lokal tid og tidszone, biljettreference, forventet resultat, observeret resultat og en redigeret skærmbillede gennem din sædvanlige supportkanal."
+      ],
+      "note": "Inkluder aldrig en adgangskode, API-nøgle, betalingskort eller gendannelseskode i et skærmbillede. Undgå at gentagne gange sende en betaling eller import, mens resultatet er usikkert.",
+      "example": "“Kl. 10:15 Mexico City tid, på Anmodninger, SH-123, viste PDF-upload en størrelsesfejl. De kombinerede filer var 3 MiB.” giver teamet et konkret udgangspunkt."
+    }
+  ]
+}

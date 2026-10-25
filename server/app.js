@@ -1030,6 +1030,8 @@ export function createApp({ getStripe } = {}) {
     [
       "/cliente",
       "/cliente/",
+      "/help",
+      "/help/",
       "/login",
       "/signup",
       "/pricing",
