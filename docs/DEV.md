@@ -30,7 +30,7 @@ Les rapports sauvegardent une photographie des indicateurs et des filtres. Un ra
 
 ### Hugging Face
 
-Le bouton de synthèse IA est prêt et désactivé tant que `HF_TOKEN` (ou `HUGGING_FACE_TOKEN`) et `HF_REPORT_MODEL` ne sont pas configurés côté serveur sur Railway **dev**. Le propriétaire fournira l’API. Aucun token n’est demandé dans l’interface ni inclus dans Git. L’endpoint utilise le contrat officiel [Chat Completion de Hugging Face](https://huggingface.co/docs/inference-providers/tasks/chat-completion), avec `https://router.huggingface.co/v1/chat/completions`.
+Le bouton de synthèse IA est prêt et désactivé tant que `HF_TOKEN` (ou `HUGGING_FACE_TOKEN`) et `HF_REPORT_MODEL` ne sont pas configurés côté serveur sur le service API Maxcess sur OVH. Le propriétaire fournira l’API. Aucun token n’est demandé dans l’interface ni inclus dans Git. L’endpoint utilise le contrat officiel [Chat Completion de Hugging Face](https://huggingface.co/docs/inference-providers/tasks/chat-completion), avec `https://router.huggingface.co/v1/chat/completions`.
 
 Seuls les indicateurs agrégés autorisés sont envoyés pour produire la synthèse ; pas de mots de passe, de notes internes ni de conversations. Un échec du fournisseur est explicite et ne produit pas de faux rapport IA. Les rapports sans IA restent fonctionnels.
 

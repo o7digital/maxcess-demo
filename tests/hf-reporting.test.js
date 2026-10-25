@@ -25,6 +25,8 @@ test("Hugging Face reports use the chosen language and aggregate data with anony
       {
         metrics: { total: 5 },
         companies: [{ label: "Private customer name", count: 5 }],
+        performance:[{label:"Private agent name",total:5}],
+        raw_tickets:[{title:"Private raw case"}],
         series: [],
       },
       "fr",
@@ -32,7 +34,9 @@ test("Hugging Face reports use the chosen language and aggregate data with anony
     assert.equal(result, "Synthèse des indicateurs");
     assert.match(sent.messages[0].content, /français/);
     assert.ok(!JSON.stringify(sent).includes("Private customer name"));
-    assert.equal(sent.max_tokens, 800);
+    assert.ok(!JSON.stringify(sent).includes("Private agent name"));
+    assert.ok(!JSON.stringify(sent).includes("Private raw case"));
+    assert.equal(sent.max_tokens, 1600);
     assert.equal(JSON.parse(sent.messages[1].content).metrics.total, 5);
     for (const [language,name] of Object.entries({en:"English",es:"español",fr:"français",de:"Deutsch",it:"italiano",pt:"português",ja:"日本語",ru:"русский",da:"dansk"})) {
       await hfNarrative({metrics:{total:0},companies:[]},language);

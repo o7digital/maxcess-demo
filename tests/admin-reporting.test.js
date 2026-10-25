@@ -213,3 +213,12 @@ test("Mexico reporting includes the full final day on a UTC database", async()=>
   const report=await reportData(client.user,{start:'2026-01-15',end:'2026-01-15'},db);assert.equal(report.metrics.total,2);assert.equal(report.series[0].created,2);
  }finally{await db.query('ROLLBACK');db.release();}
 });
+
+test('Reports include older scoped backlog, exact previous period and public staff response times without inventing missing durations',async()=>{
+ const client=await login('cliente@example.test'),agent=await login('agente@example.test'),db=await pool.connect();
+ try{await db.query('BEGIN');const{rows:[company]}=await db.query("INSERT INTO companies(name,sector,site,tenant_id) VALUES($1,'QA','QA',$2) RETURNING id",['Reporting '+randomUUID(),client.user.tenant_id]);const user={...client.user,company_id:company.id};
+ const ids=[];for(const[at,status,resolved]of[['2026-01-14T12:00:00Z','Abierto',null],['2026-01-15T12:00:00Z','Abierto',null],['2026-01-15T13:00:00Z','Cerrado',null],['2026-01-15T14:00:00Z','Resuelto','2026-01-15T15:00:00Z']]){const{rows:[t]}=await db.query("INSERT INTO tickets(title,company_id,site,category,description,priority,requested_priority,created_by,agent_id,created_at,due_at,status,resolved_at,tenant_id) VALUES('Reporting QA',$1,'QA','Servicio','QA','Media','Media',$2,$3,$4,'2026-01-16T12:00:00Z',$5,$6,$7) RETURNING id",[company.id,client.user.id,agent.user.id,at,status,resolved,client.user.tenant_id]);ids.push(t.id);}
+ for(const[actor,internal,time]of[[client.user.id,false,'2026-01-15T14:05:00Z'],[agent.user.id,true,'2026-01-15T14:10:00Z'],[agent.user.id,false,'2026-01-15T15:00:00Z']])await db.query("INSERT INTO events(ticket_id,actor_id,kind,body,internal,created_at,tenant_id) VALUES($1,$2,'reply','QA',$3,$4,$5)",[ids[3],actor,internal,time,client.user.tenant_id]);
+ const r=await reportData(user,{start:'2026-01-15',end:'2026-01-15'},db);assert.equal(r.metrics.total,3);assert.equal(r.metrics.resolved,2);assert.equal(r.metrics.sla_samples,1);assert.equal(r.metrics.sla_percent,100);assert.equal(r.metrics.average_resolution_hours,1);assert.equal(r.comparison.total,1);assert.equal(r.comparison.start,'2026-01-14');assert.equal(r.comparison.volume_change_percent,200);assert.equal(r.workload.total,2);assert.equal(r.workload.aging.reduce((s,b)=>s+b.count,0),2);assert.equal(r.first_response.answered,1);assert.equal(r.first_response.average_hours,1);assert.equal(r.performance.length,1);assert.equal(r.performance[0].total,3);
+ }finally{await db.query('ROLLBACK');db.release();}
+});

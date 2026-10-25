@@ -2987,3 +2987,25 @@ body {
 }
 
 .ticket-attachments .btn { max-width: 100%; overflow-wrap: anywhere; white-space: normal; text-align: left; }
+
+#mx-demo .report-detail-section { margin: 1.5rem 0; }
+#mx-demo .stats.report-detail-stats { grid-template-columns: repeat(3,minmax(0,1fr)); }
+#mx-demo .report-detail-stats .stat { min-width: 0; }
+#mx-demo .report-detail-stats strong { overflow-wrap: anywhere; }
+#mx-demo .report-performance { margin-top: 1.2rem; }
+#mx-demo .report-methodology { font-size: .85rem; color: #57685e; line-height: 1.65; }
+#mx-demo .report-empty-period { border-left: 4px solid #7d9e52; margin-bottom: 1.2rem; }
+#mx-demo .report-empty-chart { min-height: 80px; display: grid; place-content: center; }
+@media(max-width:680px) { #mx-demo .stats.report-detail-stats { grid-template-columns: repeat(2,minmax(0,1fr)); } #mx-demo .report-detail-section .panel-head { display: block; } }
+@media print {
+ body.print-current-report #saved-report-preview { display:none!important; }
+ body.print-saved-report .page-heading,body.print-saved-report #analytics-data { display:none!important; }
+ #mx-demo [data-action="print-snapshot"] { display:none!important; }
+ #mx-demo .report-performance { break-inside:auto; }
+ #mx-demo .report-performance .table-wrap { overflow:visible; }
+ #mx-demo .report-performance table { min-width:0; width:100%; font-size:9pt; }
+ #mx-demo .report-performance tr { break-inside:avoid; }
+ #mx-demo .report-performance thead { display:table-header-group; }
+}
+
+#mx-demo .report-detail-stats .stat strong { font-size:clamp(20px,2.5vw,30px); letter-spacing:-.5px; }

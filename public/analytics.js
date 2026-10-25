@@ -32,10 +32,10 @@ export function metricCards(data) {
     .join("")}</div>`;
 }
 function lines(series) {
-  const data =
-      series.length > 31
-        ? series.filter((_, i) => i % Math.ceil(series.length / 31) === 0)
-        : series,
+  if(!series.some(d=>d.created||d.resolved))return localizedHtml`<p class="empty report-empty-chart">Sin datos en este periodo.</p>`;
+  const step=Math.ceil(series.length/31);
+  const data=step>1?Array.from({length:Math.ceil(series.length/step)},(_,i)=>{const group=series.slice(i*step,(i+1)*step);return {date:group[0].date+' — '+group.at(-1).date,created:group.reduce((s,d)=>s+d.created,0),resolved:group.reduce((s,d)=>s+d.resolved,0)};}):series;
+  const
     max = Math.max(1, ...data.map((d) => Math.max(d.created, d.resolved))),
     w = 600,
     h = 160;
@@ -54,7 +54,7 @@ function bars(values) {
     ? values
         .map(
           (v) =>
-            localizedHtml`<div class="report-bar"><div class="row"><span>${e(v.label)}</span><b>${v.count}</b></div><svg viewBox="0 0 100 5" preserveAspectRatio="none" aria-hidden="true"><rect width="100" height="5" rx="2" fill="#edf0e9"/><rect width="${(v.count / max) * 100}" height="5" rx="2" fill="#a6be72"/></svg></div>`,
+            localizedHtml`<div class="report-bar"><div class="row"><span>${e(translateText(v.label))}</span><b>${v.count}</b></div><svg viewBox="0 0 100 5" preserveAspectRatio="none" aria-hidden="true"><rect width="100" height="5" rx="2" fill="#edf0e9"/><rect width="${(v.count / max) * 100}" height="5" rx="2" fill="#a6be72"/></svg></div>`,
         )
         .join("")
     : localizedHtml('<p class="empty">Sin datos en este periodo.</p>');
@@ -64,5 +64,30 @@ export function charts(data) {
 }
 export function reportDocument(report) {
   const d = report.snapshot;
-  return localizedHtml`<div class="saved-report"><div class="row"><div><div class="eyebrow">INFORME ${e(report.id.slice(0, 8))}</div><h2>Informe de servicio</h2></div><span class="badge">${report.provider === "huggingface" ? translateText("Hugging Face") : translateText("Datos verificados")}</span></div><p class="subtitle">${d.filters.start} — ${d.filters.end} · alcance ${e(d.scope)} · creado ${new Date(report.created_at).toLocaleString(document.documentElement.lang || "es")}</p>${d.calculation_version !== 2 ? localizedHtml`<p class="subtitle">Informe anterior al ajuste de zona horaria. Genera uno nuevo para consultar las cifras del periodo corregido.</p>` : ""}${metricCards(d)}${report.narrative ? localizedHtml`<div class="report-narrative text-block">${e(report.narrative)}</div>` : ""}${charts(d)}</div>`;
+  return localizedHtml`<div class="saved-report"><div class="row"><div><div class="eyebrow">INFORME ${e(report.id.slice(0, 8))}</div><h2>Informe de servicio</h2></div><span class="badge">${report.provider === "huggingface" ? translateText("Hugging Face") : translateText("Datos verificados")}</span></div><p class="subtitle">${d.filters.start} — ${d.filters.end} · alcance ${e(d.scope)} · creado ${new Date(report.created_at).toLocaleString(document.documentElement.lang || "es")}</p>${d.calculation_version < 3 ? localizedHtml`<p class="subtitle">Informe anterior al ajuste de zona horaria. Genera uno nuevo para consultar las cifras del periodo corregido.</p>` : ""}${metricCards(d)}${report.narrative ? localizedHtml`<div class="report-narrative text-block">${e(report.narrative)}</div>` : ""}${charts(d)}${reportingDetails(d)}<button class="btn" data-action="print-snapshot">${translateText("Print saved report / PDF")}</button></div>`;
+}
+
+const value=v=>v===null||v===undefined?'—':v;
+export function reportingDetails(data){
+ if(!data.workload)return '';
+ const w=data.workload,c=data.comparison,r=data.first_response;
+ const cards=[['Open requests',w.total],['Unassigned',w.unassigned],['SLA vencidos',w.overdue],['Oldest open request',w.oldest_age_days===null?'—':w.oldest_age_days+' '+translateText('days')],['Average first response',r.average_hours===null?'—':r.average_hours+' h'],['Volume change',c.volume_change_percent===null?translateText('Not comparable'):(c.volume_change_percent>0?'+':'')+c.volume_change_percent+'%']];
+ const header=['Agent','Total','En atención','Resueltas o cerradas','SLA vencidos','First response (h)','Resolution (h)'];
+ return localizedHtml`${data.metrics.total===0?localizedHtml`<div class="panel report-empty-period" role="status"><h2>${translateText('No requests in this period')}</h2><p>${translateText('No requests were created in this period. Open requests from earlier dates are shown below.')}</p>${!data.coverage?.earliest_created_at?localizedHtml`<p>${translateText('No requests exist in this scope yet.')}</p>`:''}</div>`:''}<section class="report-detail-section"><div class="panel-head"><h2>${translateText('Current workload · all creation dates')}</h2><small>${new Date(w.as_of).toLocaleString(document.documentElement.lang||'es')}</small></div><div class="stats report-detail-stats">${cards.map(([label,n])=>localizedHtml`<div class="stat"><small>${translateText(label)}</small><strong>${e(n)}</strong></div>`).join('')}</div><p class="subtitle">${translateText('Previous period')}: ${c.start} — ${c.end} · ${c.total} ${translateText('solicitudes')} · ${translateText('First responses recorded')}: ${r.answered} / ${data.metrics.total}</p><div class="dashboard-charts"><div class="panel"><h2>${translateText('Open request age')}</h2>${bars(w.aging)}</div><div class="panel"><h2>${translateText('Prioridad')}</h2>${bars(data.priority)}</div></div><div class="panel report-performance"><h2>${translateText('Agent performance')}</h2><p class="subtitle">${data.filters.start} — ${data.filters.end}</p>${performanceTable(data,header)}</div><p class="report-methodology">${translateText('Figures use the selected creation period; current workload includes all creation dates. Response times count public staff replies only. Missing timestamps are excluded from SLA and duration averages.')}</p></section>`;
+}
+export function reportCsvRows(data){
+ const rows=[['Section','Dimension','Metric','Value'],['Period',data.filters.start,'End',data.filters.end],['Scope',data.scope,'Timezone',data.timezone]];
+ for(const[k,v]of Object.entries(data.metrics))rows.push(['Indicators','',k,v]);
+ for(const group of ['status','category','priority','companies'])for(const row of data[group]||[])rows.push([group,row.label,'count',row.count]);
+ for(const row of data.series)for(const k of ['created','resolved'])rows.push(['Daily',row.date,k,row[k]]);
+ if(data.workload){for(const k of ['total','overdue','unassigned','critical','oldest_age_days'])rows.push(['Current workload','',k,data.workload[k]]);for(const a of data.workload.aging)rows.push(['Age',a.label,'count',a.count]);}
+ for(const row of data.performance||[])for(const k of ['total','active','resolved','overdue','average_first_response_hours','average_resolution_hours'])rows.push(['Agent',row.label,k,row[k]]);
+ if(data.comparison)for(const k of ['start','end','total','resolved','volume_change_percent'])rows.push(['Previous period','',k,data.comparison[k]]);
+ if(data.first_response)for(const[k,v]of Object.entries(data.first_response))rows.push(['First response','',k,v]);
+ return rows;
+}
+
+function performanceTable(data,headers){
+ if(!data.performance.length)return localizedHtml`<p class="empty">Sin datos en este periodo.</p>`;
+ return '<div class="table-wrap"><table><thead><tr>'+headers.map(h=>'<th>'+e(translateText(h))+'</th>').join('')+'</tr></thead><tbody>'+data.performance.map(a=>'<tr><td>'+e(a.label==='Unassigned'?translateText(a.label):a.label)+'</td>'+[a.total,a.active,a.resolved,a.overdue,a.average_first_response_hours,a.average_resolution_hours].map(n=>'<td>'+e(value(n))+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>';
 }
