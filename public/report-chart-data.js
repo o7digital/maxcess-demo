@@ -33,7 +33,8 @@ export function reportChartData(data){
   bar('customer-sla','Cumplimiento SLA',rows,[['sla_percent','Cumplimiento SLA']],r=>r.label,'%');
  }
  for(const chart of charts){if(chart.id==='status')chart.kind='doughnut';const choice=data.filters?.chart_styles?.[chart.id];if(choice){if(!allowedChartKinds(chart).includes(choice.kind))throw Object.assign(new Error('Unsupported chart presentation'),{status:400});chart.kind=choice.kind;chart.selected_series=choice.series||0;if(chart.selected_series>=chart.series.length)throw Object.assign(new Error('Unknown chart series'),{status:400});}}
- for(const chart of charts){if(['pie','doughnut'].includes(chart.kind)&&(chart.all_categories||chart.categories).length>10){const categories=chart.all_categories||chart.categories,series=chart.all_series||chart.series;chart.categories=[...categories.slice(0,9),'Other groups'];chart.series=series.map(s=>({name:s.name,values:[...s.values.slice(0,9),s.values.slice(9).some(Number.isFinite)?s.values.slice(9).reduce((n,v)=>n+(Number.isFinite(v)?v:0),0):null]}));}delete chart.all_categories;delete chart.all_series;}
+ for(const chart of charts){if(['pie','doughnut'].includes(chart.kind)){const categories=chart.all_categories||chart.categories,series=chart.all_series||chart.series,selected=chart.selected_series||0;const order=categories.map((_,i)=>i).sort((a,b)=>(series[selected].values[b]||0)-(series[selected].values[a]||0));chart.categories=order.map(i=>categories[i]);chart.series=series.map(s=>({name:s.name,values:order.map(i=>s.values[i])}));if(chart.categories.length>10){chart.categories=[...chart.categories.slice(0,9),'Other groups'];chart.series=chart.series.map(s=>({name:s.name,values:[...s.values.slice(0,9),s.values.slice(9).some(Number.isFinite)?s.values.slice(9).reduce((n,v)=>n+(Number.isFinite(v)?v:0),0):null]}));}}delete chart.all_categories;delete chart.all_series;}
+
  return charts;
 }
 
