@@ -33,12 +33,12 @@ export function reportChartData(data){
   bar('customer-sla','Cumplimiento SLA',rows,[['sla_percent','Cumplimiento SLA']],r=>r.label,'%');
  }
  for(const chart of charts){if(chart.id==='status')chart.kind='doughnut';const choice=data.filters?.chart_styles?.[chart.id];if(choice){if(!allowedChartKinds(chart).includes(choice.kind))throw Object.assign(new Error('Unsupported chart presentation'),{status:400});chart.kind=choice.kind;chart.selected_series=choice.series||0;if(chart.selected_series>=chart.series.length)throw Object.assign(new Error('Unknown chart series'),{status:400});}}
- for(const chart of charts){if(['pie','doughnut'].includes(chart.kind)&&chart.all_categories?.length>10){chart.categories=[...chart.all_categories.slice(0,9),'Other groups'];chart.series=chart.all_series.map(s=>({name:s.name,values:[...s.values.slice(0,9),s.values.slice(9).some(Number.isFinite)?s.values.slice(9).reduce((n,v)=>n+(Number.isFinite(v)?v:0),0):null]}));}delete chart.all_categories;delete chart.all_series;}
+ for(const chart of charts){if(['pie','doughnut'].includes(chart.kind)&&(chart.all_categories||chart.categories).length>10){const categories=chart.all_categories||chart.categories,series=chart.all_series||chart.series;chart.categories=[...categories.slice(0,9),'Other groups'];chart.series=series.map(s=>({name:s.name,values:[...s.values.slice(0,9),s.values.slice(9).some(Number.isFinite)?s.values.slice(9).reduce((n,v)=>n+(Number.isFinite(v)?v:0),0):null]}));}delete chart.all_categories;delete chart.all_series;}
  return charts;
 }
 
 export function allowedChartKinds(chart){
- const share=['status','aging','queues','sites','patterns','coverage','customers'].includes(chart.id)&&!chart.unit;
+ const share=['activity','flow','status','aging','queues','sites','patterns','coverage','customers'].includes(chart.id)&&!chart.unit;
  return share?['bar','column','line','pie','doughnut']:['bar','column','line'];
 }
 export function validateChartStyles(raw){
