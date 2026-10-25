@@ -3052,3 +3052,8 @@ body {
 @media print{#mx-demo .report-delivery-toolbar{display:none!important;}#mx-demo .report-graph-card{break-inside:avoid;}.report-print-dialog{display:none!important;}}
 #mx-demo .page-heading {flex-wrap:wrap;}
 #mx-demo .page-heading .report-delivery-toolbar {padding:0;max-width:100%;}
+#mx-demo .chart-display-controls {display:flex;gap:12px;flex-wrap:wrap;margin:12px 0;}
+#mx-demo .chart-display-controls label {display:grid;gap:5px;font-size:12px;flex:1;min-width:140px;}
+#mx-demo .chart-display-controls select {padding:9px;border:1px solid #c9d5bd;border-radius:7px;background:#fff;color:#29432c;width:100%;}
+#mx-demo [data-chart-readonly] .chart-display-controls {display:none;}
+@media print {#mx-demo .chart-display-controls{display:none!important;}}

@@ -18,3 +18,4 @@ body.report-preview-document {background:#edf0e9;margin:0;padding:20px;color:#1c
  .report-preview-document #mx-demo tr {break-inside:avoid;}
  .report-preview-document #mx-demo * {-webkit-print-color-adjust:exact;print-color-adjust:exact;}
 }
+.report-preview-document .chart-display-controls {display:none!important;}

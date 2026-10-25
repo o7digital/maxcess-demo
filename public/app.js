@@ -1,3 +1,4 @@
+import {reportChartData} from "./report-chart-data.js";
 import {reportToolbar,openReportPreview,excelUrl,downloadReportExcel} from "./report-delivery.js";
 import { reportType } from "./report-types.js";
 import {connectorsDialog} from "./connectors.js";
@@ -807,6 +808,7 @@ try {
   notify(err.message);
 }
 let activeReportType = "executive";
+let reportChartStyles={};
 let analyticsData = null,
   reportList = [];
 async function renderDashboard(el, reporting) {
@@ -814,7 +816,7 @@ async function renderDashboard(el, reporting) {
   el.innerHTML = localizedHtml('<p class="empty">Preparando tus indicadores…</p>');
   try {
     const [data, integration, saved] = await Promise.all([
-      api("/analytics" + (reporting ? "?report_type=" + activeReportType : "")),
+      api("/analytics" + (reporting ? "?report_type=" + activeReportType + "&chart_styles=" + encodeURIComponent(JSON.stringify(reportChartStyles[activeReportType]||{})) : "")),
       api("/integrations"),
       reporting ? api("/reports") : Promise.resolve({ reports: [] }),
     ]);
@@ -829,6 +831,7 @@ async function renderDashboard(el, reporting) {
         const params = new URLSearchParams(
           Object.fromEntries(new FormData(evt.target)),
         );
+        params.set("chart_styles",JSON.stringify(reportChartStyles[params.get("report_type")]||{}));
         const next = await api("/analytics?" + params);
         if (view !== activeView) return;
         analyticsData = next;
@@ -1069,3 +1072,12 @@ async function deliverReport(action,source){
  const html=saved?reportDocument(saved,{controls:false}):reportBody(data);
  openReportPreview({html,title,excel:url,autoPrint:action!=='report-preview',pdf:action==='report-pdf'});
 }
+
+document.addEventListener('change',event=>{
+ const node=event.target;if(!node.matches('[data-chart-kind],[data-chart-series]')||!node.closest('#analytics-data'))return;
+ const id=node.dataset.chartKind||node.dataset.chartSeries,type=analyticsData.filters.report_type||'executive';
+ const options=structuredClone(analyticsData.filters.chart_styles||{}),chart=reportChartData(analyticsData).find(c=>c.id===id);
+ options[id]={kind:node.dataset.chartKind?node.value:chart.kind,series:node.dataset.chartSeries?Number(node.value):(chart.selected_series||0)};
+ analyticsData.filters.chart_styles=options;reportChartStyles[type]=options;
+ document.querySelector('#analytics-data').innerHTML=reportBody(analyticsData);
+});

@@ -1,3 +1,4 @@
+import {validateChartStyles,reportChartData} from "../public/report-chart-data.js";
 import { reportType } from "../public/report-types.js";
 import { reportingDetails } from "./reporting-details.js";
 import { departmentManager, accessScope } from "./roles.js";
@@ -28,7 +29,7 @@ export function reportFilters(query = {}, timezone = "America/Mexico_City") {
   const company = query.company_id ? Number(query.company_id) : null;
   if (company !== null && (!Number.isSafeInteger(company) || company < 1))
     throw error(400, "Empresa no válida");
-  return { start, end, company_id: company, report_type: reportType(query.report_type || "executive").id };
+  return { start, end, company_id: company, report_type: reportType(query.report_type || "executive").id, chart_styles:validateChartStyles(query.chart_styles) };
 }
 export async function reportData(user, query = {}, db = pool) {
   if(db===pool){const client=await pool.connect();try{await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY');const result=await reportData(user,query,client);await client.query('COMMIT');return result;}catch(e){await client.query('ROLLBACK');throw e;}finally{client.release();}}
@@ -109,6 +110,7 @@ export async function reportData(user, query = {}, db = pool) {
     if (dayCounts[done]) dayCounts[done].resolved++;
   }
   const details = await reportingDetails(db,user,filters,timezone,tickets);
+  reportChartData({...details,filters,series:[],status:[]});
   return {
     ...details,
     filters,

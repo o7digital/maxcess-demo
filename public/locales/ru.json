@@ -1245,5 +1245,14 @@
   "Section": "Раздел",
   "Row": "Строка",
   "Group": "Группа",
-  "No AI analysis in this export.": "В этом экспорте нет ИИ-анализа."
+  "No AI analysis in this export.": "В этом экспорте нет ИИ-анализа.",
+  "Horizontal bars": "Горизонтальные столбцы",
+  "Vertical columns": "Вертикальные столбцы",
+  "Line chart": "Линейный график",
+  "Pie chart": "Круговая диаграмма",
+  "Doughnut chart": "Кольцевая диаграмма",
+  "Chart display": "Вид графика",
+  "Series": "Ряд данных",
+  "Other groups": "Другие группы",
+  "No positive values to display as shares.": "Нет положительных значений для отображения долей."
 }

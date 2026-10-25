@@ -77,3 +77,20 @@ saved HF text. Saved exports require the same user, tenant, current access scope
 and, for customer accounts, company. Exports are read-only, not cached and
 rate/concurrency bounded; more than 200,000 cells requires narrower filters.
 No new runtime dependency, PDF server or printer service is installed.
+
+## Chart presentation choices
+
+Each current report chart offers horizontal bars, vertical columns and lines.
+Disjoint distributions additionally offer pie and doughnut charts, including a
+series selector where several measures are available. Overlapping SLA/quality
+indicators and duration/percentage measures are not offered as pie shares.
+Status distribution defaults to a doughnut chart. Zero-only distributions show an
+explicit empty-share message; unknown durations remain gaps. More than ten pie
+categories are represented as the first nine plus an aggregated Other groups
+slice, preserving the complete total.
+
+Choices are validated in `filters.chart_styles` and stored with saved snapshots.
+The current Excel URL JSON-encodes the same options; native XLSX pie, doughnut,
+column, bar and line parts preserve them. Saved/printed reports use their stored
+presentation and do not expose editable controls. No database migration is
+needed: the options live in the existing filters/snapshot JSON.

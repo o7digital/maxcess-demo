@@ -237,3 +237,9 @@ test('Excel exports preserve saved snapshots and reject other users, companies a
  const response=await client.a.get('/api/reports/'+r.id+'/export.xlsx').buffer(true).parse(binary).expect(200);assert.match(response.headers['content-type'],/spreadsheetml/);assert.match(response.headers['cache-control'],/no-store/);const{default:ExcelJS}=await import('exceljs');const w=new ExcelJS.Workbook();await w.xlsx.load(response.body);assert.equal(w.worksheets[0].getCell('B7').value,r.snapshot.business.metrics[0].value);
  }finally{await pool.query('DELETE FROM reports WHERE id=$1',[r.id]);}
 });
+
+test('Selected chart presentation survives report save and Excel export and rejects unsupported pie metrics',async()=>{
+ const client=await login('cliente@example.test');const chart_styles={status:{kind:'pie',series:0}};
+ await client.a.get('/api/analytics?report_type=sla&chart_styles='+encodeURIComponent(JSON.stringify({exposure:{kind:'pie'}}))).expect(400);
+ const r=(await post(client,'/reports',{filters:{report_type:'executive',chart_styles}}).expect(201)).body.report;try{assert.deepEqual(r.snapshot.filters.chart_styles,chart_styles);const response=await client.a.get('/api/reports/'+r.id+'/export.xlsx').buffer(true).parse((res,cb)=>{const chunks=[];res.on('data',c=>chunks.push(c));res.on('end',()=>cb(null,Buffer.concat(chunks)));}).expect(200);const{default:unzipper}=await import('unzipper');const zip=await unzipper.Open.buffer(response.body);assert.ok((await zip.files.find(f=>f.path==='xl/charts/reportChart2.xml').buffer()).toString().includes('<c:pieChart>'));}finally{await pool.query('DELETE FROM reports WHERE id=$1',[r.id]);}
+});

@@ -1245,5 +1245,14 @@
   "Section": "Afsnit",
   "Row": "Række",
   "Group": "Gruppe",
-  "No AI analysis in this export.": "Denne eksport indeholder ingen AI-analyse."
+  "No AI analysis in this export.": "Denne eksport indeholder ingen AI-analyse.",
+  "Horizontal bars": "Vandrette søjler",
+  "Vertical columns": "Lodrette søjler",
+  "Line chart": "Kurvediagram",
+  "Pie chart": "Cirkeldiagram",
+  "Doughnut chart": "Ringdiagram",
+  "Chart display": "Diagramvisning",
+  "Series": "Dataserie",
+  "Other groups": "Andre grupper",
+  "No positive values to display as shares.": "Ingen positive værdier at vise som andele."
 }

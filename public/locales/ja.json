@@ -1245,5 +1245,14 @@
   "Section": "セクション",
   "Row": "行",
   "Group": "グループ",
-  "No AI analysis in this export.": "このエクスポートにはAI分析が含まれていません。"
+  "No AI analysis in this export.": "このエクスポートにはAI分析が含まれていません。",
+  "Horizontal bars": "横棒",
+  "Vertical columns": "縦棒",
+  "Line chart": "折れ線",
+  "Pie chart": "円グラフ",
+  "Doughnut chart": "ドーナツグラフ",
+  "Chart display": "グラフの表示",
+  "Series": "データ系列",
+  "Other groups": "その他のグループ",
+  "No positive values to display as shares.": "割合で表示できる正の値がありません。"
 }

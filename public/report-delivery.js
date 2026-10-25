@@ -5,7 +5,7 @@ export function reportToolbar(id='current'){
 }
 export function excelUrl(data,id){
  if(id&&id!=='current')return '/api/reports/'+encodeURIComponent(id)+'/export.xlsx';
- const query=new URLSearchParams();for(const[k,v]of Object.entries(data.filters))if(v!==null&&v!==undefined&&v!=='')query.set(k,v);return '/api/reports/export.xlsx?'+query;
+ const query=new URLSearchParams();for(const[k,v]of Object.entries(data.filters))if(v!==null&&v!==undefined&&v!=='')query.set(k,typeof v==='object'?JSON.stringify(v):v);return '/api/reports/export.xlsx?'+query;
 }
 export function openReportPreview({html,title,excel,autoPrint=false,pdf=false}){
  document.querySelector('#report-print-preview')?.remove();const t=translateText,dialog=document.createElement('dialog');dialog.id='report-print-preview';dialog.className='report-print-dialog';

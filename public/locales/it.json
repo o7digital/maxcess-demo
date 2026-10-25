@@ -1245,5 +1245,14 @@
   "Section": "Sezione",
   "Row": "Riga",
   "Group": "Gruppo",
-  "No AI analysis in this export.": "Questa esportazione non include analisi IA."
+  "No AI analysis in this export.": "Questa esportazione non include analisi IA.",
+  "Horizontal bars": "Barre orizzontali",
+  "Vertical columns": "Colonne verticali",
+  "Line chart": "Curve",
+  "Pie chart": "Grafico a torta",
+  "Doughnut chart": "Grafico ad anello",
+  "Chart display": "Presentazione del grafico",
+  "Series": "Serie",
+  "Other groups": "Altri gruppi",
+  "No positive values to display as shares.": "Nessun valore positivo da rappresentare in quote."
 }

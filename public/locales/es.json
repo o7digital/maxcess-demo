@@ -1245,5 +1245,14 @@
   "Section": "Sección",
   "Row": "Fila",
   "Group": "Grupo",
-  "No AI analysis in this export.": "Esta exportación no incluye análisis IA."
+  "No AI analysis in this export.": "Esta exportación no incluye análisis IA.",
+  "Horizontal bars": "Barras horizontales",
+  "Vertical columns": "Columnas verticales",
+  "Line chart": "Curvas",
+  "Pie chart": "Gráfico circular",
+  "Doughnut chart": "Gráfico de anillo",
+  "Chart display": "Presentación del gráfico",
+  "Series": "Serie",
+  "Other groups": "Otros grupos",
+  "No positive values to display as shares.": "No hay valores positivos para mostrar proporciones."
 }

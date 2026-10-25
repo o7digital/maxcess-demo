@@ -1245,5 +1245,14 @@
   "Section": "Section",
   "Row": "Row",
   "Group": "Group",
-  "No AI analysis in this export.": "No AI analysis in this export."
+  "No AI analysis in this export.": "No AI analysis in this export.",
+  "Horizontal bars": "Horizontal bars",
+  "Vertical columns": "Vertical columns",
+  "Line chart": "Line chart",
+  "Pie chart": "Pie chart",
+  "Doughnut chart": "Doughnut chart",
+  "Chart display": "Chart display",
+  "Series": "Series",
+  "Other groups": "Other groups",
+  "No positive values to display as shares.": "No positive values to display as shares."
 }

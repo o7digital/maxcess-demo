@@ -1245,5 +1245,14 @@
   "Section": "Abschnitt",
   "Row": "Zeile",
   "Group": "Gruppe",
-  "No AI analysis in this export.": "Dieser Export enthält keine KI-Analyse."
+  "No AI analysis in this export.": "Dieser Export enthält keine KI-Analyse.",
+  "Horizontal bars": "Horizontale Balken",
+  "Vertical columns": "Vertikale Säulen",
+  "Line chart": "Liniendiagramm",
+  "Pie chart": "Kreisdiagramm",
+  "Doughnut chart": "Ringdiagramm",
+  "Chart display": "Diagrammdarstellung",
+  "Series": "Datenreihe",
+  "Other groups": "Weitere Gruppen",
+  "No positive values to display as shares.": "Keine positiven Werte für Anteile vorhanden."
 }
