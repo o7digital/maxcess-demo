@@ -362,7 +362,7 @@ function render() {
     renderUsers(el);
     return;
   } else if (view === "olivia") {
-    el.innerHTML = localizedHtml`<div class="eyebrow">OLIVIA IA V3.5 · ASISTENCIA DE SERVICIO</div><h1>Contexto para tu criterio.</h1><p class="subtitle">Asistencia integrada en cada caso: resumen, clasificación y respuesta preparada con Olivia IA V3.5.</p><div class="olivia-stage"><div class="orb">✦</div><h2>Una buena respuesta empieza por <em>entender el caso.</em></h2><p>Elige una solicitud para generar su resumen, sugerir prioridad y categoría, preparar una respuesta, proponer la siguiente acción y sintetizar la resolución.</p><label for="olivia-ticket">Solicitud autorizada</label><select id="olivia-ticket">${tickets.map((t) => localizedHtml`<option value="${t.id}">SH-${t.id} · ${esc(t.title)}</option>`).join("")}</select><div class="actions"><button class="btn primary" data-action="open-olivia" ${tickets.length ? "" : "disabled"}>Abrir espacio Olivia ↗</button></div><p class="notice">Las propuestas requieren validación humana. Ninguna respuesta se publica automáticamente.</p></div>`;
+    el.innerHTML = localizedHtml`<div class="eyebrow">OLIVIA IA V3.5 · ASISTENCIA DE SERVICIO</div><h1>Contexto para tu criterio.</h1><p class="subtitle">Asistencia integrada en cada caso: resumen, clasificación y respuesta preparada con Olivia IA V3.5.</p><div class="olivia-stage"><div class="orb">✦</div><h2>Una buena respuesta empieza por <em>entender el caso.</em></h2><p>Elige una solicitud para generar su resumen, sugerir prioridad y categoría, preparar una respuesta, proponer la siguiente acción y sintetizar la resolución.</p><label for="olivia-ticket">Solicitud autorizada</label><select id="olivia-ticket" ${tickets.length ? "" : "disabled"}>${tickets.map((t) => localizedHtml`<option value="${t.id}">SH-${t.id} · ${esc(t.title)}</option>`).join("")}</select>${tickets.length ? "" : localizedHtml`<p class="notice" role="status">No requests exist in this scope yet.</p>`}<div class="actions"><button class="btn primary" data-action="open-olivia" ${tickets.length ? "" : "disabled"}>Abrir espacio Olivia ↗</button></div><p class="notice">Las propuestas requieren validación humana. Ninguna respuesta se publica automáticamente.</p></div>`;
   }
 }
 function filtered() {
@@ -713,9 +713,16 @@ document.addEventListener("click", async (e) => {
       case "suggest":
         await suggest();
         break;
-      case "open-olivia":
-        await openTicket(Number($("#olivia-ticket").value), true);
+      case "open-olivia": {
+        const ticketId = Number($("#olivia-ticket")?.value);
+        if (!Number.isSafeInteger(ticketId) || ticketId <= 0 ||
+            !tickets.some(t => t.id === ticketId)) {
+          notify("No requests exist in this scope yet.");
+          break;
+        }
+        await openTicket(ticketId, true);
         break;
+      }
       case "copy-draft":
         $("#reply").value = suggestion.draft;
         $("#approval").checked = false;

@@ -44,7 +44,9 @@ export function localizedHtml(strings,...values) {
   } else {
     template.innerHTML=raw;translateTree(template.content,document.documentElement.lang||'es');output=template.innerHTML;
   }
-  return output.replace(/__MX_SLOT_(\d+)__/g,(_,i)=>String(values[Number(i)]??''));
+  // HTML serializes attribute-name slots in lowercase and adds an empty value.
+  // Replace the whole slot so conditional disabled/selected attributes survive.
+  return output.replace(/__MX_SLOT_(\d+)__(?:="")?/gi,(_,i)=>String(values[Number(i)]??''));
 }
 export function translatedLegal(html,code=document.documentElement.lang||'es') {
   const template=document.createElement('template');template.innerHTML=html;translateTree(template.content,code);return template.innerHTML;
